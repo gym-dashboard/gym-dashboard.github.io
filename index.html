@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gym Logs Dashboard</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>Gym Logs Dashboard</h1>
+  <p>This sample dashboard reads three JSON logs (19-03-2025, 20-03-2025, and 22-03-2025) and displays some visual insights.</p>
+
+  <div class="chart-container">
+    <!-- Chart 1: Bar chart of total volume by day -->
+    <div id="barChart" class="chart">
+      <h3>Total Volume by Day</h3>
+      <svg id="barChartSVG" width="400" height="300"></svg>
+    </div>
+
+    <!-- Chart 2: Donut chart of total volume by muscle group -->
+    <div id="donutChart" class="chart">
+      <h3>Volume by Muscle Group</h3>
+      <svg id="donutChartSVG" width="400" height="300"></svg>
+    </div>
+  </div>
+
+  <!-- Hidden tooltip for optional hover interactions -->
+  <div class="tooltip" id="tooltip"></div>
+
+  <!-- Include your script -->
+  <script src="script.js"></script>
+</body>
+</html>

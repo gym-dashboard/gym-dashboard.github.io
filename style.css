@@ -1,0 +1,37 @@
+/* style.css */
+body {
+  font-family: Arial, sans-serif;
+  margin: 40px;
+}
+
+h1 {
+  margin-bottom: 10px;
+}
+
+.chart-container {
+  margin-top: 30px;
+  display: flex;      /* side-by-side layout */
+  flex-wrap: wrap;    /* wrap if too wide */
+  gap: 60px;
+}
+
+.chart {
+  border: 1px solid #ccc;
+  padding: 20px;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.tooltip {
+  position: absolute;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #ccc;
+  pointer-events: none;
+  opacity: 0;
+  font-size: 14px;
+}

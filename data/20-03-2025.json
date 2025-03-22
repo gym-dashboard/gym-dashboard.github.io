@@ -1,0 +1,110 @@
+{
+    "date": "20-03-2025",
+    "participants": [
+        "André D.",
+        "Duarte T.",
+        "Mariana D."
+    ],
+    "start_time": "18:01",
+    "end_time": "19:28",
+    "total_time": "1 hour 27 minutes",
+    "overall_muscle_group": "Back",
+    "workout": [
+        {
+            "Exercise": "Pull-Ups",
+            "Reps": 10,
+            "Weight": "0 kg",
+            "Effort": "65%",
+            "Muscle-Group": "Back",
+            "Location": null
+        },
+        {
+            "Exercise": "Pull-Ups",
+            "Reps": 10,
+            "Weight": "0 kg",
+            "Effort": "75%",
+            "Muscle-Group": "Back",
+            "Location": null
+        },
+        {
+            "Exercise": "Pull-Ups",
+            "Reps": 10,
+            "Weight": "0 kg",
+            "Effort": "80%",
+            "Muscle-Group": "Back",
+            "Location": null
+        },
+        {
+            "Exercise": "Lat Pull-Down",
+            "Reps": 18,
+            "Weight": "45 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Machine"
+        },
+        {
+            "Exercise": "Lat Pull-Down",
+            "Reps": 8,
+            "Weight": "50 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Machine"
+        },
+        {
+            "Exercise": "Lat Pull-Down",
+            "Reps": 8,
+            "Weight": "50 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Machine"
+        },
+        {
+            "Exercise": "Rows",
+            "Reps": 10,
+            "Weight": "50 kg",
+            "Effort": "85%",
+            "Muscle-Group": "Back",
+            "Location": "Machine"
+        },
+        {
+            "Exercise": "Rows",
+            "Reps": 8,
+            "Weight": "55 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Machine"
+        },
+        {
+            "Exercise": "Rows",
+            "Reps": 8,
+            "Weight": "55 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Machine"
+        },
+        {
+            "Exercise": "Pullovers",
+            "Reps": 12,
+            "Weight": "20 kg",
+            "Effort": "80%",
+            "Muscle-Group": "Back",
+            "Location": "Cables"
+        },
+        {
+            "Exercise": "Pullovers",
+            "Reps": 10,
+            "Weight": "25 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Cables"
+        },
+        {
+            "Exercise": "Pullovers",
+            "Reps": 10,
+            "Weight": "25 kg",
+            "Effort": "100%",
+            "Muscle-Group": "Back",
+            "Location": "Cables"
+        }
+    ]
+}
