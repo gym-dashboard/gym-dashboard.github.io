@@ -6,6 +6,29 @@ body {
   background: #f9f9f9;
 }
 
+/* Outer box that holds everything, pinned to 700px wide */
+#outerBox {
+  max-width: 700px;
+  margin: 0 auto;  /* center the entire box on the page */
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+/* The chart wrapper no longer needs its own max-width or border,
+   since #outerBox is controlling the width. */
+#chartWrapper {
+  /* We'll still allow horizontal scroll on small screens if needed. */
+  width: 100%;
+  overflow-x: auto;
+  text-align: left;
+}
+
+/* The chart container: inline-block helps keep the chart from stretching. */
+#chartContainer {
+  display: inline-block;
+}
+
 /* ========== Calendar Plot (GitHub style) ========== */
 .cell {
   shape-rendering: crispEdges;
@@ -23,15 +46,14 @@ body {
 }
 .axis-label {
   fill: #767676;
-  font-size: 10px;
+  font-size: 14px;
 }
 
 /* ========== Timeline ========== */
-/* The chunk container: #timelineMonths is a row of 3 or 5 items. */
 #timelineMonths button {
   border: none;
   background: none;
-  color: #aaa; /* unselected is light gray */
+  color: #aaa;
   font-size: 0.95rem;
   cursor: pointer;
   padding: 4px 8px;
@@ -42,14 +64,34 @@ body {
   background: #eee;
 }
 #timelineMonths .selectedMonth {
-  color: #e74c3c; /* red for selected month */
-  pointer-events: none; /* no click */
+  color: #005506;
+  pointer-events: none;
   font-weight: bold;
 }
+
+#timelineContainer {
+  transform: translateX(30px);  /* Adjust 50px to your desired offset */
+}
+
+
 
 /* Prev/Next disabled style */
 #timelinePrevBtn:disabled,
 #timelineNextBtn:disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+/* Legend color boxes */
+.colorBox {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin: 0 5px;
+}
+.colorBox.first {
+  background-color: #c6e48b; /* "Less" color */
+}
+.colorBox.second {
+  background-color: #196127; /* "More" color */
 }

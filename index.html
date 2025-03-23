@@ -16,28 +16,49 @@
 </head>
 <body>
 
+<!-- Outer container (full width for spacing, if desired) -->
 <div class="container my-4">
-  <h1 class="text-center mb-4">Month-by-Month Calendar Plot</h1>
+  <!-- A narrower box (max-width: 700px) that holds everything:
+       the top text, the chart, the timeline, and the footer/legend. -->
+  <div id="outerBox" class="p-3 border rounded bg-white">
+    
+    <!-- Top bar: "X Logged Workouts in the last year" on the left, year select on the right -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <!-- This will be updated by script.js to show total workouts -->
+      <div id="yearlyWorkoutsCount" class="fw-bold"></div>
 
-  <!-- Year Select -->
-  <div class="row mb-4">
-    <div class="col-12 d-flex justify-content-center">
-      <label for="yearSelect" class="me-2 fw-bold">Year:</label>
-      <select id="yearSelect" class="form-select" style="width:120px;"></select>
+      <!-- Year Select (on the right) -->
+      <div class="d-flex align-items-center">
+        <label for="yearSelect" class="me-2 mb-0 fw-bold">Year:</label>
+        <select id="yearSelect" class="form-select form-select-sm" style="width:auto;"></select>
+      </div>
     </div>
-  </div>
 
-  <!-- Calendar Plot (top) -->
-  <div id="chartContainer" class="d-flex justify-content-center mb-4"></div>
+    <!-- Chart + timeline area -->
+    <div id="chartWrapper" class="mb-2">
+      <div id="chartContainer"></div>
+    </div>
 
-  <!-- Timeline (below) -->
-  <div id="timelineContainer" class="d-flex justify-content-center align-items-center">
-    <button id="timelinePrevBtn" class="btn btn-sm btn-outline-secondary me-2">Prev</button>
-    <!-- The chunk of months goes here. We only create 5 or 3 months in the DOM. -->
-    <div id="timelineMonths" class="d-flex gap-2"></div>
-    <button id="timelineNextBtn" class="btn btn-sm btn-outline-secondary ms-2">Next</button>
-  </div>
-</div>
+    <!-- Timeline controls below the chart -->
+    <div id="timelineContainer" class="d-flex justify-content-center align-items-center mb-3">
+      <button id="timelinePrevBtn" class="btn btn-sm btn-outline-secondary me-2">Prev</button>
+      <div id="timelineMonths" class="d-flex gap-2"></div>
+      <button id="timelineNextBtn" class="btn btn-sm btn-outline-secondary ms-2">Next</button>
+    </div>
+
+    <!-- Bottom bar: "Learn how we count contributions" on the left, "Less ... More" on the right -->
+    <div class="d-flex justify-content-between align-items-center">
+      <span>Hover on squares for extra detail</span>
+      <div>
+        <span>Less</span>
+        <span class="colorBox first"></span>
+        <span class="colorBox second"></span>
+        <span>More</span>
+      </div>
+    </div>
+
+  </div> <!-- end of #outerBox -->
+</div> <!-- end of .container -->
 
 <!-- Main JS -->
 <script src="script.js"></script>
