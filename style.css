@@ -70,7 +70,7 @@ body {
 }
 
 #timelineContainer {
-  transform: translateX(30px);  /* Adjust 50px to your desired offset */
+  transform: translateX(20px);  /* Adjust 50px to your desired offset */
 }
 
 

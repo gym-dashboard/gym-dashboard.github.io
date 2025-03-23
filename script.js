@@ -70,7 +70,7 @@ function updateYearlyWorkoutCount(year) {
 function getMargins() {
   if (window.innerWidth < 768) {
     // For small screens, slightly bigger margins
-    return { top: 25, right: 25, bottom: 0, left: 70 };
+    return { top: 25, right: 5, bottom: 0, left: 50 };
   } else {
     // For larger screens, standard margins
     return { top: 20, right: 20, bottom: 0, left: 70 };
