@@ -16,37 +16,29 @@
 </head>
 <body>
 
-<!-- Outer container (full width for spacing, if desired) -->
 <div class="container my-4">
-  <!-- A narrower box (max-width: 700px) that holds everything:
-       the top text, the chart, the timeline, and the footer/legend. -->
   <div id="outerBox" class="p-3 border rounded bg-white">
     
-    <!-- Top bar: "X Logged Workouts in the last year" on the left, year select on the right -->
+    <!-- Top Bar: "X Logged Workouts..." on the left, Year Select on the right -->
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <!-- This will be updated by script.js to show total workouts -->
       <div id="yearlyWorkoutsCount" class="fw-bold"></div>
-
-      <!-- Year Select (on the right) -->
       <div class="d-flex align-items-center">
         <label for="yearSelect" class="me-2 mb-0 fw-bold">Year:</label>
         <select id="yearSelect" class="form-select form-select-sm" style="width:auto;"></select>
       </div>
     </div>
 
-    <!-- Chart + timeline area -->
+    <!-- Chart Area -->
     <div id="chartWrapper" class="mb-2">
       <div id="chartContainer"></div>
     </div>
 
-    <!-- Timeline controls below the chart -->
-    <div id="timelineContainer" class="d-flex justify-content-center align-items-center mb-3">
-      <button id="timelinePrevBtn" class="btn btn-sm btn-outline-secondary me-2">Prev</button>
+    <!-- Timeline (with NO Prev/Next buttons, just drag/scroll/click) -->
+    <div id="timelineContainer" class="d-flex align-items-center mb-3">
       <div id="timelineMonths" class="d-flex gap-2"></div>
-      <button id="timelineNextBtn" class="btn btn-sm btn-outline-secondary ms-2">Next</button>
     </div>
 
-    <!-- Bottom bar: "Learn how we count contributions" on the left, "Less ... More" on the right -->
+    <!-- Bottom Bar: "Hover on squares..." on the left, color legend on the right -->
     <div class="d-flex justify-content-between align-items-center">
       <span>Hover on squares for extra detail</span>
       <div>
@@ -57,8 +49,8 @@
       </div>
     </div>
 
-  </div> <!-- end of #outerBox -->
-</div> <!-- end of .container -->
+  </div> <!-- end outerBox -->
+</div> <!-- end container -->
 
 <!-- Main JS -->
 <script src="script.js"></script>

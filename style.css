@@ -6,30 +6,29 @@ body {
   background: #f9f9f9;
 }
 
-/* Outer box that holds everything, pinned to 700px wide */
+/* Outer box pinned to 700px wide (centered) */
 #outerBox {
   max-width: 700px;
-  margin: 0 auto;  /* center the entire box on the page */
+  margin: 0 auto;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
 }
 
-/* The chart wrapper no longer needs its own max-width or border,
-   since #outerBox is controlling the width. */
+/* Chart area: allows horizontal scroll on small screens if needed */
 #chartWrapper {
-  /* We'll still allow horizontal scroll on small screens if needed. */
   width: 100%;
   overflow-x: auto;
   text-align: left;
+  position: relative; /* Ensure proper positioning context */
 }
 
-/* The chart container: inline-block helps keep the chart from stretching. */
+/* The chart container: inline-block keeps chart from auto-stretching */
 #chartContainer {
   display: inline-block;
 }
 
-/* ========== Calendar Plot (GitHub style) ========== */
+/* ====== GitHub-Style Calendar Cells ====== */
 .cell {
   shape-rendering: crispEdges;
   rx: 3;
@@ -49,37 +48,55 @@ body {
   font-size: 14px;
 }
 
-/* ========== Timeline ========== */
+/* ====== Timeline Container ====== */
+#timelineContainer {
+  width: auto;
+  text-align: left;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+/* Timeline months will have width set by JS to match the squares area */
+#timelineMonths {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+  cursor: grab;
+  padding: 10px 0;
+  -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+  scrollbar-width: none;     /* Hide scrollbar Firefox */
+  justify-content: flex-start;
+}
+
+/* Hide scrollbar for Chrome/Safari/Opera */
+#timelineMonths::-webkit-scrollbar {
+  display: none;
+}
+
+/* Each month "button" in the timeline */
 #timelineMonths button {
   border: none;
   background: none;
-  color: #aaa;
+  color: #777;
   font-size: 0.95rem;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 14px;
   border-radius: 4px;
   transition: background 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
+
 #timelineMonths button:hover {
   background: #eee;
 }
-#timelineMonths .selectedMonth {
+
+#timelineMonths button.selectedMonth {
   color: #005506;
-  pointer-events: none;
   font-weight: bold;
-}
-
-#timelineContainer {
-  transform: translateX(20px);  /* Adjust 50px to your desired offset */
-}
-
-
-
-/* Prev/Next disabled style */
-#timelinePrevBtn:disabled,
-#timelineNextBtn:disabled {
-  opacity: 0.5;
-  pointer-events: none;
+  background: #daf5d8;
 }
 
 /* Legend color boxes */
