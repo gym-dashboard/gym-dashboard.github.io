@@ -1,22 +1,20 @@
 /***********************************************
  * script.js
- * 
- * 1) Load data for each day from data/DD-MM-YYYY.json
- * 2) drawMonthChart => 31 columns x 6 muscle groups
- * 3) Horizontal timeline is below the chart:
- *    - Only shows a subset of months at a time
- *    - "Prev" / "Next" switch which chunk of months is visible
- *    - Clicking a month => updates chart
+ *
+ * 1) Load day-by-day data => yearData[year][monthIndex].
+ * 2) drawMonthChart => GitHub squares for chosen month.
+ * 3) The timeline below shows a chunk of months (5 on large screens, 3 on small). 
+ *    - The selected month is placed in the center if possible.
+ *    - If user picks near Jan or Dec, we pin left or right so we never go past the range [0..11].
+ *    - No partial months are rendered; only exactly 5 or 3 months in the DOM at once.
+ * 4) Prev/Next shift the selected month by ±1 (not the chunk). 
+ *    The chunk is recomputed so the selected month is centered if possible.
  **********************************************/
 
-// ---- Calendar Config ----
-const muscleGroups = ["Chest", "Back", "Legs", "Shoulders", "Bicep", "Tricep"];
-const monthNames = [
-  "Jan","Feb","Mar","Apr","May","Jun",
-  "Jul","Aug","Sep","Oct","Nov","Dec"
-];
+// ----- Calendar config
+const muscleGroups = ["Chest","Back","Legs","Shoulders","Bicep","Tricep"];
+const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-// yearData[year][monthIndex] => array of 31 * muscleGroups
 let yearData = {};
 let currentYear = new Date().getFullYear();
 let currentMonthIndex = new Date().getMonth(); // 0..11
@@ -28,85 +26,84 @@ const timelinePrevBtn = document.getElementById("timelinePrevBtn");
 const timelineNextBtn = document.getElementById("timelineNextBtn");
 const timelineMonthsDiv = document.getElementById("timelineMonths");
 
-// 1) Populate year select
+// Timeline state
+let selectedMonthIndex = 0; // which month is selected
+let chunkStartIndex = 0; // first month in the chunk
+
+// ========== 1) Populate Year Select ==========
 function populateYearSelect() {
-  const years = [2023, 2024, 2025, 2026];
-  years.forEach(yr => {
-    let opt = document.createElement("option");
-    opt.value = yr;
-    opt.textContent = yr;
+  const years=[2023,2024,2025,2026];
+  years.forEach(yr=>{
+    const opt=document.createElement("option");
+    opt.value=yr;
+    opt.textContent=yr;
     yearSelect.appendChild(opt);
   });
-  yearSelect.value = currentYear;
+  yearSelect.value=currentYear;
 }
 populateYearSelect();
 
-yearSelect.addEventListener("change", () => {
-  currentYear = +yearSelect.value;
-  if (!yearData[currentYear]) {
-    loadDataForYear(currentYear).then(() => {
+yearSelect.addEventListener("change",()=>{
+  currentYear=+yearSelect.value;
+  if(!yearData[currentYear]){
+    loadDataForYear(currentYear).then(()=>{
       drawMonthChart(currentYear, currentMonthIndex);
+      renderTimeline(); 
     });
   } else {
     drawMonthChart(currentYear, currentMonthIndex);
+    renderTimeline();
   }
 });
 
-// 2) loadDataForYear
-async function loadDataForYear(year) {
-  yearData[year] = new Array(12).fill(null).map(() => []);
-
-  // fill each month with 31*g
-  for (let m=0; m<12; m++){
-    for (let d=1; d<=31; d++){
-      muscleGroups.forEach(mg => {
-        yearData[year][m].push({ day:d, muscle: mg, volume:0 });
+// ========== 2) Load Data For a Year ==========
+async function loadDataForYear(year){
+  yearData[year]=new Array(12).fill(null).map(()=>[]);
+  // fill
+  for(let m=0;m<12;m++){
+    for(let d=1;d<=31;d++){
+      muscleGroups.forEach(mg=>{
+        yearData[year][m].push({day:d,muscle:mg,volume:0});
       });
     }
   }
-
-  // load from data/...
-  let startDate = new Date(year, 0,1);
-  let endDate = new Date(year,11,31);
-
-  for(let dt=new Date(startDate); dt<=endDate; dt.setDate(dt.getDate()+1)){
-    let dd=String(dt.getDate()).padStart(2,"0");
-    let mm=String(dt.getMonth()+1).padStart(2,"0");
-    let yyyy=dt.getFullYear();
-    let fileName=`data/${dd}-${mm}-${yyyy}.json`;
-
-    try {
-      let json=await d3.json(fileName);
+  // load day-by-day
+  let start=new Date(year,0,1);
+  let end=new Date(year,11,31);
+  for(let dt=new Date(start); dt<=end; dt.setDate(dt.getDate()+1)){
+    const dd=String(dt.getDate()).padStart(2,"0");
+    const mm=String(dt.getMonth()+1).padStart(2,"0");
+    const yyyy=dt.getFullYear();
+    const fileName=`data/${dd}-${mm}-${yyyy}.json`;
+    try{
+      const json=await d3.json(fileName);
       if(json && json.workout){
         let volumeMap={};
-        muscleGroups.forEach(mg => volumeMap[mg]=0);
-
+        muscleGroups.forEach(mg=>volumeMap[mg]=0);
         json.workout.forEach(entry=>{
-          let mg=entry["Muscle-Group"]||"Unknown";
+          const mg=entry["Muscle-Group"]||"Unknown";
           if(muscleGroups.includes(mg)){
-            let reps=+entry.Reps||0;
-            let weight=parseFloat(entry.Weight)||0;
+            const reps=+entry.Reps||0;
+            const weight=parseFloat(entry.Weight)||0;
             volumeMap[mg]+=reps*weight;
           }
         });
-
-        let monIdx=dt.getMonth();
-        let dayIdx=dt.getDate();
-        let offset=(dayIdx-1)*muscleGroups.length;
+        const monIdx=dt.getMonth();
+        const dayIdx=dt.getDate();
+        const off=(dayIdx-1)*muscleGroups.length;
         muscleGroups.forEach((mg,i)=>{
-          yearData[year][monIdx][offset+i].volume=volumeMap[mg];
+          yearData[year][monIdx][off+i].volume=volumeMap[mg];
         });
       }
     } catch(err){
       // missing => volume=0
     }
   }
-
-  // days beyond real month => volume=null
+  // days beyond real month => null
   for(let m=0;m<12;m++){
-    let dim=new Date(year,m+1,0).getDate();
+    const dim=new Date(year,m+1,0).getDate();
     for(let d=dim+1; d<=31; d++){
-      let off=(d-1)*muscleGroups.length;
+      const off=(d-1)*muscleGroups.length;
       for(let i=0;i<muscleGroups.length;i++){
         yearData[year][m][off+i].volume=null;
       }
@@ -114,21 +111,20 @@ async function loadDataForYear(year) {
   }
 }
 
-// 3) drawMonthChart
+// ========== 3) Draw Calendar Plot ==========
 function drawMonthChart(year, monthIndex){
   chartContainer.innerHTML="";
-
   if(!yearData[year]) return;
-  let arr=yearData[year][monthIndex];
-  let maxVol=d3.max(arr,d=>d.volume===null?0:d.volume)||0;
+  const arr=yearData[year][monthIndex];
+  const maxVol=d3.max(arr,d=>d.volume===null?0:d.volume)||0;
 
-  let colorScale=d3.scaleLinear()
+  const colorScale=d3.scaleLinear()
     .domain([1,maxVol])
     .range(["#c6e48b","#196127"])
     .clamp(true);
 
   const cellSize=15, cellGap=4;
-  const margin={ top:20,right:20,bottom:20,left:80 };
+  const margin={top:20,right:20,bottom:20,left:80};
   const days=31, rows=muscleGroups.length;
 
   const squaresWidth=(cellSize+cellGap)*days;
@@ -136,12 +132,12 @@ function drawMonthChart(year, monthIndex){
   const chartWidth=margin.left+margin.right+squaresWidth;
   const chartHeight=margin.top+margin.bottom+squaresHeight;
 
-  let svg=d3.select("#chartContainer")
+  const svg=d3.select("#chartContainer")
     .append("svg")
     .attr("width",chartWidth)
     .attr("height",chartHeight);
 
-  let g=svg.append("g")
+  const g=svg.append("g")
     .attr("transform",`translate(${margin.left},${margin.top})`);
 
   function fillColor(d){
@@ -166,11 +162,11 @@ function drawMonthChart(year, monthIndex){
       .attr("height",cellSize)
       .attr("fill",fillColor);
 
-  // X-axis
-  let xScale=d3.scaleBand()
+  // x-axis
+  const xScale=d3.scaleBand()
     .domain(d3.range(1,32).map(String))
     .range([0,squaresWidth]);
-  let xAxis=d3.axisTop(xScale)
+  const xAxis=d3.axisTop(xScale)
     .tickValues(xScale.domain().filter((_,i)=>i%2===0))
     .tickSize(0);
 
@@ -179,11 +175,11 @@ function drawMonthChart(year, monthIndex){
     .attr("font-size",9)
     .call(g=>g.select(".domain").remove());
 
-  // Y-axis
-  let yScale=d3.scaleBand()
+  // y-axis
+  const yScale=d3.scaleBand()
     .domain(muscleGroups)
     .range([0,squaresHeight]);
-  let yAxis=d3.axisLeft(yScale).tickSize(0);
+  const yAxis=d3.axisLeft(yScale).tickSize(0);
 
   g.append("g")
     .call(yAxis)
@@ -191,90 +187,85 @@ function drawMonthChart(year, monthIndex){
     .call(g=>g.select(".domain").remove());
 }
 
-// 4) Timeline with "paged" months
-// We'll define a 12-month array for the chosen year, but we only show a chunk at a time.
-let timelineStart=0; // index of first displayed month in [0..11]
-let selectedMonthIndex=0; // which month is selected? e.g. 0=Jan
+// ========== 4) Timeline Logic ==========
 
-// The months array for the timeline
-// We'll update it if you want to show a different year label, but for now let's keep year=2025 in data-date
-// Actually, let's store the "monthIndex" 0..11 and label them "Jan..Dec"
-let timelineMonths = monthNames.map((name, i) => {
-  return { label: name, monthIndex: i }; // no year stored here; we rely on currentYear
-});
-
-// We'll show a variable # of months per page (6 on large screens, 3 on small).
-function getMonthsPerPage() {
-  // simple approach: if window width >= 768 => 6, else 3
-  if(window.innerWidth>=768) return 6;
-  else return 3;
+// How many months are visible? 5 if >=768px, else 3
+function getVisibleCount(){
+  return (window.innerWidth>=768)?5:3;
 }
 
-// Render the subset of months in [timelineStart..(timelineStart+ monthsPerPage-1)]
-function renderTimeline() {
-  // clamp timelineStart so it doesn't exceed 0..(12-monthsPerPage)
-  const mpp=getMonthsPerPage();
-  const maxStart=12-mpp;
-  if(timelineStart<0) timelineStart=0;
-  if(timelineStart>maxStart) timelineStart=maxStart;
+// We want the selected month near the "center" if possible.
+function computeChunkStart(selected) {
+  const visible = getVisibleCount();
+  const half = Math.floor(visible/2); // center index in the chunk
+  let start = selected - half;
+  if(start<0) start=0; // can't go before month 0
+  const maxStart = 12 - visible; // can't go beyond month 11
+  if(start>maxStart) start=maxStart;
+  return start;
+}
 
-  // clear
+// Render the chunk in #timelineMonths
+function renderTimeline() {
+  // Recompute chunkStart
+  chunkStartIndex = computeChunkStart(selectedMonthIndex);
+
+  // Clear
   timelineMonthsDiv.innerHTML="";
 
-  // slice the array
-  let visibleMonths=timelineMonths.slice(timelineStart, timelineStart+mpp);
-
-  visibleMonths.forEach(mObj => {
+  const visible = getVisibleCount();
+  const end = chunkStartIndex + visible; // not inclusive
+  // create chunk
+  for(let i=chunkStartIndex; i<end; i++){
     let btn=document.createElement("button");
-    btn.textContent=mObj.label;
-    // if selected
-    if(mObj.monthIndex===selectedMonthIndex) {
+    btn.textContent=monthNames[i];
+    if(i===selectedMonthIndex){
       btn.classList.add("selectedMonth");
     }
-    btn.addEventListener("click", ()=>{
-      // on click => update chart
-      selectedMonthIndex=mObj.monthIndex;
+    btn.addEventListener("click",()=>{
+      selectedMonthIndex=i;
       drawMonthChart(currentYear, selectedMonthIndex);
-      renderTimeline(); // re-render to highlight new selected
+      renderTimeline();
     });
     timelineMonthsDiv.appendChild(btn);
-  });
+  }
 
-  // disable prev if timelineStart=0
-  timelinePrevBtn.disabled=(timelineStart<=0);
-  // disable next if timelineStart >= 12-mpp
-  timelineNextBtn.disabled=(timelineStart>=maxStart);
+  // enable/disable prev/next
+  // If selectedMonthIndex=0 => can't go prev
+  timelinePrevBtn.disabled=(selectedMonthIndex<=0);
+  // If selectedMonthIndex=11 => can't go next
+  timelineNextBtn.disabled=(selectedMonthIndex>=11);
 }
 
-// handle prev/next
-timelinePrevBtn.addEventListener("click", ()=>{
-  timelineStart-=getMonthsPerPage();
-  renderTimeline();
+// Prev => selectedMonthIndex--
+timelinePrevBtn.addEventListener("click",()=>{
+  if(selectedMonthIndex>0){
+    selectedMonthIndex--;
+    drawMonthChart(currentYear, selectedMonthIndex);
+    renderTimeline();
+  }
 });
-timelineNextBtn.addEventListener("click", ()=>{
-  timelineStart+=getMonthsPerPage();
+
+// Next => selectedMonthIndex++
+timelineNextBtn.addEventListener("click",()=>{
+  if(selectedMonthIndex<11){
+    selectedMonthIndex++;
+    drawMonthChart(currentYear, selectedMonthIndex);
+    renderTimeline();
+  }
+});
+
+// On resize => re-render timeline (the chunk might become 5->3 or vice versa)
+window.addEventListener("resize",()=>{
   renderTimeline();
 });
 
-// on resize => recalc months per page, clamp, re-render
-window.addEventListener("resize", ()=>{
-  let oldMPP=getMonthsPerPage();
-  // re-render
-  renderTimeline();
-});
-
-// 5) Initialization
+// ========== 5) Initialization ==========
 (async function init(){
-  // load currentYear if needed
-  if(!yearData[currentYear]) {
+  if(!yearData[currentYear]){
     await loadDataForYear(currentYear);
   }
-  // draw chart for currentMonthIndex
+  selectedMonthIndex=currentMonthIndex; // start with user's real current month
   drawMonthChart(currentYear, currentMonthIndex);
-
-  // set timelineStart=0 if the user is in the first half or 6 if the user is in the second half
-  // but let's just keep it 0 for now
-  timelineStart=0;
-  selectedMonthIndex=currentMonthIndex;
   renderTimeline();
 })();

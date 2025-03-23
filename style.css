@@ -6,7 +6,7 @@ body {
   background: #f9f9f9;
 }
 
-/* Chart squares (GitHub-style) */
+/* ========== Calendar Plot (GitHub style) ========== */
 .cell {
   shape-rendering: crispEdges;
   rx: 3;
@@ -26,19 +26,12 @@ body {
   font-size: 10px;
 }
 
-/* Timeline styling */
-.timelineWrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-}
-
-/* The months container */
+/* ========== Timeline ========== */
+/* The chunk container: #timelineMonths is a row of 3 or 5 items. */
 #timelineMonths button {
   border: none;
   background: none;
-  color: #aaa; /* light gray for unselected */
+  color: #aaa; /* unselected is light gray */
   font-size: 0.95rem;
   cursor: pointer;
   padding: 4px 8px;
@@ -50,15 +43,13 @@ body {
 }
 #timelineMonths .selectedMonth {
   color: #e74c3c; /* red for selected month */
-  pointer-events: none; /* disable click */
+  pointer-events: none; /* no click */
   font-weight: bold;
 }
-#timelineMonths button:disabled {
+
+/* Prev/Next disabled style */
+#timelinePrevBtn:disabled,
+#timelineNextBtn:disabled {
   opacity: 0.5;
   pointer-events: none;
-}
-
-/* Buttons for Prev/Next */
-#timelinePrevBtn, #timelineNextBtn {
-  min-width: 50px;
 }

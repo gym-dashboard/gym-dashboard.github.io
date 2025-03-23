@@ -2,23 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Calendar Plot (Top) + Horizontal Timeline (Bottom)</title>
+  <title>Calendar + Chunked Timeline</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- (Optional) Bootstrap for layout -->
   <link 
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
   />
-  <!-- Our custom CSS -->
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css" />
-  <!-- D3 -->
+  <!-- D3 for the calendar -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
+
 <div class="container my-4">
   <h1 class="text-center mb-4">Month-by-Month Calendar Plot</h1>
 
-  <!-- Year select row -->
+  <!-- Year Select -->
   <div class="row mb-4">
     <div class="col-12 d-flex justify-content-center">
       <label for="yearSelect" class="me-2 fw-bold">Year:</label>
@@ -26,23 +27,15 @@
     </div>
   </div>
 
-  <!-- Chart container (top) -->
+  <!-- Calendar Plot (top) -->
   <div id="chartContainer" class="d-flex justify-content-center mb-4"></div>
 
-  <!-- Timeline below the chart -->
-  <div id="timelineContainer" class="d-flex justify-content-center">
-    <div class="timelineWrapper">
-      <!-- Prev button -->
-      <button id="timelinePrevBtn" class="btn btn-sm btn-outline-secondary me-2" disabled>Prev</button>
-
-      <!-- The months go here -->
-      <div id="timelineMonths" class="d-flex gap-2">
-        <!-- We'll dynamically render the months as <button> or <span> elements -->
-      </div>
-
-      <!-- Next button -->
-      <button id="timelineNextBtn" class="btn btn-sm btn-outline-secondary ms-2">Next</button>
-    </div>
+  <!-- Timeline (below) -->
+  <div id="timelineContainer" class="d-flex justify-content-center align-items-center">
+    <button id="timelinePrevBtn" class="btn btn-sm btn-outline-secondary me-2">Prev</button>
+    <!-- The chunk of months goes here. We only create 5 or 3 months in the DOM. -->
+    <div id="timelineMonths" class="d-flex gap-2"></div>
+    <button id="timelineNextBtn" class="btn btn-sm btn-outline-secondary ms-2">Next</button>
   </div>
 </div>
 
