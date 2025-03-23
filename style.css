@@ -3,6 +3,7 @@
 /* Basic page styling */
 body {
   font-family: Arial, sans-serif;
+  background: #f9f9f9;
 }
 
 /* Chart squares (GitHub-style) */
@@ -13,77 +14,51 @@ body {
   stroke: #ddd;
   stroke-width: 1px;
 }
-
-/* 0-volume squares => gray */
 .cell-zero {
   fill: #ebedf0;
 }
-
-/* For days that don’t exist in the month => no fill */
 .cell-empty {
   fill: none;
   stroke: #eee;
 }
-
-/* Axis labels */
 .axis-label {
   fill: #767676;
   font-size: 10px;
 }
 
-/* -------------- Slider Styling -------------- */
-
-/* #sliderWrapper is sized in script.js 
-   to 75% of the squares width, and is centered with margin: 0 auto. */
-#sliderWrapper {
-  position: relative;
-  margin: 0 auto; 
+/* Timeline styling */
+.timelineWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
-/* The slider track */
-#monthSlider {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 8px;
-  background: #ddd;
-  border-radius: 5px;
-  outline: none;
-  margin: 0;
-  padding: 0;
-}
-
-/* WebKit thumb */
-#monthSlider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #196127;
+/* The months container */
+#timelineMonths button {
+  border: none;
+  background: none;
+  color: #aaa; /* light gray for unselected */
+  font-size: 0.95rem;
   cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-}
-
-/* Mozilla thumb */
-#monthSlider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #196127;
-  cursor: pointer;
-  border: 2px solid #fff;
-}
-
-/* Floating label above the slider thumb */
-#sliderLabel {
-  position: absolute;
-  top: -1.8rem;
-  left: 0;
-  transform: translateX(0);
-  background: #fff;
-  padding: 2px 6px;
-  border: 1px solid #ccc;
+  padding: 4px 8px;
   border-radius: 4px;
-  font-size: 14px;
+  transition: background 0.2s;
+}
+#timelineMonths button:hover {
+  background: #eee;
+}
+#timelineMonths .selectedMonth {
+  color: #e74c3c; /* red for selected month */
+  pointer-events: none; /* disable click */
+  font-weight: bold;
+}
+#timelineMonths button:disabled {
+  opacity: 0.5;
   pointer-events: none;
+}
+
+/* Buttons for Prev/Next */
+#timelinePrevBtn, #timelineNextBtn {
+  min-width: 50px;
 }
