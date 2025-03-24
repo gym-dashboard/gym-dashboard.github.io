@@ -6,29 +6,30 @@ body {
   background: #f9f9f9;
 }
 
-/* Outer box pinned to 700px wide (centered) */
+/* Outer box styling */
 #outerBox {
   max-width: 700px;
   margin: 0 auto;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
+  padding: 15px;
 }
 
-/* Chart area: allows horizontal scroll on small screens if needed */
+/* Chart area: allows horizontal scroll if needed */
 #chartWrapper {
-  width: 100%;
   overflow-x: auto;
   text-align: left;
-  position: relative; /* Ensure proper positioning context */
+  position: relative;
+  margin-right: 10px;
 }
 
-/* The chart container: inline-block keeps chart from auto-stretching */
+/* Chart container styling */
 #chartContainer {
   display: inline-block;
 }
 
-/* ====== GitHub-Style Calendar Cells ====== */
+/* Calendar cells styling */
 .cell {
   shape-rendering: crispEdges;
   rx: 3;
@@ -36,38 +37,39 @@ body {
   stroke: #ddd;
   stroke-width: 1px;
 }
-.cell-zero {
-  fill: #ebedf0;
-}
-.cell-empty {
-  fill: none;
-  stroke: #eee;
-}
-.axis-label {
-  fill: #767676;
-  font-size: 14px;
+
+/* Day label text inside cells */
+.dayLabel {
+  pointer-events: none;
 }
 
-/* ====== Timeline Container ====== */
+/* Weekday labels styling */
+.weekDay {
+  font-weight: bold;
+}
+
+/* Timeline container styling */
 #timelineContainer {
-  width: auto;
-  text-align: left;
-  margin-top: 10px;
-  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  padding-left: 5px;
+  position: relative;
 }
 
-/* Timeline months will have width set by JS to match the squares area */
+/* Timeline months container - now vertical */
 #timelineMonths {
   display: flex;
+  flex-direction: column;
   gap: 6px;
-  overflow-x: auto;
+  overflow-y: auto;
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch; /* iOS smooth scroll */
+  -webkit-overflow-scrolling: touch;
   cursor: grab;
-  padding: 10px 0;
-  -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
-  scrollbar-width: none;     /* Hide scrollbar Firefox */
-  justify-content: flex-start;
+  padding: 0 10px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  position: relative;
+  width: 70px;
 }
 
 /* Hide scrollbar for Chrome/Safari/Opera */
@@ -75,17 +77,17 @@ body {
   display: none;
 }
 
-/* Each month "button" in the timeline */
+/* Each month button in the timeline */
 #timelineMonths button {
   border: none;
   background: none;
   color: #777;
   font-size: 0.95rem;
   cursor: pointer;
-  padding: 6px 14px;
+  padding: 6px 10px;
   border-radius: 4px;
   transition: background 0.2s;
-  flex-shrink: 0;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -99,16 +101,25 @@ body {
   background: #daf5d8;
 }
 
-/* Legend color boxes */
+/* Legend styling */
+#legend {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
 .colorBox {
   display: inline-block;
   width: 15px;
   height: 15px;
-  margin: 0 5px;
-}
-.colorBox.first {
-  background-color: #c6e48b; /* "Less" color */
-}
-.colorBox.second {
-  background-color: #196127; /* "More" color */
+  border-radius: 3px;
 }

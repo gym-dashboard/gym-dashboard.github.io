@@ -14,9 +14,10 @@ const muscleDisplayNames = {
 };
 const monthNames = ["Jan","Feb","Mar","Apr","May","Jun",
                     "Jul","Aug","Sep","Oct","Nov","Dec"];
+const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-let yearData = {};
-let workoutFiles = {};   // track JSON files found for each year
+let yearData = {};      // structure: { year: [ month0, month1, ... month11 ] }
+let workoutFiles = {};  // track JSON files found for each year
 let currentYear = new Date().getFullYear();
 let currentMonthIndex = new Date().getMonth();
 
@@ -25,15 +26,14 @@ const yearSelect = document.getElementById("yearSelect");
 const chartContainer = document.getElementById("chartContainer");
 const timelineMonthsDiv = document.getElementById("timelineMonths");
 
-// Timeline state
+// Timeline state (updated for vertical sliding)
 let selectedMonthIndex = 0;
 let isDragging = false;  // track if user is in the middle of dragging
-let startX = 0;          // initial x position on mousedown
-let scrollLeft = 0;      // initial scrollLeft on mousedown
-let movedDistance = 0;   // how far user has dragged; used to differentiate click vs. drag
+let startY = 0;          // initial y position on mousedown
+let scrollTop = 0;       // initial scrollTop on mousedown
+let movedDistance = 0;   // track drag distance to differentiate click vs. drag
 
-// ========== For the top bar text: number of loaded JSON files ==========
-
+// ========== Top Bar: update workout count ==========
 function computeYearlyWorkoutCount(year) {
   return workoutFiles[year] ? workoutFiles[year].length : 0;
 }
@@ -44,19 +44,7 @@ function updateYearlyWorkoutCount(year) {
   countElem.textContent = `${total} Logged Workouts in the last year`;
 }
 
-// ========== Helper to set margins based on screen width ==========
-
-function getMargins() {
-  // Tweak as you wish
-  if (window.innerWidth < 768) {
-    return { top: 25, right: 5, bottom: 0, left: 50 };
-  } else {
-    return { top: 20, right: 20, bottom: 0, left: 70 };
-  }
-}
-
 // ========== Populate the Year <select> dropdown ==========
-
 function populateYearSelect() {
   const years = [2023, 2024, 2025, 2026];
   years.forEach(yr => {
@@ -76,220 +64,191 @@ yearSelect.addEventListener("change", () => {
       drawMonthChart(currentYear, currentMonthIndex);
       renderTimeline();
       updateYearlyWorkoutCount(currentYear);
+      renderLegend();
     });
   } else {
     drawMonthChart(currentYear, selectedMonthIndex);
     renderTimeline();
     updateYearlyWorkoutCount(currentYear);
+    renderLegend();
   }
 });
 
-// ========== Load data for a given year ==========
-
+// ========== Load data for a given year (optimized with parallel requests) ==========
 async function loadDataForYear(year) {
-  yearData[year] = new Array(12).fill(null).map(() => []);
+  yearData[year] = Array.from({ length: 12 }, () => []);
   workoutFiles[year] = [];
-
-  // Initialize placeholders for each day/muscle
-  for (let m = 0; m < 12; m++) {
-    for (let d = 1; d <= 31; d++) {
-      muscleGroups.forEach(mg => {
-        yearData[year][m].push({ day: d, muscle: mg, volume: 0 });
-      });
-    }
-  }
-
-  // Attempt to load data files day-by-day
+  let promises = [];
   let start = new Date(year, 0, 1);
   let end = new Date(year, 11, 31);
+  
+  // Loop through every day in the year and queue a fetch
   for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
-    const dd = String(dt.getDate()).padStart(2, "0");
-    const mm = String(dt.getMonth() + 1).padStart(2, "0");
-    const yyyy = dt.getFullYear();
-    const fileName = `data/${dd}-${mm}-${yyyy}.json`; // example path
+    const currentDate = new Date(dt);
+    const dd = String(currentDate.getDate()).padStart(2, "0");
+    const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
+    const yyyy = currentDate.getFullYear();
+    const fileName = `data/${dd}-${mm}-${yyyy}.json`;
     
-    try {
-      const json = await d3.json(fileName);
-      if (json && json.workout) {
-        // Found a valid workout file => track it
-        workoutFiles[year].push(fileName);
-        
-        // Sum volume by muscle group
-        let volumeMap = {};
-        muscleGroups.forEach(mg => (volumeMap[mg] = 0));
-        json.workout.forEach(entry => {
-          const mg = entry["Muscle-Group"] || "Unknown";
-          if (muscleGroups.includes(mg)) {
-            const reps = +entry.Reps || 0;
-            const weight = parseFloat(entry.Weight) || 0;
-            volumeMap[mg] += (reps * weight);
-          }
-        });
-
-        const monIdx = dt.getMonth();
-        const off = (dt.getDate() - 1) * muscleGroups.length;
-        muscleGroups.forEach((mg, i) => {
-          yearData[year][monIdx][off + i].volume = volumeMap[mg];
-        });
-      }
-    } catch (err) {
-      // no file => keep volume=0
-    }
+    let monthIndex = currentDate.getMonth();
+    let promise = d3.json(fileName)
+      .then(json => {
+        if (json && json.workout) {
+          workoutFiles[year].push(fileName);
+          let volumeMap = {};
+          muscleGroups.forEach(mg => (volumeMap[mg] = 0));
+          json.workout.forEach(entry => {
+            const mg = entry["Muscle-Group"] || "Unknown";
+            if (muscleGroups.includes(mg)) {
+              const reps = +entry.Reps || 0;
+              const weight = parseFloat(entry.Weight) || 0;
+              volumeMap[mg] += (reps * weight);
+            }
+          });
+          // Pick the muscle group with the highest volume
+          let selectedMuscle = null;
+          let maxVolume = 0;
+          muscleGroups.forEach(mg => {
+            if (volumeMap[mg] > maxVolume) {
+              maxVolume = volumeMap[mg];
+              selectedMuscle = mg;
+            }
+          });
+          return { day: currentDate.getDate(), muscle: selectedMuscle, volume: maxVolume };
+        } else {
+          return { day: currentDate.getDate(), muscle: null, volume: 0 };
+        }
+      })
+      .catch(err => {
+        return { day: currentDate.getDate(), muscle: null, volume: 0 };
+      })
+      .then(result => ({ month: monthIndex, result }));
+    promises.push(promise);
   }
-
-  // Mark days beyond each month-end as null volume
-  for (let m = 0; m < 12; m++) {
-    const dim = new Date(year, m + 1, 0).getDate(); // days in month
-    for (let d = dim + 1; d <= 31; d++) {
-      const off = (d - 1) * muscleGroups.length;
-      for (let i = 0; i < muscleGroups.length; i++) {
-        yearData[year][m][off + i].volume = null;
-      }
-    }
-  }
-}
-
-// ========== Align timeline with the squares of the calendar ==========
-
-function updateLayout() {
-  // Get the dimensions of the squares section of the chart
-  const svg = document.querySelector('#chartContainer svg');
-  if (!svg) return;
   
-  // Calculate the left offset of the actual squares (not including axis labels)
-  const margin = getMargins();
-  const squaresLeftOffset = margin.left;
-  
-  // Set the timeline container to match the width and position of the squares
-  const timelineContainer = document.getElementById('timelineContainer');
-  timelineContainer.style.width = 'auto'; // Reset any previous width
-  timelineContainer.style.marginLeft = `${squaresLeftOffset}px`;
-  timelineContainer.style.marginRight = `${margin.right}px`;
-  
-  // Adjust the timeline itself to align with the squares
-  const timelineMonths = document.getElementById('timelineMonths');
-  
-  // Calculate the width of the squares portion (excluding the y-axis labels)
-  const days = 31;
-  const cellSize = 15, cellGap = 4;
-  const squaresWidth = (cellSize + cellGap) * days;
-  
-  // Set the width of the timeline to match the squares portion
-  timelineMonths.style.width = `${squaresWidth}px`;
-  
-  // Make sure the container shows scrollbars when needed
-  timelineMonths.style.overflowX = 'auto';
+  const results = await Promise.all(promises);
+  results.forEach(({ month, result }) => {
+    // Place the day's data at index (day-1) for that month
+    yearData[year][month][result.day - 1] = result;
+  });
 }
 
 // ========== Draw the "calendar" chart for a given month ==========
-
 function drawMonthChart(year, monthIndex) {
   chartContainer.innerHTML = "";
-  if (!yearData[year]) return;
-
-  const arr = yearData[year][monthIndex];
-  const maxVol = d3.max(arr, d => (d.volume === null ? 0 : d.volume)) || 0;
-
-  const colorScale = d3.scaleLinear()
-    .domain([1, maxVol])
-    .range(["#c6e48b", "#196127"])
-    .clamp(true);
-
-  const margin = getMargins();
-  const days = 31, rows = muscleGroups.length;
-  const cellSize = 15, cellGap = 4;
-
-  // total area needed for squares alone
-  const squaresWidth = (cellSize + cellGap) * days;
-  const squaresHeight = (cellSize + cellGap) * rows;
   
-  // overall svg dimensions
-  const chartWidth = margin.left + margin.right + squaresWidth;
-  const chartHeight = margin.top + margin.bottom + squaresHeight;
+  // Determine number of days and weekday offset for the month
+  const numDays = new Date(year, monthIndex + 1, 0).getDate();
+  const firstDay = new Date(year, monthIndex, 1).getDay(); // 0=Sun, 6=Sat
   
-  // ensure the SVG is not smaller than container
-  const containerWidth = chartContainer.clientWidth;
-  const finalWidth = Math.max(containerWidth, chartWidth);
-
+  // Build an array of 35 cells (7 columns x 5 rows)
+  let cells = [];
+  for (let i = 0; i < 35; i++) {
+    let dayNumber = i - firstDay + 1;
+    if (dayNumber >= 1 && dayNumber <= numDays) {
+      let dayData = yearData[year][monthIndex][dayNumber - 1];
+      cells.push({ ...dayData, day: dayNumber });
+    } else {
+      cells.push(null);
+    }
+  }
+  
+  // Define dimensions
+  const cellSize = 20,
+        cellGap = 4,
+        cols = 7,
+        rows = 5;
+  const gridWidth = cols * (cellSize + cellGap) - cellGap;
+  const gridHeight = rows * (cellSize + cellGap) - cellGap;
+  // Increase top margin to allow space for weekday labels
+  const margin = { top: 40, right: 20, bottom: 20, left: 20 };
+  const chartWidth = gridWidth + margin.left + margin.right;
+  const chartHeight = gridHeight + margin.top + margin.bottom;
+  
+  // Store the grid height in a data attribute for the timeline to reference
+  chartContainer.dataset.gridHeight = gridHeight;
+  
   const svg = d3.select("#chartContainer")
     .append("svg")
-    .attr("width", finalWidth)
+    .attr("width", chartWidth)
     .attr("height", chartHeight)
     .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
     .attr("preserveAspectRatio", "xMinYMin meet");
-
+  
+  // Create main group translated by the margins
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  function fillColor(d) {
-    if (d.volume === null) return "none";
-    if (d.volume === 0) return "#ebedf0";
-    return colorScale(d.volume);
-  }
-
-  // draw squares
-  g.selectAll("rect.cell")
-    .data(arr)
+  
+  // ===== Weekday Labels =====
+  g.selectAll("text.weekDay")
+    .data(weekDays)
+    .join("text")
+      .attr("class", "weekDay")
+      .attr("x", (d, i) => i * (cellSize + cellGap) + cellSize / 2)
+      .attr("y", -10) // positioned above the grid
+      .attr("text-anchor", "middle")
+      .attr("font-size", "10px")
+      .attr("fill", "#333")
+      .text(d => d);
+  
+  // Create a new group for the grid, shifting it downward to clear the weekday labels
+  const cellsG = g.append("g")
+    .attr("transform", "translate(0,0)")
+    .attr("class", "grid-cells-group");
+  
+  // Ordinal color scale for muscle groups
+  const colorScale = d3.scaleOrdinal()
+    .domain(muscleGroups)
+    .range(["#f28e2b", "#4e79a7", "#59a14f", "#e15759", "#76b7b2", "#edc949"]);
+  
+  // Draw each cell as a rectangle with tooltip and day label
+  const cellsSel = cellsG.selectAll("rect.cell")
+    .data(cells)
     .join("rect")
       .attr("class", "cell")
-      .attr("x", (d, i) => {
-        let dayI = Math.floor(i / muscleGroups.length);
-        return dayI * (cellSize + cellGap);
-      })
-      .attr("y", (d, i) => {
-        let mgI = i % muscleGroups.length;
-        return mgI * (cellSize + cellGap);
-      })
+      .attr("x", (d, i) => (i % cols) * (cellSize + cellGap))
+      .attr("y", (d, i) => Math.floor(i / cols) * (cellSize + cellGap))
       .attr("width", cellSize)
       .attr("height", cellSize)
-      .attr("rx", Math.max(1, cellSize / 5))
-      .attr("ry", Math.max(1, cellSize / 5))
-      .attr("fill", fillColor)
+      .attr("rx", 3)
+      .attr("ry", 3)
       .attr("stroke", "#ddd")
-      .attr("stroke-width", 1);
-
-  // x-axis at top
-  const xScale = d3.scaleBand()
-    .domain(d3.range(1, 32).map(String))
-    .range([0, squaresWidth]);
-  const tickSkip = 2;
-  const xAxis = d3.axisTop(xScale)
-    .tickValues(xScale.domain().filter((_, i) => i % tickSkip === 0))
-    .tickSize(0);
-
-  g.append("g")
-    .call(xAxis)
-    .attr("font-size", 11)
-    .call(g => g.selectAll(".tick text").attr("dx", "-0.125em"))
-    .call(g => g.select(".domain").remove());
-
-  // y-axis on left
-  const yScale = d3.scaleBand()
-    .domain(muscleGroups)
-    .range([0, squaresHeight]);
-  const yAxis = d3.axisLeft(yScale)
-    .tickSize(0)
-    .tickPadding(50)
-    .tickFormat(d => muscleDisplayNames[d] || d);
-
-  g.append("g")
-    .call(yAxis)
-    .attr("font-size", 12)
-    .call(g => {
-      g.select(".domain").remove();
-      g.selectAll(".tick text")
-        .attr("text-anchor", "start");
+      .attr("stroke-width", 1)
+      .attr("fill", d => {
+        if (!d) return "none";
+        return d.muscle ? colorScale(d.muscle) : "#ebedf0";
+      });
+  
+  // Add tooltip using <title> for each cell
+  cellsSel.append("title")
+    .text((d, i) => {
+      let dayNumber = i - firstDay + 1;
+      if (d && dayNumber >= 1 && dayNumber <= numDays) {
+        return `Day ${dayNumber}: ${d.muscle ? d.muscle : "No workout"}`;
+      }
+      return "";
     });
-    
-  // Call updateLayout after chart is drawn to align timeline
+  
+  // Add day number labels inside cells
+  cellsG.selectAll("text.dayLabel")
+    .data(cells)
+    .join("text")
+      .attr("class", "dayLabel")
+      .attr("x", (d, i) => (i % cols) * (cellSize + cellGap) + 2)
+      .attr("y", (d, i) => Math.floor(i / cols) * (cellSize + cellGap) + 12)
+      .attr("font-size", "10px")
+      .attr("fill", "#333")
+      .text((d, i) => {
+        let dayNumber = i - firstDay + 1;
+        return (dayNumber >= 1 && dayNumber <= numDays) ? dayNumber : "";
+      });
+  
   updateLayout();
 }
 
 // ========== Timeline: create months + handle drag/scroll + click ==========
-
 function renderTimeline() {
   timelineMonthsDiv.innerHTML = "";
-
   for (let i = 0; i < 12; i++) {
     const btn = document.createElement("button");
     btn.textContent = monthNames[i];
@@ -297,53 +256,34 @@ function renderTimeline() {
       btn.classList.add("selectedMonth");
     }
     
-    // We use mousedown->drag->mouseup logic in the container.
-    // So to ensure a "true click", we only act if the user hasn't dragged.
     btn.addEventListener("click", (evt) => {
-      // If user dragged more than a small threshold, ignore click
-      if (Math.abs(movedDistance) > 5) {
-        // This was actually a drag, not a deliberate click
-        return;
-      }
-      // If it was a real click, update chart
+      if (Math.abs(movedDistance) > 5) return; // ignore drag clicks
       selectedMonthIndex = i;
       drawMonthChart(currentYear, selectedMonthIndex);
       centerMonthButton(btn);
       highlightSelectedMonth();
     });
-
     timelineMonthsDiv.appendChild(btn);
   }
-
-  // Update layout to align with squares
   updateLayout();
-
-  // Immediately center the selected month button
+  
+  // Center the selected month button
   setTimeout(() => {
     const selectedBtn = timelineMonthsDiv.children[selectedMonthIndex];
-    if (selectedBtn) {
-      centerMonthButton(selectedBtn, false);
-    }
+    if (selectedBtn) centerMonthButton(selectedBtn, false);
   }, 0);
-
-  setupDragScroll();
 }
 
-// Center a month button in the scroll container
 function centerMonthButton(buttonElem, smooth = true) {
   const btnRect = buttonElem.getBoundingClientRect();
   const containerRect = timelineMonthsDiv.getBoundingClientRect();
-  const target = (btnRect.left - containerRect.left)
-               - (containerRect.width / 2)
-               + (btnRect.width / 2);
-  
+  const target = (btnRect.top - containerRect.top) - (containerRect.height / 2) + (btnRect.height / 2);
   timelineMonthsDiv.scrollTo({
-    left: timelineMonthsDiv.scrollLeft + target,
+    top: timelineMonthsDiv.scrollTop + target,
     behavior: smooth ? 'smooth' : 'auto'
   });
 }
 
-// Visually highlight the currently selected month button
 function highlightSelectedMonth() {
   Array.from(timelineMonthsDiv.children).forEach((child, idx) => {
     if (idx === selectedMonthIndex) {
@@ -354,10 +294,8 @@ function highlightSelectedMonth() {
   });
 }
 
-// ========== Set up drag-to-scroll logic ==========
-
+// ========== Drag-to-scroll for timeline (vertical version) ==========
 function setupDragScroll() {
-  // clear any old event handlers
   timelineMonthsDiv.onmousedown = null;
   timelineMonthsDiv.onmousemove = null;
   timelineMonthsDiv.onmouseup = null;
@@ -366,60 +304,112 @@ function setupDragScroll() {
   timelineMonthsDiv.ontouchmove = null;
   timelineMonthsDiv.ontouchend = null;
 
-  // Mouse events
   timelineMonthsDiv.addEventListener('mousedown', (e) => {
     isDragging = true;
-    startX = e.pageX - timelineMonthsDiv.offsetLeft;
-    scrollLeft = timelineMonthsDiv.scrollLeft;
-    movedDistance = 0; // reset for click detection
+    startY = e.pageY - timelineMonthsDiv.offsetTop;
+    scrollTop = timelineMonthsDiv.scrollTop;
+    movedDistance = 0;
     timelineMonthsDiv.style.cursor = 'grabbing';
     e.preventDefault();
   });
-
+  
   timelineMonthsDiv.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    const x = e.pageX - timelineMonthsDiv.offsetLeft;
-    const walk = (x - startX) * 2; // scroll speed multiplier
-    timelineMonthsDiv.scrollLeft = scrollLeft - walk;
-    movedDistance = walk; // track how much we've moved
+    const y = e.pageY - timelineMonthsDiv.offsetTop;
+    const walk = (y - startY) * 2;
+    timelineMonthsDiv.scrollTop = scrollTop - walk;
+    movedDistance = walk;
   });
-
+  
   timelineMonthsDiv.addEventListener('mouseup', () => {
     isDragging = false;
     timelineMonthsDiv.style.cursor = 'grab';
   });
-
+  
   timelineMonthsDiv.addEventListener('mouseleave', () => {
     if (isDragging) {
       isDragging = false;
       timelineMonthsDiv.style.cursor = 'grab';
     }
   });
-
-  // Touch events (mobile)
+  
   timelineMonthsDiv.addEventListener('touchstart', (e) => {
     isDragging = true;
-    startX = e.touches[0].pageX - timelineMonthsDiv.offsetLeft;
-    scrollLeft = timelineMonthsDiv.scrollLeft;
+    startY = e.touches[0].pageY - timelineMonthsDiv.offsetTop;
+    scrollTop = timelineMonthsDiv.scrollTop;
     movedDistance = 0;
   });
-
+  
   timelineMonthsDiv.addEventListener('touchmove', (e) => {
     if (!isDragging) return;
-    const x = e.touches[0].pageX - timelineMonthsDiv.offsetLeft;
-    const walk = (x - startX) * 2;
-    timelineMonthsDiv.scrollLeft = scrollLeft - walk;
+    const y = e.touches[0].pageY - timelineMonthsDiv.offsetTop;
+    const walk = (y - startY) * 2;
+    timelineMonthsDiv.scrollTop = scrollTop - walk;
     movedDistance = walk;
     e.preventDefault();
   });
-
+  
   timelineMonthsDiv.addEventListener('touchend', () => {
     isDragging = false;
   });
 }
 
-// ========== Redraw chart on resize ==========
+function updateLayout() {
+  // Get the grid height from the data attribute we set
+  const gridHeight = parseInt(chartContainer.dataset.gridHeight || "0");
+  
+  if (gridHeight > 0) {
+    // Make the timeline months container match the grid height exactly
+    timelineMonthsDiv.style.height = `${gridHeight}px`;
+    
+    // Position the timeline vertically to align with the grid
+    // First, get the SVG element and the grid group
+    const svg = chartContainer.querySelector('svg');
+    if (svg) {
+      const gridGroup = svg.querySelector('.grid-cells-group');
+      if (gridGroup) {
+        // Get the transformation matrix to find the vertical offset
+        const transform = gridGroup.getAttribute('transform');
+        const match = transform ? transform.match(/translate\(\s*([^,)]+)(?:,\s*([^)]+))?\)/) : null;
+        const translateY = match && match[2] ? parseFloat(match[2]) : 0;
+        
+        // Adjust the timeline container's margin-top to align with the grid
+        const svgRect = svg.getBoundingClientRect();
+        const gridRect = gridGroup.getBoundingClientRect();
+        const topOffset = gridRect.top - svgRect.top;
+        
+        // Apply the offset to align with the grid
+        document.getElementById('timelineContainer').style.marginTop = `${topOffset}px`;
+      }
+    }
+  }
+}
 
+// ========== Legend: Render muscle group legend ==========
+function renderLegend() {
+  const legendDiv = document.getElementById("legend");
+  legendDiv.innerHTML = "";
+  
+  // Use the same color scale as in drawMonthChart
+  const colorScale = d3.scaleOrdinal()
+    .domain(muscleGroups)
+    .range(["#f28e2b", "#4e79a7", "#59a14f", "#e15759", "#76b7b2", "#edc949"]);
+  
+  muscleGroups.forEach(mg => {
+    const item = document.createElement("div");
+    item.classList.add("legend-item");
+    const box = document.createElement("span");
+    box.classList.add("colorBox");
+    box.style.backgroundColor = colorScale(mg);
+    const label = document.createElement("span");
+    label.textContent = muscleDisplayNames[mg] || mg;
+    item.appendChild(box);
+    item.appendChild(label);
+    legendDiv.appendChild(item);
+  });
+}
+
+// ========== Redraw chart on window resize ==========
 window.addEventListener("resize", () => {
   drawMonthChart(currentYear, selectedMonthIndex);
   renderTimeline();
@@ -427,7 +417,6 @@ window.addEventListener("resize", () => {
 });
 
 // ========== Init on Page Load ==========
-
 (async function init() {
   if (!yearData[currentYear]) {
     await loadDataForYear(currentYear);
@@ -436,5 +425,7 @@ window.addEventListener("resize", () => {
   drawMonthChart(currentYear, selectedMonthIndex);
   renderTimeline();
   updateYearlyWorkoutCount(currentYear);
+  renderLegend();
   updateLayout();
+  setupDragScroll();
 })();
