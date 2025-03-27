@@ -3,15 +3,26 @@
  **********************************************/
 
 // ====== Calendar config ======
-const muscleGroups = ["Chest", "Back", "Legs", "Shoulders", "Bicep", "Tricep"];
+const muscleGroups = ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps"];
 const muscleDisplayNames = {
   "Chest": "Chest",
   "Back": "Back",
   "Legs": "Legs",
   "Shoulders": "SH.",
-  "Bicep": "Biceps",
-  "Tricep": "Triceps"
+  "Biceps": "Biceps",
+  "Triceps": "Triceps"
 };
+
+// Define colors for each muscle group
+const muscleColors = {
+  "Chest": "#bb595f",    // Vibrant Red
+  "Back": "#577590",     // Steel Blue
+  "Legs": "#43AA8B",     // Teal Green
+  "Shoulders": "#F8961E", // Bright Orange
+  "Biceps": "#90BE6D",   // Sage Green
+  "Triceps": "#F9C74F"   // Golden Yellow
+};
+
 const monthNames = ["Jan","Feb","Mar","Apr","May","Jun",
                     "Jul","Aug","Sep","Oct","Nov","Dec"];
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -95,32 +106,54 @@ async function loadDataForYear(year) {
       .then(json => {
         if (json && json.workout) {
           workoutFiles[year].push(fileName);
-          let volumeMap = {};
-          muscleGroups.forEach(mg => (volumeMap[mg] = 0));
-          json.workout.forEach(entry => {
-            const mg = entry["Muscle-Group"] || "Unknown";
-            if (muscleGroups.includes(mg)) {
-              const reps = +entry.Reps || 0;
-              const weight = parseFloat(entry.Weight) || 0;
-              volumeMap[mg] += (reps * weight);
-            }
-          });
-          // Pick the muscle group with the highest volume
-          let selectedMuscle = null;
-          let maxVolume = 0;
-          muscleGroups.forEach(mg => {
-            if (volumeMap[mg] > maxVolume) {
-              maxVolume = volumeMap[mg];
-              selectedMuscle = mg;
-            }
-          });
-          return { day: currentDate.getDate(), muscle: selectedMuscle, volume: maxVolume };
+          
+          // Handle new format - overall_muscle_group as an array
+          if (json.overall_muscle_group && Array.isArray(json.overall_muscle_group)) {
+            // Filter to only include valid muscle groups from our list
+            const musclesList = json.overall_muscle_group
+              .filter(mg => muscleGroups.includes(mg));
+            
+            return { 
+              day: currentDate.getDate(), 
+              muscles: musclesList, 
+              volume: musclesList.length 
+            };
+          } else {
+            // Fallback to old format with volume calculations
+            let volumeMap = {};
+            muscleGroups.forEach(mg => (volumeMap[mg] = 0));
+            
+            json.workout.forEach(entry => {
+              const mg = entry["Muscle-Group"] || "Unknown";
+              if (muscleGroups.includes(mg)) {
+                const reps = +entry.Reps || 0;
+                const weight = parseFloat(entry.Weight) || 0;
+                volumeMap[mg] += (reps * weight);
+              }
+            });
+            
+            // Pick the muscle group with the highest volume
+            let selectedMuscle = null;
+            let maxVolume = 0;
+            muscleGroups.forEach(mg => {
+              if (volumeMap[mg] > maxVolume) {
+                maxVolume = volumeMap[mg];
+                selectedMuscle = mg;
+              }
+            });
+            
+            return { 
+              day: currentDate.getDate(), 
+              muscles: selectedMuscle ? [selectedMuscle] : [], 
+              volume: maxVolume 
+            };
+          }
         } else {
-          return { day: currentDate.getDate(), muscle: null, volume: 0 };
+          return { day: currentDate.getDate(), muscles: [], volume: 0 };
         }
       })
       .catch(err => {
-        return { day: currentDate.getDate(), muscle: null, volume: 0 };
+        return { day: currentDate.getDate(), muscles: [], volume: 0 };
       })
       .then(result => ({ month: monthIndex, result }));
     promises.push(promise);
@@ -196,52 +229,139 @@ function drawMonthChart(year, monthIndex) {
     .attr("transform", "translate(0,0)")
     .attr("class", "grid-cells-group");
   
-  // Ordinal color scale for muscle groups
+  // Ordinal color scale for muscle groups - using the defined muscle colors
   const colorScale = d3.scaleOrdinal()
     .domain(muscleGroups)
-    .range(["#f28e2b", "#4e79a7", "#59a14f", "#e15759", "#76b7b2", "#edc949"]);
+    .range(muscleGroups.map(muscle => muscleColors[muscle]));
+    
+  // Add gradient definitions to the SVG
+  const defs = svg.append("defs");
+    
+  // Create gradients for multi-muscle cells
+  cells.forEach((cell, i) => {
+    if (cell && cell.muscles && cell.muscles.length > 1) {
+      const uniqueMuscles = [...new Set(cell.muscles)].slice(0, 3); // Allow up to 3 muscles
+      if (uniqueMuscles.length > 1) {
+        const gradientId = `gradient-${year}-${monthIndex}-${cell.day}`;
+        
+        const gradient = defs.append("linearGradient")
+          .attr("id", gradientId)
+          .attr("x1", "0%")
+          .attr("y1", "0%")
+          .attr("x2", "0%")
+          .attr("y2", "100%");
+        
+        // Handle either 2 or 3 muscle groups
+        if (uniqueMuscles.length === 2) {
+          // Two muscle gradient
+          const color1 = colorScale(uniqueMuscles[0]);
+          const color2 = colorScale(uniqueMuscles[1]);
+          
+          gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", color1);
+            
+          gradient.append("stop")
+            .attr("offset", "40%")
+            .attr("stop-color", color1);
+            
+          gradient.append("stop")
+            .attr("offset", "60%")
+            .attr("stop-color", color2);
+            
+          gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", color2);
+        } else {
+          // Three muscle gradient
+          const color1 = colorScale(uniqueMuscles[0]);
+          const color2 = colorScale(uniqueMuscles[1]);
+          const color3 = colorScale(uniqueMuscles[2]);
+          
+          gradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", color1);
+            
+          gradient.append("stop")
+            .attr("offset", "30%")
+            .attr("stop-color", color1);
+            
+          gradient.append("stop")
+            .attr("offset", "35%")
+            .attr("stop-color", color2);
+            
+          gradient.append("stop")
+            .attr("offset", "65%")
+            .attr("stop-color", color2);
+            
+          gradient.append("stop")
+            .attr("offset", "70%")
+            .attr("stop-color", color3);
+            
+          gradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", color3);
+        }
+        
+        // Store the gradient ID in the cell data for later use
+        cell.gradientId = gradientId;
+      }
+    }
+  });
   
-  // Draw each cell as a rectangle with tooltip and day label
-  const cellsSel = cellsG.selectAll("rect.cell")
+  // Draw cell backgrounds and outlines
+  const cellsWrapper = cellsG.selectAll("g.cell-wrapper")
     .data(cells)
-    .join("rect")
-      .attr("class", "cell")
-      .attr("x", (d, i) => (i % cols) * (cellSize + cellGap))
-      .attr("y", (d, i) => Math.floor(i / cols) * (cellSize + cellGap))
-      .attr("width", cellSize)
-      .attr("height", cellSize)
-      .attr("rx", 3)
-      .attr("ry", 3)
-      .attr("stroke", "#ddd")
-      .attr("stroke-width", 1)
-      .attr("fill", d => {
-        if (!d) return "none";
-        return d.muscle ? colorScale(d.muscle) : "#ebedf0";
+    .join("g")
+      .attr("class", "cell-wrapper")
+      .attr("transform", (d, i) => {
+        const x = (i % cols) * (cellSize + cellGap);
+        const y = Math.floor(i / cols) * (cellSize + cellGap);
+        return `translate(${x}, ${y})`;
       });
   
-  // Add tooltip using <title> for each cell
-  cellsSel.append("title")
-    .text((d, i) => {
-      let dayNumber = i - firstDay + 1;
-      if (d && dayNumber >= 1 && dayNumber <= numDays) {
-        return `Day ${dayNumber}: ${d.muscle ? d.muscle : "No workout"}`;
-      }
-      return "";
+  // Add base rectangles for all cells
+  cellsWrapper.append("rect")
+    .attr("class", "cell-background")
+    .attr("width", cellSize)
+    .attr("height", cellSize)
+    .attr("rx", 3)
+    .attr("ry", 3)
+    .attr("stroke", "#ddd")
+    .attr("stroke-width", 1)
+    .attr("fill", d => {
+      if (!d || !d.muscles || d.muscles.length === 0) return "#ebedf0";
+      if (d.muscles.length === 1) return colorScale(d.muscles[0]);
+      if (d.gradientId) return `url(#${d.gradientId})`;
+      return "#ebedf0"; // Fallback
     });
   
   // Add day number labels inside cells
-  cellsG.selectAll("text.dayLabel")
-    .data(cells)
-    .join("text")
-      .attr("class", "dayLabel")
-      .attr("x", (d, i) => (i % cols) * (cellSize + cellGap) + 2)
-      .attr("y", (d, i) => Math.floor(i / cols) * (cellSize + cellGap) + 12)
-      .attr("font-size", "10px")
-      .attr("fill", "#333")
-      .text((d, i) => {
-        let dayNumber = i - firstDay + 1;
-        return (dayNumber >= 1 && dayNumber <= numDays) ? dayNumber : "";
-      });
+  cellsWrapper.append("text")
+    .attr("class", "dayLabel")
+    .attr("x", 2)
+    .attr("y", 12)
+    .attr("font-size", "10px")
+    .attr("fill", "#333")
+    .text((d, i) => {
+      let dayNumber = i - firstDay + 1;
+      return (dayNumber >= 1 && dayNumber <= numDays) ? dayNumber : "";
+    });
+  
+  // Add tooltip for each cell
+  cellsWrapper.append("title")
+    .text((d, i) => {
+      let dayNumber = i - firstDay + 1;
+      if (d && dayNumber >= 1 && dayNumber <= numDays) {
+        if (d.muscles && d.muscles.length > 0) {
+          // Show all muscle groups in the tooltip
+          return `Day ${dayNumber}: ${d.muscles.join(", ")}`;
+        } else {
+          return `Day ${dayNumber}: No workout`;
+        }
+      }
+      return "";
+    });
   
   updateLayout();
 }
@@ -390,10 +510,10 @@ function renderLegend() {
   const legendDiv = document.getElementById("legend");
   legendDiv.innerHTML = "";
   
-  // Use the same color scale as in drawMonthChart
+  // Use the muscle colors defined at the top
   const colorScale = d3.scaleOrdinal()
     .domain(muscleGroups)
-    .range(["#f28e2b", "#4e79a7", "#59a14f", "#e15759", "#76b7b2", "#edc949"]);
+    .range(muscleGroups.map(muscle => muscleColors[muscle]));
   
   muscleGroups.forEach(mg => {
     const item = document.createElement("div");
