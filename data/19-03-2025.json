@@ -7,7 +7,7 @@
     "start_time": "07:50",
     "end_time": "08:50",
     "total_time": "1 hour 0 minutes",
-    "overall_muscle_group": "Shoulders",
+    "overall_muscle_group": ["Shoulders"],
     "workout": [
         {
             "Exercise": "Shoulder Press",
@@ -39,7 +39,7 @@
             "Weight": "8 kg",
             "Effort": "70%",
             "Muscle-Group": "Shoulders",
-            "Location": "Dumbels"
+            "Location": "Dumbbells"
         },
         {
             "Exercise": "Lateral Raises",
@@ -47,7 +47,7 @@
             "Weight": "8 kg",
             "Effort": "80%",
             "Muscle-Group": "Shoulders",
-            "Location": "Dumbels"
+            "Location": "Dumbbells"
         },
         {
             "Exercise": "Lateral Raises",
@@ -55,7 +55,7 @@
             "Weight": "8 kg",
             "Effort": "85%",
             "Muscle-Group": "Shoulders",
-            "Location": "Dumbels"
+            "Location": "Dumbbells"
         },
         {
             "Exercise": "Front Raises",

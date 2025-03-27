@@ -1,0 +1,77 @@
+{
+  "date": "25-03-2025",
+  "participants": [
+    "André D.",
+    "Mariana D."
+  ],
+  "start_time": "7:55",
+  "end_time": "8:33",
+  "total_time": "0 hours 38 minutes",
+  "overall_muscle_group": ["Legs"],
+  "workout": [
+    {
+      "Exercise": "Leg Press",
+      "Reps": 20,
+      "Weight": "100 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 12,
+      "Weight": "110 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 8,
+      "Weight": "120 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 15,
+      "Weight": "45 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 12,
+      "Weight": "50 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 10,
+      "Weight": "50 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "SLD",
+      "Reps": 10,
+      "Weight": "5 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Legs",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "SLD",
+      "Reps": 10,
+      "Weight": "5 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Legs",
+      "Location": "Bar"
+    }
+  ]
+}

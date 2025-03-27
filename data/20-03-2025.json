@@ -8,7 +8,7 @@
     "start_time": "18:01",
     "end_time": "19:28",
     "total_time": "1 hour 27 minutes",
-    "overall_muscle_group": "Back",
+    "overall_muscle_group": ["Back"],
     "workout": [
         {
             "Exercise": "Pull-Ups",
