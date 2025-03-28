@@ -49,74 +49,230 @@ svg {
   pointer-events: none;
 }
 
-/* Legend styling - improved 2x3 grid layout aligned left */
-#legend {
-  display: grid;
-  grid-template-columns: repeat(3, auto);
-  grid-template-rows: repeat(2, auto);
-  gap: 16px 24px;
-  justify-content: start;
-  align-items: center;
+/* Container for side-by-side layout */
+.legend-progress-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch; /* Changed to stretch to match heights */
+  gap: 20px;
   margin-top: 20px;
-  width: 100%;
-  max-width: 450px; /* Constrain width so it doesn't span the entire div */
 }
 
-/* Legend items - larger on desktop */
+/* Legend styling - 2x3 grid layout for desktop */
+#legend {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  grid-template-rows: repeat(3, auto);
+  gap: 12px 24px;
+  justify-content: start;
+  align-content: space-between; /* Distribute items to match container height */
+  flex: 1; /* Take up available space */
+  max-width: 280px;
+  margin: 0;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Legend items - sized to match progress bar height */
 .legend-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
 }
 
-/* Colored box for each muscle group - larger on desktop */
+/* Colored box for each muscle group */
 .colorBox {
   display: inline-block;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 3px;
 }
 
-/* Medium screens */
+/* Weekly Progress Bar Styling */
+#weeklyProgressContainer {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  max-width: 450px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Distribute content to match legend height */
+}
+
+.weekly-title {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.progress-container {
+  width: 100%;
+  padding: 4px 0;
+}
+
+.progress-segments {
+  display: flex;
+  width: 100%;
+  height: 24px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segment {
+  flex: 1;
+  height: 100%;
+  background-color: #e9ecef;
+  border-right: 2px solid #fff;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.segment:last-child {
+  border-right: none;
+}
+
+/* Use categorical blue colors instead of gradient */
+.segment[data-index="0"].filled {
+  background-color: #cfe2ff; /* Light blue */
+}
+
+.segment[data-index="1"].filled {
+  background-color: #9ec5fe; /* Medium-light blue */
+}
+
+.segment[data-index="2"].filled {
+  background-color: #6ea8fe; /* Medium blue */
+}
+
+.segment[data-index="3"].filled {
+  background-color: #3b82f6; /* Darker blue */
+}
+
+.streak-badge {
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.streak-badge.active {
+  background-color: #3b82f6; /* Match the darkest blue */
+  opacity: 1;
+}
+
+.streak-badge.active::before {
+  content: "🔥";
+  margin-right: 5px;
+}
+
+#progressText {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+/* Medium screens - adjust spacing but keep 2x3 layout */
 @media (max-width: 768px) {
   /* Adjust cell size for better mobile viewing */
   #chartContainer svg {
-    max-width: none; /* Allow SVG to maintain its original size in scrollable container */
+    max-width: none;
   }
   
-  /* Slightly reduce legend size for medium screens */
+  /* Keep side by side but make more compact */
+  .legend-progress-container {
+    gap: 12px;
+  }
+  
   #legend {
-    gap: 12px 20px;
-    max-width: 400px;
+    gap: 10px 16px;
+    padding: 10px;
+    max-width: 260px;
   }
   
   .legend-item {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
   
   .colorBox {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
+  }
+  
+  #weeklyProgressContainer {
+    padding: 10px;
+  }
+  
+  .weekly-title {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+  
+  .progress-segments {
+    height: 22px;
+  }
+  
+  .streak-badge {
+    font-size: 0.82rem;
+  }
+  
+  #progressText {
+    font-size: 0.85rem;
+    margin-top: 8px;
   }
 }
 
-/* Small screens */
+/* Small screens - switch to 3x2 legend layout but keep side by side */
 @media (max-width: 480px) {
-  /* Further reduce legend size and keep 2x3 format */
+  .legend-progress-container {
+    gap: 8px;
+  }
+  
+  /* Change to 3x2 layout on mobile */
   #legend {
     grid-template-columns: repeat(3, auto);
     grid-template-rows: repeat(2, auto);
-    gap: 8px 16px;
-    max-width: 100%; /* Allow full width on very small screens */
+    gap: 8px 10px;
+    padding: 8px;
+    max-width: 220px;
   }
   
   .legend-item {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
   
   .colorBox {
-    width: 14px;
-    height: 14px;
+    width: 12px; 
+    height: 12px;
+  }
+  
+  #weeklyProgressContainer {
+    padding: 8px;
+  }
+  
+  .weekly-title {
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+  }
+  
+  .progress-segments {
+    height: 18px;
+  }
+  
+  .streak-badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+  
+  #progressText {
+    font-size: 0.75rem;
+    margin-top: 6px;
   }
 }

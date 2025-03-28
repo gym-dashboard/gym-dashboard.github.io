@@ -8,7 +8,7 @@ const muscleDisplayNames = {
   "Chest": "Chest",
   "Triceps": "Triceps",
   "Legs": "Legs",
-  "Shoulders": "SH.",
+  "Shoulders": "Shoulders",
   "Biceps": "Biceps",
   "Back": "Back",
 };
@@ -29,6 +29,13 @@ const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 let yearData = {};      // structure: { year: [ month0, month1, ... month11 ] }
 let workoutFiles = {};  // track JSON files found for each year
 let currentYear = new Date().getFullYear();
+
+// Weekly progress tracking
+let weeklyData = {
+  currentWeekWorkouts: 0,
+  weekStreakCount: 0,
+  lastCompletedWeek: null,
+};
 
 // DOM elements
 const yearSelect = document.getElementById("yearSelect");
@@ -54,13 +61,15 @@ yearSelect.addEventListener("change", () => {
       drawYearCalendar(currentYear);
       updateYearlyWorkoutCount(currentYear);
       renderLegend();
-      adjustMonthDisplay(); // Add adjustment after redrawing
+      adjustMonthDisplay();
+      updateWeeklyProgress(); // Update weekly progress after loading data
     });
   } else {
     drawYearCalendar(currentYear);
     updateYearlyWorkoutCount(currentYear);
     renderLegend();
-    adjustMonthDisplay(); // Add adjustment after redrawing
+    adjustMonthDisplay();
+    updateWeeklyProgress(); // Update weekly progress with existing data
   }
 });
 
@@ -471,6 +480,175 @@ function renderLegend() {
   });
 }
 
+// ========== Weekly Progress Bar Functions ==========
+
+// Get the start and end dates of the current week (Sunday-Saturday)
+function getCurrentWeekDateRange() {
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+  
+  // Calculate start of week (Sunday)
+  const startDate = new Date(now);
+  startDate.setDate(now.getDate() - currentDay);
+  
+  // Calculate end of week (Saturday)
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+  
+  return { startDate, endDate };
+}
+
+// Format a date as MM/DD
+function formatShortDate(date) {
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+// Update the date range display
+function updateWeekDateRangeDisplay() {
+  const { startDate, endDate } = getCurrentWeekDateRange();
+  const dateRangeElem = document.getElementById('weekDateRange');
+  if (dateRangeElem) {
+    dateRangeElem.textContent = `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+  }
+}
+
+// Count workouts in the current week
+function countCurrentWeekWorkouts() {
+  const { startDate, endDate } = getCurrentWeekDateRange();
+  let count = 0;
+  
+  // Only proceed if we have data for the current year
+  if (!yearData[currentYear]) return 0;
+  
+  // Loop through each day in the current week
+  for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
+    const month = day.getMonth();
+    const dayOfMonth = day.getDate() - 1; // Adjust to 0-based index
+    
+    // Check if the day has workout data
+    if (yearData[currentYear][month] && 
+        yearData[currentYear][month][dayOfMonth] && 
+        yearData[currentYear][month][dayOfMonth].muscles && 
+        yearData[currentYear][month][dayOfMonth].muscles.length > 0) {
+      count++;
+    }
+  }
+  
+  return count;
+}
+
+// Check if the previous week was completed (had 4 workouts)
+function checkPreviousWeekCompleted() {
+  const { startDate } = getCurrentWeekDateRange();
+  
+  // Get previous week's end date (Saturday)
+  const prevWeekEnd = new Date(startDate);
+  prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
+  
+  // Get previous week's start date (Sunday)
+  const prevWeekStart = new Date(prevWeekEnd);
+  prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
+  
+  let count = 0;
+  
+  // Only proceed if we have data for the year
+  if (!yearData[currentYear]) return false;
+  
+  // Loop through each day in the previous week
+  for (let day = new Date(prevWeekStart); day <= prevWeekEnd; day.setDate(day.getDate() + 1)) {
+    const month = day.getMonth();
+    const dayOfMonth = day.getDate() - 1; // Adjust to 0-based index
+    
+    // Check if the day has workout data
+    if (yearData[currentYear][month] && 
+        yearData[currentYear][month][dayOfMonth] && 
+        yearData[currentYear][month][dayOfMonth].muscles && 
+        yearData[currentYear][month][dayOfMonth].muscles.length > 0) {
+      count++;
+    }
+  }
+  
+  // Week is completed if there were at least 4 workouts
+  return count >= 4;
+}
+
+// Update streak counter
+function updateStreakCounter() {
+  // Format of the key: YYYY-MM-DD
+  const startDate = getCurrentWeekDateRange().startDate;
+  const weekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
+  
+  // Check if we already processed this week
+  if (weeklyData.lastCompletedWeek === weekKey) {
+    return; // Already processed this week
+  }
+  
+  // Check if previous week was completed
+  const prevWeekCompleted = checkPreviousWeekCompleted();
+  
+  // Reset streak if previous week wasn't completed
+  if (!prevWeekCompleted) {
+    weeklyData.weekStreakCount = 0;
+  }
+  
+  // Check if current week is completed
+  const currentWeekCompleted = weeklyData.currentWeekWorkouts >= 4;
+  
+  // Update streak if current week is completed
+  if (currentWeekCompleted) {
+    weeklyData.weekStreakCount++;
+    weeklyData.lastCompletedWeek = weekKey;
+  }
+  
+  // Update the streak display
+  const streakIndicator = document.getElementById('streakIndicator');
+  if (streakIndicator) {
+    if (weeklyData.weekStreakCount > 0) {
+      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
+      streakIndicator.classList.add('active');
+    } else {
+      streakIndicator.textContent = '';
+      streakIndicator.classList.remove('active');
+    }
+  }
+}
+
+// Update progress bar segments based on workout count
+function updateProgressBar(workoutCount) {
+  const segments = document.querySelectorAll('.segment');
+  const progressText = document.getElementById('progressText');
+  
+  if (!segments.length || !progressText) return;
+  
+  // Update each segment
+  segments.forEach((segment, index) => {
+    if (index < workoutCount) {
+      segment.classList.add('filled');
+    } else {
+      segment.classList.remove('filled');
+    }
+  });
+  
+  // Update text
+  progressText.textContent = `${workoutCount}/4 Workouts This Week`;
+  
+  // Update streak if we've reached the goal
+  if (workoutCount >= 4) {
+    updateStreakCounter();
+  }
+}
+
+// Main function to update weekly progress
+function updateWeeklyProgress() {
+  updateWeekDateRangeDisplay();
+  
+  const workoutCount = countCurrentWeekWorkouts();
+  weeklyData.currentWeekWorkouts = workoutCount;
+  
+  updateProgressBar(workoutCount);
+  updateStreakCounter();
+}
+
 // ========== Window Resize Handler ==========
 window.addEventListener('resize', function() {
   // Add a small delay to avoid too many redraws during resizing
@@ -489,5 +667,6 @@ window.addEventListener('resize', function() {
   drawYearCalendar(currentYear);
   updateYearlyWorkoutCount(currentYear);
   renderLegend();
-  adjustMonthDisplay(); // Add adjustment after drawing
+  adjustMonthDisplay();
+  updateWeeklyProgress(); // Initialize weekly progress bar
 })();
