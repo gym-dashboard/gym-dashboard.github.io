@@ -1,87 +1,87 @@
 {
-  "date": "27-03-2025",
+  "date": "28-03-2025",
   "participants": [
-    "Tomás T.",
-    "Duarte T.",
-    "Mariana D.",
-    "André D."
+    "André D.",
+    "Mariana D."
   ],
-  "start_time": "18:15",
-  "end_time": "19:29",
-  "total_time": "1 hour 14 minutes",
-  "overall_muscle_group": ["Back"],
+  "start_time": "18:06",
+  "end_time": "18:50",
+  "total_time": "0 hours 44 minutes",
+  "overall_muscle_group": [
+    "Legs"
+  ],
   "workout": [
     {
-      "Exercise": "Pull-Ups",
-      "Reps": 10,
-      "Weight": "0 kg",
-      "Effort": "60%",
-      "Muscle-Group": "Back",
-      "Location": null
-    },
-    {
-      "Exercise": "Pull-Ups",
-      "Reps": 10,
-      "Weight": "0 kg",
-      "Effort": "75%",
-      "Muscle-Group": "Back",
-      "Location": null
-    },
-    {
-      "Exercise": "Pull-Ups",
-      "Reps": 10,
-      "Weight": "0 kg",
-      "Effort": "100%",
-      "Muscle-Group": "Back",
-      "Location": null
-    },
-    {
-      "Exercise": "Lat Pull-Down",
-      "Reps": 10,
-      "Weight": "50 kg",
-      "Effort": "100%",
-      "Muscle-Group": "Back",
-      "Location": "Machine"
-    },
-    {
-      "Exercise": "Lat Pull-Down",
-      "Reps": 10,
-      "Weight": "50 kg",
-      "Effort": "85%",
-      "Muscle-Group": "Back",
-      "Location": "Machine"
-    },
-    {
-      "Exercise": "Rows",
-      "Reps": 10,
-      "Weight": "50 kg",
-      "Effort": "95%",
-      "Muscle-Group": "Back",
-      "Location": "Machine"
-    },
-    {
-      "Exercise": "Rows",
-      "Reps": 8,
-      "Weight": "60 kg",
-      "Effort": "95%",
-      "Muscle-Group": "Back",
-      "Location": "Machine"
-    },
-    {
-      "Exercise": "High Rows",
-      "Reps": 10,
-      "Weight": "40 kg",
+      "Exercise": "Leg Press",
+      "Reps": 15,
+      "Weight": "110 kg",
       "Effort": "90%",
-      "Muscle-Group": "Back",
+      "Muscle-Group": "Legs",
       "Location": "Machine"
     },
     {
-      "Exercise": "High Rows",
+      "Exercise": "Leg Press",
+      "Reps": 12,
+      "Weight": "120 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
       "Reps": 12,
       "Weight": "40 kg",
-      "Effort": "95%",
-      "Muscle-Group": "Back",
+      "Effort": "70%",
+      "Muscle-Group": "Legs",
       "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 10,
+      "Weight": "50 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 10,
+      "Weight": "60 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 10,
+      "Weight": "15 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 35,
+      "Weight": "0 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Legs",
+      "Location": null
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 15,
+      "Weight": "0 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Legs",
+      "Location": null
     }
   ]
 }
