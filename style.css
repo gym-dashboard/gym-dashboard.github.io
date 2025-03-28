@@ -122,17 +122,20 @@ svg {
 
 .streak-badge {
   padding: 4px 10px;
-  border-radius: 16px;
+  border-radius: 6px; /* Less rounded corners */
   font-weight: bold;
   font-size: 0.9rem;
   color: #fff;
   opacity: 0;
   transition: opacity 0.5s ease;
+  background-color: #4361EE; /* New, more aesthetic blue color */
 }
 
 .streak-badge.active {
-  background-color: #3b82f6;
   opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .streak-badge.active::before {
@@ -167,7 +170,7 @@ svg {
   border-right: none;
 }
 
-/* Blue color segments */
+/* Blue color segments - Updated with a matching palette */
 .segment[data-index="0"].filled {
   background-color: #cfe2ff;
 }
@@ -181,7 +184,7 @@ svg {
 }
 
 .segment[data-index="3"].filled {
-  background-color: #3b82f6;
+  background-color: #4361EE; /* Match to streak badge color */
 }
 
 #progressText {
@@ -277,12 +280,19 @@ svg {
   
   .weekly-title {
     font-size: 0.85rem;
-    margin-bottom: 6px; /* Add margin back for vertical layout */
+    margin-bottom: 10px; /* Add more space between title and streak badge */
+    width: 100%; /* Ensure text wraps */
   }
   
+  /* Make streak badge full width on mobile */
   .streak-badge {
+    width: 100%;
     font-size: 0.8rem;
-    padding: 3px 8px;
+    padding: 6px 0;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
   .progress-segments {
@@ -323,11 +333,10 @@ svg {
   
   .weekly-title {
     font-size: 0.8rem;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
   
   .streak-badge {
     font-size: 0.75rem;
-    padding: 2px 6px;
   }
 }

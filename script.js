@@ -503,12 +503,19 @@ function formatShortDate(date) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-// Update the date range display
+// Update the date range display with responsive formatting
 function updateWeekDateRangeDisplay() {
   const { startDate, endDate } = getCurrentWeekDateRange();
   const dateRangeElem = document.getElementById('weekDateRange');
   if (dateRangeElem) {
-    dateRangeElem.textContent = `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+    // Check screen width to determine display format
+    if (window.innerWidth <= 767) {
+      // Mobile format: MM/DD-MM/DD (no spaces)
+      dateRangeElem.textContent = `${formatShortDate(startDate)}-${formatShortDate(endDate)}`;
+    } else {
+      // Desktop format: MM/DD - MM/DD (with spaces)
+      dateRangeElem.textContent = `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+    }
   }
 }
 
@@ -656,6 +663,7 @@ window.addEventListener('resize', function() {
   this.resizeTimeout = setTimeout(function() {
     drawYearCalendar(currentYear);
     adjustMonthDisplay(); // Add adjustment after redrawing
+    updateWeekDateRangeDisplay(); // Update date format based on screen size
   }, 200);
 });
 
