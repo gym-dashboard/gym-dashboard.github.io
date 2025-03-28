@@ -3,14 +3,14 @@
  **********************************************/
 
 // ====== Calendar config ======
-const muscleGroups = ["Chest", "Triceps", "Legs", "Shoulders", "Biceps", "Back"];
+const muscleGroups = ["Chest", "Triceps", "Legs", "Shoulders", "Back", "Biceps"];
 const muscleDisplayNames = {
   "Chest": "Chest",
   "Triceps": "Triceps",
   "Legs": "Legs",
   "Shoulders": "Shoulders",
-  "Biceps": "Biceps",
   "Back": "Back",
+  "Biceps": "Biceps",
 };
 
 const muscleColors = {
@@ -18,8 +18,8 @@ const muscleColors = {
   "Triceps": "#F9C74F",
   "Legs": "#43AA8B",
   "Shoulders": "#F8961E",
-  "Biceps": "#90BE6D",
   "Back": "#577590",
+  "Biceps": "#90BE6D",
 };
 
 const monthNames = ["Jan","Feb","Mar","Apr","May","Jun",
@@ -504,7 +504,6 @@ function formatShortDate(date) {
 }
 
 // Update the date range display with responsive formatting
-// Update the date range display with screen-adaptive formatting
 function updateWeekDateRangeDisplay() {
   const { startDate, endDate } = getCurrentWeekDateRange();
   const dateRangeElem = document.getElementById('weekDateRange');
@@ -519,7 +518,7 @@ function updateWeekDateRangeDisplay() {
     // Adjust title prefix based on screen size
     if (window.innerWidth <= 767) {
       // Mobile: shorter prefix
-      titlePrefix.textContent = "Week:";
+      titlePrefix.textContent = "";
     } else {
       // Desktop: can use longer prefix
       titlePrefix.textContent = "Current Week:";
@@ -548,6 +547,25 @@ function updateWeekDateRangeDisplay() {
         dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
       }
     }
+  }
+}
+
+// Format date range string for mobile view
+function getFormattedDateRangeForMobile() {
+  const { startDate, endDate } = getCurrentWeekDateRange();
+  const startMonth = startDate.getMonth();
+  const endMonth = endDate.getMonth();
+  const isSameMonth = startMonth === endMonth;
+  
+  if (isSameMonth) {
+    // Same month: "Mar 23-29"
+    const monthName = monthNames[startMonth];
+    return `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
+  } else {
+    // Different months: "Mar 30-Apr 5"
+    const startMonthName = monthNames[startMonth];
+    const endMonthName = monthNames[endMonth];
+    return `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
   }
 }
 
@@ -643,7 +661,7 @@ function updateStreakCounter() {
   const streakIndicator = document.getElementById('streakIndicator');
   if (streakIndicator) {
     if (weeklyData.weekStreakCount > 0) {
-      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week`;
+      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
       streakIndicator.classList.add('active');
       if (weeklyData.weekStreakCount > 1) {
         streakIndicator.textContent += 's';
@@ -671,8 +689,13 @@ function updateProgressBar(workoutCount) {
     }
   });
   
-  // Update text
-  progressText.textContent = `${workoutCount}/4 Workouts This Week`;
+  // Update text with date range for mobile
+  if (window.innerWidth <= 767) {
+    const dateRange = getFormattedDateRangeForMobile();
+    progressText.textContent = `${workoutCount}/4 workouts (${dateRange})`;
+  } else {
+    progressText.textContent = `${workoutCount}/4 Workouts This Week`;
+  }
   
   // Update streak if we've reached the goal
   if (workoutCount >= 4) {
@@ -699,6 +722,10 @@ window.addEventListener('resize', function() {
     drawYearCalendar(currentYear);
     adjustMonthDisplay(); // Add adjustment after redrawing
     updateWeekDateRangeDisplay(); // Update date format based on screen size
+    
+    // Also update progress text for mobile/desktop format
+    const workoutCount = countCurrentWeekWorkouts();
+    updateProgressBar(workoutCount);
   }, 200);
 });
 
