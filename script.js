@@ -14,12 +14,12 @@ const muscleDisplayNames = {
 };
 
 const muscleColors = {
-  "Chest": "#71b288",
-  "Triceps": "#8871b2",
-  "Legs": "#c65353",
-  "Shoulders": "#b28871",
-  "Back": "#b2718c",
-  "Biceps": "#719bb2",
+  "Chest": "rgba(113, 178, 136, 0.61)",
+  "Triceps": "rgba(136, 113, 178, 0.61)",
+  "Legs": "rgba(198, 83, 83, 0.61)",
+  "Shoulders": "rgba(178, 136, 113, 0.61)",
+  "Back": "rgba(178, 113, 140, 0.61)",
+  "Biceps": "rgba(113, 155, 178, 0.61)",
 };
 
 const monthNames = ["Jan","Feb","Mar","Apr","May","Jun",
