@@ -504,17 +504,49 @@ function formatShortDate(date) {
 }
 
 // Update the date range display with responsive formatting
+// Update the date range display with screen-adaptive formatting
 function updateWeekDateRangeDisplay() {
   const { startDate, endDate } = getCurrentWeekDateRange();
   const dateRangeElem = document.getElementById('weekDateRange');
+  const titlePrefix = document.querySelector('.weekly-title-prefix');
+  
   if (dateRangeElem) {
-    // Check screen width to determine display format
+    // Check if week spans two different months
+    const startMonth = startDate.getMonth();
+    const endMonth = endDate.getMonth();
+    const isSameMonth = startMonth === endMonth;
+    
+    // Adjust title prefix based on screen size
     if (window.innerWidth <= 767) {
-      // Mobile format: MM/DD-MM/DD (no spaces)
-      dateRangeElem.textContent = `${formatShortDate(startDate)}-${formatShortDate(endDate)}`;
+      // Mobile: shorter prefix
+      titlePrefix.textContent = "Week:";
     } else {
-      // Desktop format: MM/DD - MM/DD (with spaces)
-      dateRangeElem.textContent = `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`;
+      // Desktop: can use longer prefix
+      titlePrefix.textContent = "Current Week:";
+    }
+    
+    // Check screen width to determine date format
+    if (window.innerWidth <= 767) {
+      if (isSameMonth) {
+        // Same month: "Mar 23-29"
+        const monthName = monthNames[startMonth];
+        dateRangeElem.textContent = `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
+      } else {
+        // Different months: "Mar 30-Apr 5"
+        const startMonthName = monthNames[startMonth];
+        const endMonthName = monthNames[endMonth];
+        dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
+      }
+    } else {
+      // Desktop format with month names
+      if (isSameMonth) {
+        const monthName = monthNames[startMonth];
+        dateRangeElem.textContent = `${monthName} ${startDate.getDate()} - ${endDate.getDate()}`;
+      } else {
+        const startMonthName = monthNames[startMonth];
+        const endMonthName = monthNames[endMonth];
+        dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
+      }
     }
   }
 }
