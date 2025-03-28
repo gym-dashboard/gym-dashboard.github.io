@@ -37,10 +37,12 @@
       
       <!-- Weekly Progress Bar -->
       <div id="weeklyProgressContainer">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div class="weekly-title fw-bold">Current Week: <span id="weekDateRange"></span></div>
+        <!-- Header will be side-by-side on desktop, stacked on mobile -->
+        <div class="weekly-header">
+          <div class="weekly-title">Current Week: <span id="weekDateRange"></span></div>
           <div id="streakIndicator" class="streak-badge"></div>
         </div>
+        
         <div class="progress-container">
           <div class="progress-segments">
             <div class="segment" data-index="0"></div>
@@ -49,7 +51,7 @@
             <div class="segment" data-index="3"></div>
           </div>
         </div>
-        <div class="text-center mt-2" id="progressText">0/4 Workouts This Week</div>
+        <div id="progressText">0/4 Workouts This Week</div>
       </div>
     </div>
   </div>

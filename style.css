@@ -91,7 +91,7 @@ svg {
   border-radius: 3px;
 }
 
-/* Weekly Progress Bar Styling */
+/* Weekly Progress Container - Base styling */
 #weeklyProgressContainer {
   flex: 1;
   padding: 12px;
@@ -102,15 +102,45 @@ svg {
   margin: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Distribute content to match legend height */
+  justify-content: space-between;
+}
+
+/* Weekly header - side by side on large screens */
+.weekly-header {
+  display: flex;
+  flex-direction: row; /* Side by side on desktop */
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
 }
 
 .weekly-title {
   font-size: 1rem;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 0; /* Remove bottom margin for horizontal layout */
 }
 
+.streak-badge {
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.streak-badge.active {
+  background-color: #3b82f6;
+  opacity: 1;
+}
+
+.streak-badge.active::before {
+  content: "🔥";
+  margin-right: 5px;
+}
+
+/* Progress bar container */
 .progress-container {
   width: 100%;
   padding: 4px 0;
@@ -137,46 +167,27 @@ svg {
   border-right: none;
 }
 
-/* Use categorical blue colors instead of gradient */
+/* Blue color segments */
 .segment[data-index="0"].filled {
-  background-color: #cfe2ff; /* Light blue */
+  background-color: #cfe2ff;
 }
 
 .segment[data-index="1"].filled {
-  background-color: #9ec5fe; /* Medium-light blue */
+  background-color: #9ec5fe;
 }
 
 .segment[data-index="2"].filled {
-  background-color: #6ea8fe; /* Medium blue */
+  background-color: #6ea8fe;
 }
 
 .segment[data-index="3"].filled {
-  background-color: #3b82f6; /* Darker blue */
-}
-
-.streak-badge {
-  padding: 3px 8px;
-  border-radius: 16px;
-  font-weight: bold;
-  font-size: 0.85rem;
-  color: #fff;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-.streak-badge.active {
-  background-color: #3b82f6; /* Match the darkest blue */
-  opacity: 1;
-}
-
-.streak-badge.active::before {
-  content: "🔥";
-  margin-right: 5px;
+  background-color: #3b82f6;
 }
 
 #progressText {
   margin-top: 10px;
   font-size: 0.9rem;
+  text-align: center;
 }
 
 /* Medium screens - adjust spacing */
@@ -213,7 +224,6 @@ svg {
   
   .weekly-title {
     font-size: 0.95rem;
-    margin-bottom: 8px;
   }
   
   .progress-segments {
@@ -221,7 +231,8 @@ svg {
   }
   
   .streak-badge {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
+    padding: 3px 8px;
   }
   
   #progressText {
@@ -230,7 +241,7 @@ svg {
   }
 }
 
-/* Mobile devices - make more compact but maintain 2x3 layout */
+/* Mobile devices - STACK THE ELEMENTS VERTICALLY */
 @media (max-width: 767px) {
   .legend-progress-container {
     gap: 8px;
@@ -257,18 +268,25 @@ svg {
     padding: 8px;
   }
   
+  /* Stack header elements vertically on mobile */
+  .weekly-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
   .weekly-title {
+    font-size: 0.85rem;
+    margin-bottom: 6px; /* Add margin back for vertical layout */
+  }
+  
+  .streak-badge {
     font-size: 0.8rem;
-    margin-bottom: 6px;
+    padding: 3px 8px;
   }
   
   .progress-segments {
     height: 18px;
-  }
-  
-  .streak-badge {
-    font-size: 0.75rem;
-    padding: 2px 6px;
   }
   
   #progressText {
@@ -304,7 +322,12 @@ svg {
   }
   
   .weekly-title {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     margin-bottom: 4px;
+  }
+  
+  .streak-badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
   }
 }
