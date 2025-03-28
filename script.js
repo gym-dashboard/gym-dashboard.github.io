@@ -643,8 +643,11 @@ function updateStreakCounter() {
   const streakIndicator = document.getElementById('streakIndicator');
   if (streakIndicator) {
     if (weeklyData.weekStreakCount > 0) {
-      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
+      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week`;
       streakIndicator.classList.add('active');
+      if (weeklyData.weekStreakCount > 1) {
+        streakIndicator.textContent += 's';
+      }
     } else {
       streakIndicator.textContent = '';
       streakIndicator.classList.remove('active');
