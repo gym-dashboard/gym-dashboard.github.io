@@ -54,11 +54,13 @@ yearSelect.addEventListener("change", () => {
       drawYearCalendar(currentYear);
       updateYearlyWorkoutCount(currentYear);
       renderLegend();
+      adjustMonthDisplay(); // Add adjustment after redrawing
     });
   } else {
     drawYearCalendar(currentYear);
     updateYearlyWorkoutCount(currentYear);
     renderLegend();
+    adjustMonthDisplay(); // Add adjustment after redrawing
   }
 });
 
@@ -134,7 +136,7 @@ async function loadDataForYear(year) {
   });
 }
 
-// Add these functions right before the drawYearCalendar function
+// ========== Responsive Functions ==========
 
 // Determine appropriate cell size based on screen width
 function calculateResponsiveCellSize() {
@@ -163,48 +165,49 @@ function calculateResponsiveCellSize() {
   }
 }
 
-// Modify the beginning of the drawYearCalendar function to use responsive cell size
+// Adjust month blocks to show exactly the desired number of months
+function adjustMonthDisplay() {
+  const chartContainer = document.getElementById('chartContainer');
+  const containerWidth = chartContainer.clientWidth;
+  const monthBlocks = document.querySelectorAll('.month-block');
+  
+  if (monthBlocks.length === 0) return;
+  
+  // How many months do we want to show at once? (2-3)
+  const targetMonthsVisible = Math.min(3, monthBlocks.length);
+  
+  // Calculate the ideal width for each month
+  // Subtract margins between months (5px × (targetMonthsVisible-1))
+  const idealMonthWidth = Math.floor((containerWidth - (5 * (targetMonthsVisible - 1))) / targetMonthsVisible);
+  
+  // Apply the calculated width to each month-block's SVG
+  monthBlocks.forEach(block => {
+    const svg = block.querySelector('svg');
+    if (svg) {
+      svg.setAttribute('width', idealMonthWidth);
+      // Need to maintain aspect ratio
+      const viewBox = svg.getAttribute('viewBox').split(' ');
+      const aspectRatio = parseFloat(viewBox[3]) / parseFloat(viewBox[2]);
+      svg.setAttribute('height', Math.floor(idealMonthWidth * aspectRatio));
+    }
+  });
+  
+  // Update the scroll position to show current month
+  const now = new Date();
+  let currentMonth = now.getMonth();
+  let updatedMonthBlockWidth = idealMonthWidth + 5; // Width + margin
+  const desiredScroll = (currentMonth * updatedMonthBlockWidth) - 
+                        (containerWidth - updatedMonthBlockWidth);
+                        
+  chartContainer.scrollLeft = Math.max(0, desiredScroll);
+}
+
+// ========== Draw Year Calendar: Render 12 Months Horizontally ==========
 function drawYearCalendar(year) {
   chartContainer.innerHTML = "";
   
   // Define dimensions for each month based on screen size
   const cellSize = calculateResponsiveCellSize(),
-        cellGap = 4,
-        cols = 7,
-        rows = 5;
-  const gridWidth = cols * (cellSize + cellGap) - cellGap;
-  const gridHeight = rows * (cellSize + cellGap) - cellGap;
-  const margin = { top: 50, right: 20, bottom: 20, left: 20 };
-  const monthChartWidth = gridWidth + margin.left + margin.right;
-  const monthChartHeight = gridHeight + margin.top + margin.bottom;
-  
-  // Rest of the function remains the same...
-  
-  // Utility function to generate gradient IDs based on muscle groups
-  const getGradientId = (muscles) => {
-    return `gradient-${muscles.join('-')}`;
-  };
-  
-  // Loop through all 12 months
-  // ... rest of the existing function
-}
-
-// Also add a window resize handler to redraw the calendar when screen size changes
-window.addEventListener('resize', function() {
-  // Add a small delay to avoid too many redraws during resizing
-  if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
-  this.resizeTimeout = setTimeout(function() {
-    drawYearCalendar(currentYear);
-  }, 200);
-});
-
-
-
-// ========== Draw Year Calendar: Render 12 Months Horizontally ==========
-function drawYearCalendar(year) {
-  chartContainer.innerHTML = "";
-  // Define dimensions for each month
-  const cellSize = 20,
         cellGap = 4,
         cols = 7,
         rows = 5;
@@ -436,16 +439,6 @@ function drawYearCalendar(year) {
     monthDiv.appendChild(svg.node());
     chartContainer.appendChild(monthDiv);
   }
-  
-  // Set scroll position so that by default the current month is on the right and the previous month on the left.
-  const now = new Date();
-  let currentMonth = now.getMonth();
-  // Calculate width of one month block (including CSS margin-right: 5px)
-  let monthBlockWidth = monthChartWidth + 5;
-  const visibleWidth = chartContainer.clientWidth;
-  let desiredScroll = (currentMonth * monthBlockWidth) - (visibleWidth - monthBlockWidth);
-  if (desiredScroll < 0) desiredScroll = 0;
-  chartContainer.scrollLeft = desiredScroll;
 }
 
 // ========== Render Legend ==========
@@ -471,6 +464,16 @@ function renderLegend() {
   });
 }
 
+// ========== Window Resize Handler ==========
+window.addEventListener('resize', function() {
+  // Add a small delay to avoid too many redraws during resizing
+  if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+  this.resizeTimeout = setTimeout(function() {
+    drawYearCalendar(currentYear);
+    adjustMonthDisplay(); // Add adjustment after redrawing
+  }, 200);
+});
+
 // ========== Init on Page Load ==========
 (async function init() {
   if (!yearData[currentYear]) {
@@ -479,4 +482,5 @@ function renderLegend() {
   drawYearCalendar(currentYear);
   updateYearlyWorkoutCount(currentYear);
   renderLegend();
+  adjustMonthDisplay(); // Add adjustment after drawing
 })();

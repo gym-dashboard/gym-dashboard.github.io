@@ -4,10 +4,10 @@ body {
   background: #f9f9f9;
 }
 
-/* Outer box styling */
+/* Modify the outerBox styling */
 #outerBox {
   max-width: 1000px;
-  width: 45%;
+  width: 100%; /* Use full width of parent */
   margin: 0 auto;
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
@@ -16,14 +16,15 @@ body {
   box-sizing: border-box;
 }
 
-/* Chart container styling for horizontal scroll - fully responsive */
+/* Add this to control how many months are visible */
 #chartContainer {
   overflow-x: auto;
   white-space: nowrap;
   width: 100%;
   max-width: 100%;
   margin: 0 auto 15px auto;
-  padding-bottom: 5px; /* Add padding for scrollbar */
+  padding-bottom: 5px;
+  scroll-padding: 0 20px;
 }
 
 /* Each month block styling */
