@@ -58,7 +58,7 @@ svg {
   margin-top: 20px;
 }
 
-/* Legend styling - 2x3 grid layout for desktop */
+/* Legend styling - always 2x3 grid layout */
 #legend {
   display: grid;
   grid-template-columns: repeat(2, auto);
@@ -179,7 +179,7 @@ svg {
   font-size: 0.9rem;
 }
 
-/* Medium screens - adjust spacing but keep 2x3 layout */
+/* Medium screens - adjust spacing */
 @media (max-width: 768px) {
   /* Adjust cell size for better mobile viewing */
   #chartContainer svg {
@@ -194,16 +194,17 @@ svg {
   #legend {
     gap: 10px 16px;
     padding: 10px;
-    max-width: 260px;
+    max-width: 220px;
   }
   
   .legend-item {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    gap: 6px;
   }
   
   .colorBox {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
   }
   
   #weeklyProgressContainer {
@@ -229,23 +230,22 @@ svg {
   }
 }
 
-/* Small screens - switch to 3x2 legend layout but keep side by side */
-@media (max-width: 480px) {
+/* Mobile devices - make more compact but maintain 2x3 layout */
+@media (max-width: 767px) {
   .legend-progress-container {
     gap: 8px;
   }
   
-  /* Change to 3x2 layout on mobile */
+  /* Keep 2x3 layout but make more compact */
   #legend {
-    grid-template-columns: repeat(3, auto);
-    grid-template-rows: repeat(2, auto);
     gap: 8px 10px;
     padding: 8px;
-    max-width: 220px;
+    max-width: 180px;
   }
   
   .legend-item {
     font-size: 0.75rem;
+    gap: 5px;
   }
   
   .colorBox {
@@ -274,5 +274,37 @@ svg {
   #progressText {
     font-size: 0.75rem;
     margin-top: 6px;
+  }
+}
+
+/* Very small screens - further reduce sizes */
+@media (max-width: 374px) {
+  .legend-progress-container {
+    gap: 6px;
+  }
+  
+  #legend {
+    gap: 5px 6px;
+    padding: 6px;
+    max-width: 160px;
+  }
+  
+  .legend-item {
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+  
+  .colorBox {
+    width: 10px;
+    height: 10px;
+  }
+  
+  #weeklyProgressContainer {
+    padding: 6px;
+  }
+  
+  .weekly-title {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
   }
 }
