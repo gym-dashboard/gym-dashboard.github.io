@@ -173,8 +173,15 @@ function adjustMonthDisplay() {
   
   if (monthBlocks.length === 0) return;
   
-  // How many months do we want to show at once? (2-3)
-  const targetMonthsVisible = Math.min(3, monthBlocks.length);
+  // Determine how many months to show based on screen width
+  let targetMonthsVisible;
+  if (containerWidth < 480) {
+    // For very small screens (phones), show only 2 months
+    targetMonthsVisible = Math.min(2, monthBlocks.length);
+  } else {
+    // For larger screens, show up to 3 months
+    targetMonthsVisible = Math.min(3, monthBlocks.length);
+  }
   
   // Calculate the ideal width for each month
   // Subtract margins between months (5px × (targetMonthsVisible-1))

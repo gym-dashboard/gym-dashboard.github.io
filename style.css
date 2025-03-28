@@ -49,49 +49,74 @@ svg {
   pointer-events: none;
 }
 
-/* Legend styling - grid layout with better responsiveness */
+/* Legend styling - improved 2x3 grid layout aligned left */
 #legend {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 10px;
-  justify-items: start;
+  grid-template-columns: repeat(3, auto);
+  grid-template-rows: repeat(2, auto);
+  gap: 16px 24px;
+  justify-content: start;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 20px;
   width: 100%;
+  max-width: 450px; /* Constrain width so it doesn't span the entire div */
 }
 
-/* Legend items */
+/* Legend items - larger on desktop */
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.9rem;
+  gap: 8px;
+  font-size: 1.05rem;
 }
 
-/* Colored box for each muscle group */
+/* Colored box for each muscle group - larger on desktop */
 .colorBox {
   display: inline-block;
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   border-radius: 3px;
 }
 
-/* Responsive adjustments for small screens */
+/* Medium screens */
 @media (max-width: 768px) {
   /* Adjust cell size for better mobile viewing */
   #chartContainer svg {
     max-width: none; /* Allow SVG to maintain its original size in scrollable container */
   }
   
-  /* More mobile-friendly legend */
+  /* Slightly reduce legend size for medium screens */
   #legend {
-    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 20px;
+    max-width: 400px;
+  }
+  
+  .legend-item {
+    font-size: 0.95rem;
+  }
+  
+  .colorBox {
+    width: 16px;
+    height: 16px;
   }
 }
 
-/* Ensure the container is properly contained on very small screens */
+/* Small screens */
 @media (max-width: 480px) {
+  /* Further reduce legend size and keep 2x3 format */
   #legend {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, auto);
+    grid-template-rows: repeat(2, auto);
+    gap: 8px 16px;
+    max-width: 100%; /* Allow full width on very small screens */
+  }
+  
+  .legend-item {
+    font-size: 0.85rem;
+  }
+  
+  .colorBox {
+    width: 14px;
+    height: 14px;
   }
 }
