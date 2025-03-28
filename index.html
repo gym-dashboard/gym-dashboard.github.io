@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Calendar + Chunked Timeline</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <!-- Bootstrap for layout (optional) -->
   <link 
     rel="stylesheet"
@@ -16,7 +16,7 @@
 </head>
 <body>
 
-<div class="container my-4">
+<div class="container-fluid my-4">
   <!-- Top Bar -->
   <div class="d-flex justify-content-between align-items-center mb-2">
     <div id="yearlyWorkoutsCount" class="fw-bold"></div>
@@ -27,7 +27,7 @@
   </div>
 
   <div id="outerBox" class="p-3 rounded bg-white">
-    <!-- Calendar Container: horizontal scrolling with 3 months visible -->
+    <!-- Calendar Container: horizontal scrolling with responsive width -->
     <div id="chartContainer"></div>
     <!-- Legend for Muscle Groups -->
     <div id="legend"></div>

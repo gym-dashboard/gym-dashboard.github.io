@@ -134,6 +134,72 @@ async function loadDataForYear(year) {
   });
 }
 
+// Add these functions right before the drawYearCalendar function
+
+// Determine appropriate cell size based on screen width
+function calculateResponsiveCellSize() {
+  const outerBoxWidth = document.getElementById('outerBox').clientWidth;
+  
+  // Calculate cell size based on available width
+  // We need to fit at least 7 cells horizontally (for days of the week)
+  // plus account for margins, padding and gaps
+  const minCellSize = 16; // Minimum usable cell size
+  const idealCellSize = 20; // Original designed cell size
+  
+  // Account for margins and padding (approx 40px from margins and padding)
+  const availableWidth = outerBoxWidth - 40;
+  const cellGap = 4;
+  
+  // Calculate how much space 7 cells would take with gaps
+  const cellsWithGapsWidth = (7 * idealCellSize) + (6 * cellGap);
+  
+  // If we have enough space, use the ideal size
+  if (availableWidth >= cellsWithGapsWidth) {
+    return idealCellSize;
+  } else {
+    // Calculate a cell size that would fit
+    const calculatedSize = Math.floor((availableWidth - (6 * cellGap)) / 7);
+    return Math.max(calculatedSize, minCellSize);
+  }
+}
+
+// Modify the beginning of the drawYearCalendar function to use responsive cell size
+function drawYearCalendar(year) {
+  chartContainer.innerHTML = "";
+  
+  // Define dimensions for each month based on screen size
+  const cellSize = calculateResponsiveCellSize(),
+        cellGap = 4,
+        cols = 7,
+        rows = 5;
+  const gridWidth = cols * (cellSize + cellGap) - cellGap;
+  const gridHeight = rows * (cellSize + cellGap) - cellGap;
+  const margin = { top: 50, right: 20, bottom: 20, left: 20 };
+  const monthChartWidth = gridWidth + margin.left + margin.right;
+  const monthChartHeight = gridHeight + margin.top + margin.bottom;
+  
+  // Rest of the function remains the same...
+  
+  // Utility function to generate gradient IDs based on muscle groups
+  const getGradientId = (muscles) => {
+    return `gradient-${muscles.join('-')}`;
+  };
+  
+  // Loop through all 12 months
+  // ... rest of the existing function
+}
+
+// Also add a window resize handler to redraw the calendar when screen size changes
+window.addEventListener('resize', function() {
+  // Add a small delay to avoid too many redraws during resizing
+  if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
+  this.resizeTimeout = setTimeout(function() {
+    drawYearCalendar(currentYear);
+  }, 200);
+});
+
+
+
 // ========== Draw Year Calendar: Render 12 Months Horizontally ==========
 function drawYearCalendar(year) {
   chartContainer.innerHTML = "";
