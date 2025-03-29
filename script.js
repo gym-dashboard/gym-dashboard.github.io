@@ -41,6 +41,11 @@ let weeklyData = {
 const yearSelect = document.getElementById("yearSelect");
 const chartContainer = document.getElementById("chartContainer");
 
+// For tracking browser zoom level
+let currentZoomLevel = 1;
+const baseZoomWidth = window.innerWidth;
+let lastResizeWidth = window.innerWidth;
+
 // ========== Populate Year Select ==========
 function populateYearSelect() {
   const years = [2023, 2024, 2025, 2026];
@@ -199,7 +204,7 @@ function buildTooltipHTML(dayData) {
   // Always include the footer separator
   let footerContent = "";
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // For mobile, show duration only (removed tap to close message)
+    // For mobile, show duration only
     footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
   } else {
     // For desktop, only show duration if available
@@ -213,6 +218,66 @@ function buildTooltipHTML(dayData) {
   `;
 }
 
+// ========== Detect and Update Zoom Level ==========
+
+function updateZoomLevel() {
+  // Primary method: device pixel ratio
+  let newZoomLevel = window.devicePixelRatio || 1;
+  
+  // Only update if zoom changed significantly (prevents minor fluctuations)
+  if (Math.abs(newZoomLevel - currentZoomLevel) > 0.05) {
+    // Store previous zoom level
+    const oldZoomLevel = currentZoomLevel;
+    currentZoomLevel = newZoomLevel;
+    
+    console.log(`Zoom level changed: ${oldZoomLevel.toFixed(2)} -> ${currentZoomLevel.toFixed(2)}`);
+    
+    // Update any visible tooltip
+    const tooltip = document.getElementById("tooltip");
+    if (tooltip && tooltip.style.opacity !== "0") {
+      updateTooltipSize(tooltip);
+    }
+  }
+}
+
+// Size tooltip according to zoom level
+function updateTooltipSize(tooltip) {
+  if (!tooltip) return;
+  
+  // Base sizes (100% zoom)
+  const baseFontSize = 0.85; // rem
+  const baseMinWidth = 120; // px
+  const baseMaxWidth = 200; // px
+  const basePaddingH = 12; // px
+  const basePaddingV = 8; // px
+  
+  // Only adjust if zoom is significantly different from 1.0
+  if (Math.abs(currentZoomLevel - 1.0) > 0.1) {
+    // Apply a more balanced adjustment factor
+    // Use square root to make the adjustment more moderate
+    let adjustedFactor;
+    if (currentZoomLevel > 1.0) {
+      // Zoomed in: make tooltip smaller, but not as much
+      adjustedFactor = 1.0 / Math.sqrt(currentZoomLevel);
+    } else {
+      // Zoomed out: make tooltip larger, but not as much
+      adjustedFactor = Math.sqrt(1.0 / currentZoomLevel);
+    }
+    
+    // Apply with minimums to prevent too-small tooltips
+    tooltip.style.fontSize = `${Math.max(0.7, baseFontSize * adjustedFactor)}rem`;
+    tooltip.style.minWidth = `${Math.max(100, baseMinWidth * adjustedFactor)}px`;
+    tooltip.style.maxWidth = `${Math.max(160, baseMaxWidth * adjustedFactor)}px`;
+    tooltip.style.padding = `${Math.max(6, basePaddingV * adjustedFactor)}px ${Math.max(8, basePaddingH * adjustedFactor)}px`;
+  } else {
+    // Near normal zoom - use default values
+    tooltip.style.fontSize = `${baseFontSize}rem`;
+    tooltip.style.minWidth = `${baseMinWidth}px`;
+    tooltip.style.maxWidth = `${baseMaxWidth}px`;
+    tooltip.style.padding = `${basePaddingV}px ${basePaddingH}px`;
+  }
+}
+
 // ========== Tooltip Show/Hide ==========
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
@@ -223,7 +288,10 @@ function showTooltip(event, dayData) {
   // Make the tooltip visible first so we can measure it
   tooltipDiv.style("opacity", 1);
   
-  // Measure the tooltip
+  // Apply zoom-responsive sizing
+  updateTooltipSize(tooltipDiv.node());
+  
+  // Measure the tooltip after zoom adjustments
   const tooltipNode = tooltipDiv.node();
   const tooltipWidth = tooltipNode.offsetWidth;
   const tooltipHeight = tooltipNode.offsetHeight;
@@ -284,6 +352,9 @@ function hideAllTooltips() {
   d3.select("#tooltip").style("opacity", 0).style("pointer-events", "none");
   d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
   d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
+  
+  // Remove any active overlay
+  removeTooltipOverlay();
 }
 
 // Update the existing hideTooltip function
@@ -308,6 +379,178 @@ async function fetchWorkoutDetails(year, month, day) {
   }
   
   return { duration: null };
+}
+
+// ========== Mobile Tooltip Overlay ==========
+let isProcessingTouch = false;
+
+// Create a transparent overlay that allows scrolling but captures taps
+function createTooltipOverlay() {
+  // Remove any existing overlay first
+  removeTooltipOverlay();
+  
+  const overlay = document.createElement("div");
+  overlay.id = "tooltip-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.right = "0";
+  overlay.style.bottom = "0";
+  overlay.style.zIndex = "9000";
+  overlay.style.background = "transparent";
+  
+  // This is crucial - we need to handle touch events but allow scrolling
+  overlay.style.touchAction = "auto"; 
+  
+  document.body.appendChild(overlay);
+  
+  // Listen for single taps on the overlay - use touchstart and touchend together
+  // to distinguish taps from scrolls
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  
+  // Track if this touch resulted in movement (scrolling)
+  let isTouching = false;
+  let isScrolling = false;
+  
+  // Touch start - record position but don't prevent default
+  overlay.addEventListener("touchstart", function(e) {
+    // Don't do anything if we're already processing a touch
+    if (isProcessingTouch) return;
+    
+    if (e.touches.length === 1) {
+      isTouching = true;
+      isScrolling = false;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    }
+  });
+  
+  // Touch move - detect if the user is scrolling
+  overlay.addEventListener("touchmove", function(e) {
+    if (!isTouching) return;
+    
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartX);
+    const deltaY = Math.abs(touch.clientY - touchStartY);
+    
+    // If significant movement, it's a scroll
+    if (deltaX > 10 || deltaY > 10) {
+      isScrolling = true;
+      
+      // For horizontal scrolls, immediately remove overlay to allow smooth scrolling
+      if (deltaX > deltaY && deltaX > 30) {
+        // It's a deliberate horizontal swipe - remove overlay to allow scrolling
+        // We're not preventing default to allow natural scrolling
+        removeTooltipOverlay();
+        hideAllTooltips();
+      }
+    }
+  });
+  
+  // Touch end - check if it was a tap or a scroll
+  overlay.addEventListener("touchend", function(e) {
+    if (!isTouching) return;
+    
+    // Prevent multiple fast taps from causing issues
+    isProcessingTouch = true;
+    setTimeout(() => { isProcessingTouch = false; }, 100);
+    
+    // If this was a scroll, just cleanup
+    if (isScrolling) {
+      isTouching = false;
+      return;
+    }
+    
+    // This was a tap - check what was tapped
+    const touchDuration = Date.now() - touchStartTime;
+    
+    // Only process quick taps (under 500ms)
+    if (touchDuration < 500) {
+      // Get the element that was tapped
+      const element = document.elementFromPoint(touchStartX, touchStartY);
+      
+      // If tapped on a tooltip, do nothing
+      if (element && element.closest("#tooltip")) {
+        isTouching = false;
+        return;
+      }
+      
+      // If tapped on a workout cell, let it handle the tap
+      if (element && isWorkoutCell(element)) {
+        // Clear current tooltip
+        hideAllTooltips();
+        
+        // Let the cell handle it (synthetic event)
+        const cellElement = element.closest(".cell-wrapper");
+        if (cellElement) {
+          // Dispatch a simulated touch event to the cell
+          setTimeout(() => {
+            // Find the data for this cell
+            const month = parseInt(cellElement.getAttribute("data-month"));
+            const dayText = cellElement.querySelector(".dayLabel").textContent;
+            const day = parseInt(dayText);
+            
+            if (yearData[currentYear] && 
+                yearData[currentYear][month] && 
+                yearData[currentYear][month][day-1]) {
+              
+              const cellData = yearData[currentYear][month][day-1];
+              
+              // Only proceed if this is actually a workout cell
+              if (cellData.muscles && cellData.muscles.length > 0) {
+                // Apply highlighting and create new tooltip
+                const rect = d3.select(cellElement).select("rect.cell-background");
+                rect.attr("stroke", "#333").attr("stroke-width", 2);
+                d3.select(cellElement).classed("active-tooltip-cell", true);
+                
+                // Create a synthetic event object with required properties
+                const syntheticEvent = {
+                  currentTarget: cellElement,
+                  pageX: touchStartX,
+                  pageY: touchStartY
+                };
+                
+                // Show tooltip for this cell
+                showTooltip(syntheticEvent, cellData);
+                
+                // Create new overlay
+                createTooltipOverlay();
+              }
+            }
+          }, 50);
+        }
+      } else {
+        // Tapped elsewhere - dismiss the tooltip
+        hideAllTooltips();
+      }
+    }
+    
+    isTouching = false;
+  });
+  
+  return overlay;
+}
+
+// Helper function to check if an element is a workout cell with data
+function isWorkoutCell(element) {
+  // Find the nearest cell wrapper
+  const cellWrapper = element.closest(".cell-wrapper");
+  if (!cellWrapper) return false;
+  
+  // Check if it has a background rect that's not an empty day
+  const rect = cellWrapper.querySelector("rect.cell-background");
+  return rect && rect.getAttribute("fill") !== "#ebedf0" && rect.getAttribute("fill") !== "none";
+}
+
+// Remove the overlay
+function removeTooltipOverlay() {
+  const overlay = document.getElementById("tooltip-overlay");
+  if (overlay) {
+    overlay.parentNode.removeChild(overlay);
+  }
 }
 
 // ========== Responsive Functions ==========
@@ -537,235 +780,49 @@ function addTooltipBehavior(cellSelection, dayData) {
 
   // Check for a coarse pointer (likely a touch device)
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // Variables to track touch behavior
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchStartTime = 0;
-    let isTouchMoving = false;
-    const MOVE_THRESHOLD = 10; // pixels of movement to consider it a scroll not a tap
-    const TIME_THRESHOLD = 20; // milliseconds to wait before considering it a deliberate tap
-    const HORIZONTAL_THRESHOLD = 30; // pixels of horizontal movement to consider it a deliberate swipe
-
-    // Touch start handler
-    cellSelection.on("touchstart", (event) => {
-      // Record starting position and time
-      const touch = event.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      touchStartTime = Date.now();
-      isTouchMoving = false;
-    });
-    
-    // Touch move handler
-    cellSelection.on("touchmove", (event) => {
-      const touch = event.touches[0];
-      const deltaX = Math.abs(touch.clientX - touchStartX);
-      const deltaY = Math.abs(touch.clientY - touchStartY);
+    // Simplified touch handling for mobile
+    cellSelection.on("touchend", async function(event) {
+      // Prevent double-firing of events
+      if (isProcessingTouch) return;
+      isProcessingTouch = true;
       
-      // If movement exceeds threshold, consider it a scroll
-      if (deltaX > MOVE_THRESHOLD || deltaY > MOVE_THRESHOLD) {
-        isTouchMoving = true;
-      }
-    });
-    
-    // Touch end handler
-    cellSelection.on("touchend", async (event) => {
-      const touchDuration = Date.now() - touchStartTime;
+      // Hide any existing tooltips first
+      hideAllTooltips();
       
-      // Only show tooltip if:
-      // 1. Touch wasn't moving (not scrolling)
-      // 2. Touch was long enough to be deliberate
-      if (!isTouchMoving && touchDuration > TIME_THRESHOLD) {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // Add duration information from the full workout JSON if available
-        if (!dayData.duration && dayData.day) {
-          try {
-            const year = currentYear;
-            const month = +cellSelection.attr("data-month") || 0;
-            const details = await fetchWorkoutDetails(year, month, dayData.day);
-            dayData.duration = details.duration;
-          } catch (err) {
-            console.error("Error fetching workout details:", err);
-          }
-        }
-        
-        // Check if we're clicking on the same cell or a new one
-        const isNewCell = !cellSelection.classed("active-tooltip-cell");
-        
-        // If there's already an active tooltip for another cell, update it for this cell
-        if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
-          // Hide previous cell highlight
-          d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
-          d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
-          
-          // Highlight the new cell
-          rect.attr("stroke", "#333").attr("stroke-width", 2);
-          cellSelection.classed("active-tooltip-cell", true);
-          
-          // Show the tooltip for this cell
-          showTooltip(event, dayData);
-          return;
-        }
-        
-        // If tooltip is not showing yet or this is the same cell again
-        if (isNewCell) {
-          // Hide any existing tooltip first (in case another one is open)
-          hideAllTooltips();
-          
-          // Highlight the selected cell
-          rect.attr("stroke", "#333").attr("stroke-width", 2);
-          
-          // Mark this cell as active
-          cellSelection.classed("active-tooltip-cell", true);
-          
-          // Show the tooltip
-          showTooltip(event, dayData);
-          
-          // Add a modified overlay to allow swipes and taps on workout cells
-          const overlay = document.getElementById("tooltip-overlay");
-          if (!overlay) {
-            const newOverlay = document.createElement("div");
-            newOverlay.id = "tooltip-overlay";
-            newOverlay.style.position = "fixed";
-            newOverlay.style.top = "0";
-            newOverlay.style.left = "0";
-            newOverlay.style.right = "0";
-            newOverlay.style.bottom = "0";
-            newOverlay.style.zIndex = "9000";
-            newOverlay.style.background = "transparent";
-            
-            // Allow pointer events to pass through
-            newOverlay.style.pointerEvents = "auto";
-            
-            document.body.appendChild(newOverlay);
-            
-            // Handle touch start on the overlay
-            newOverlay.addEventListener("touchstart", handleOverlayTouchStart);
-            newOverlay.addEventListener("touchmove", handleOverlayTouchMove);
-            newOverlay.addEventListener("touchend", handleOverlayTouchEnd);
-          }
+      // Highlight this cell
+      rect.attr("stroke", "#333").attr("stroke-width", 2);
+      cellSelection.classed("active-tooltip-cell", true);
+      
+      // Fetch workout details if needed
+      if (!dayData.duration && dayData.day) {
+        try {
+          const year = currentYear;
+          const month = +cellSelection.attr("data-month") || 0;
+          const details = await fetchWorkoutDetails(year, month, dayData.day);
+          dayData.duration = details.duration;
+        } catch (err) {
+          console.error("Error fetching workout details:", err);
         }
       }
       
-      // Tracking variables for overlay touch handling
-      let overlayTouchStartX = 0;
-      let overlayTouchStartY = 0;
-      let isOverlayTouchMoving = false;
+      // Show the tooltip
+      showTooltip(event, dayData);
       
-      function handleOverlayTouchStart(e) {
-        // Record starting position
-        if (e.touches.length > 0) {
-          overlayTouchStartX = e.touches[0].clientX;
-          overlayTouchStartY = e.touches[0].clientY;
-          isOverlayTouchMoving = false;
-        }
-        
-        // Check if the touch started on a workout cell
-        const targetIsWorkoutCell = isWorkoutCell(e.target);
-        
-        // If starting touch on a workout cell, don't prevent default
-        if (targetIsWorkoutCell) {
-          return; // Let the cell's touch events handle it
-        }
-        
-        // If it's the tooltip itself, don't prevent default
-        if (e.target.closest("#tooltip")) {
-          return;
-        }
-      }
+      // Create overlay to handle taps outside
+      createTooltipOverlay();
       
-      function handleOverlayTouchMove(e) {
-        if (e.touches.length > 0) {
-          const deltaX = Math.abs(e.touches[0].clientX - overlayTouchStartX);
-          const deltaY = Math.abs(e.touches[0].clientY - overlayTouchStartY);
-          
-          // If it's a significant horizontal movement, consider it a swipe
-          if (deltaX > HORIZONTAL_THRESHOLD && deltaX > deltaY * 1.5) {
-            isOverlayTouchMoving = true;
-            
-            // Remove the overlay to allow scrolling
-            cleanupOverlay();
-            hideAllTooltips();
-            
-            // Don't prevent default to allow the calendar to scroll
-            return;
-          }
-          
-          // If there's any significant movement, note it
-          if (deltaX > MOVE_THRESHOLD || deltaY > MOVE_THRESHOLD) {
-            isOverlayTouchMoving = true;
-          }
-        }
-      }
-      
-      function handleOverlayTouchEnd(e) {
-        // If it was a swipe, we've already cleaned up
-        if (isOverlayTouchMoving) {
-          return;
-        }
-        
-        // Get the element that was tapped
-        const tappedElement = document.elementFromPoint(
-          overlayTouchStartX, 
-          overlayTouchStartY
-        );
-        
-        // Check if the tap is on a workout cell
-        const targetIsWorkoutCell = isWorkoutCell(tappedElement);
-        
-        // If tapped on a cell with workout data, let that cell handle it
-        if (targetIsWorkoutCell) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // The cell's own touch handler will show its tooltip
-          // Just clean up the current overlay
-          cleanupOverlay();
-          return;
-        }
-        
-        // If tapped on the tooltip, do nothing
-        if (tappedElement.closest("#tooltip")) {
-          return;
-        }
-        
-        // Otherwise, this is a tap elsewhere - clean up
-        e.preventDefault();
-        e.stopPropagation();
-        hideAllTooltips();
-        cleanupOverlay();
-      }
-      
-      // Helper to check if an element is a workout cell with data
-      function isWorkoutCell(element) {
-        // Find the nearest cell wrapper
-        const cellWrapper = element.closest(".cell-wrapper");
-        if (!cellWrapper) return false;
-        
-        // Check if it has a background rect that's not an empty day
-        const rect = cellWrapper.querySelector("rect.cell-background");
-        return rect && rect.getAttribute("fill") !== "#ebedf0" && rect.getAttribute("fill") !== "none";
-      }
-      
-      // Helper to clean up overlay and event listeners
-      function cleanupOverlay() {
-        const overlay = document.getElementById("tooltip-overlay");
-        if (overlay) {
-          overlay.removeEventListener("touchstart", handleOverlayTouchStart);
-          overlay.removeEventListener("touchmove", handleOverlayTouchMove);
-          overlay.removeEventListener("touchend", handleOverlayTouchEnd);
-          document.body.removeChild(overlay);
-        }
-      }
+      // Reset processing flag after a short delay
+      setTimeout(() => {
+        isProcessingTouch = false;
+      }, 100);
     });
   } else {
-    // Desktop and fine pointer devices (unchanged)
+    // Desktop behavior
     cellSelection
       .on("pointerenter", (event) => {
         rect.attr("stroke", "#333").attr("stroke-width", 2);
         showTooltip(event, dayData);
+        updateZoomLevel(); // Check zoom level on tooltip show
       })
       .on("pointermove", (event) => {
         showTooltip(event, dayData);
@@ -974,7 +1031,7 @@ function updateWeeklyProgress() {
   updateStreakCounter();
 }
 
-// ========== Window Resize Handler ==========
+// ========== Window Resize and Zoom Handler ==========
 window.addEventListener('resize', function() {
   if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
   this.resizeTimeout = setTimeout(function() {
@@ -984,8 +1041,20 @@ window.addEventListener('resize', function() {
     
     const workoutCount = countCurrentWeekWorkouts();
     updateProgressBar(workoutCount);
+    updateZoomLevel();
   }, 200);
 });
+
+// Listen for zoom events
+window.addEventListener('resize', updateZoomLevel);
+
+// Add wheel event listener for desktop zoom detection
+window.addEventListener('wheel', function(e) {
+  // Only check if it's a zoom (Ctrl+wheel)
+  if (e.ctrlKey) {
+    setTimeout(updateZoomLevel, 100);
+  }
+}, { passive: true });
 
 // ========== Init on Page Load ==========
 (async function init() {
@@ -997,4 +1066,7 @@ window.addEventListener('resize', function() {
   renderLegend();
   adjustMonthDisplay();
   updateWeeklyProgress();
+  
+  // Set initial zoom level
+  updateZoomLevel();
 })();
