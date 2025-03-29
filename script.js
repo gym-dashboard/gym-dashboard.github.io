@@ -232,34 +232,25 @@ function showTooltip(event, dayData) {
   
   // For mobile touchscreen devices
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // Get the position of the tapped cell
-    const cell = event.currentTarget;
+    // For touchend event, event.touches will be empty
+    // In this case, we need to use the cell's position
+    const cell = event.currentTarget || event.target.closest('.cell-wrapper');
+    if (!cell) return;
+    
     const cellRect = cell.getBoundingClientRect();
     
     // Position tooltip centered below the cell
-    const targetRect = d3.select(cell).select("rect").node().getBoundingClientRect();
-    
-    // Account for visualViewport (crucial for zoom)
-    const visualViewport = window.visualViewport || {
-      offsetLeft: 0,
-      offsetTop: 0,
-      scale: 1
-    };
-    
-    // Calculate the absolute position considering zoom and scroll
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    // Center the tooltip under the cell
-    posX = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2);
-    posY = targetRect.bottom + 10;
+    posX = cellRect.left + (cellRect.width / 2) - (tooltipWidth / 2);
+    posY = cellRect.bottom + 10;
     
     // Add scroll offset to get page coordinates
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     posX += scrollLeft;
     posY += scrollTop;
     
     // Adjust for viewport boundaries
-    const viewportWidth = visualViewport.width || window.innerWidth;
+    const viewportWidth = window.innerWidth;
     if (posX < 0) posX = 10;
     if (posX + tooltipWidth > viewportWidth) posX = viewportWidth - tooltipWidth - 10;
   } else {
@@ -281,7 +272,7 @@ function showTooltip(event, dayData) {
     posY = posY + 10;
   }
   
-  // Apply final positioning without setting a fixed width
+  // Apply final positioning
   tooltipDiv
     .style("left", posX + "px")
     .style("top", posY + "px")
@@ -546,78 +537,117 @@ function addTooltipBehavior(cellSelection, dayData) {
 
   // Check for a coarse pointer (likely a touch device)
   if (window.matchMedia('(pointer: coarse)').matches) {
-    cellSelection.on("touchstart", async (event) => {
-      // Prevent default touch behavior that might interfere
-      event.preventDefault();
-      event.stopPropagation();
+    // Variables to track touch behavior
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isTouchMoving = false;
+    const MOVE_THRESHOLD = 10; // pixels of movement to consider it a scroll not a tap
+    const TIME_THRESHOLD = 200; // milliseconds to wait before considering it a deliberate tap
+
+    // Touch start handler
+    cellSelection.on("touchstart", (event) => {
+      // Don't prevent default here to allow scrolling
       
-      // Add duration information from the full workout JSON if available
-      if (!dayData.duration && dayData.day) {
-        try {
-          const year = currentYear;
-          const month = +cellSelection.attr("data-month") || 0;
-          const details = await fetchWorkoutDetails(year, month, dayData.day);
-          dayData.duration = details.duration;
-        } catch (err) {
-          console.error("Error fetching workout details:", err);
+      // Record starting position and time
+      const touch = event.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStartTime = Date.now();
+      isTouchMoving = false;
+    });
+    
+    // Touch move handler
+    cellSelection.on("touchmove", (event) => {
+      const touch = event.touches[0];
+      const deltaX = Math.abs(touch.clientX - touchStartX);
+      const deltaY = Math.abs(touch.clientY - touchStartY);
+      
+      // If movement exceeds threshold, consider it a scroll
+      if (deltaX > MOVE_THRESHOLD || deltaY > MOVE_THRESHOLD) {
+        isTouchMoving = true;
+      }
+    });
+    
+    // Touch end handler
+    cellSelection.on("touchend", async (event) => {
+      const touchDuration = Date.now() - touchStartTime;
+      
+      // Only show tooltip if:
+      // 1. Touch wasn't moving (not scrolling)
+      // 2. Touch was long enough to be deliberate
+      if (!isTouchMoving && touchDuration > TIME_THRESHOLD) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Add duration information from the full workout JSON if available
+        if (!dayData.duration && dayData.day) {
+          try {
+            const year = currentYear;
+            const month = +cellSelection.attr("data-month") || 0;
+            const details = await fetchWorkoutDetails(year, month, dayData.day);
+            dayData.duration = details.duration;
+          } catch (err) {
+            console.error("Error fetching workout details:", err);
+          }
         }
-      }
-      
-      // Check if we're clicking on the same cell or a new one
-      const isNewCell = !cellSelection.classed("active-tooltip-cell");
-      const overlay = document.getElementById("tooltip-overlay");
-      
-      // If there's already an active tooltip for another cell, update it for this cell
-      if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
-        // Hide previous cell highlight
-        d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
-        d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
         
-        // Highlight the new cell
-        rect.attr("stroke", "#333").attr("stroke-width", 2);
-        cellSelection.classed("active-tooltip-cell", true);
+        // Check if we're clicking on the same cell or a new one
+        const isNewCell = !cellSelection.classed("active-tooltip-cell");
         
-        // Show the tooltip for this cell
-        showTooltip(event, dayData);
-        return;
-      }
-      
-      // If tooltip is not showing yet or this is the same cell again
-      if (isNewCell) {
-        // Hide any existing tooltip first (in case another one is open)
-        hideAllTooltips();
-        
-        // Highlight the selected cell
-        rect.attr("stroke", "#333").attr("stroke-width", 2);
-        
-        // Mark this cell as active
-        cellSelection.classed("active-tooltip-cell", true);
-        
-        // Show the tooltip
-        showTooltip(event, dayData);
-        
-        // Add a semi-transparent overlay to make it clear the tooltip is modal
-        if (!overlay) {
-          const overlay = document.createElement("div");
-          overlay.id = "tooltip-overlay";
-          overlay.style.position = "fixed";
-          overlay.style.top = "0";
-          overlay.style.left = "0";
-          overlay.style.right = "0";
-          overlay.style.bottom = "0";
-          overlay.style.zIndex = "9000";
-          overlay.style.background = "transparent";
-          document.body.appendChild(overlay);
+        // If there's already an active tooltip for another cell, update it for this cell
+        if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
+          // Hide previous cell highlight
+          d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
+          d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
           
-          // Listen for taps on the overlay to dismiss
-          overlay.addEventListener("touchstart", handleOverlayTap);
+          // Highlight the new cell
+          rect.attr("stroke", "#333").attr("stroke-width", 2);
+          cellSelection.classed("active-tooltip-cell", true);
+          
+          // Show the tooltip for this cell
+          showTooltip(event, dayData);
+          return;
+        }
+        
+        // If tooltip is not showing yet or this is the same cell again
+        if (isNewCell) {
+          // Hide any existing tooltip first (in case another one is open)
+          hideAllTooltips();
+          
+          // Highlight the selected cell
+          rect.attr("stroke", "#333").attr("stroke-width", 2);
+          
+          // Mark this cell as active
+          cellSelection.classed("active-tooltip-cell", true);
+          
+          // Show the tooltip
+          showTooltip(event, dayData);
+          
+          // Add a semi-transparent overlay to make it clear the tooltip is modal
+          const overlay = document.getElementById("tooltip-overlay");
+          if (!overlay) {
+            const newOverlay = document.createElement("div");
+            newOverlay.id = "tooltip-overlay";
+            newOverlay.style.position = "fixed";
+            newOverlay.style.top = "0";
+            newOverlay.style.left = "0";
+            newOverlay.style.right = "0";
+            newOverlay.style.bottom = "0";
+            newOverlay.style.zIndex = "9000";
+            newOverlay.style.background = "transparent";
+            document.body.appendChild(newOverlay);
+            
+            // Listen for taps on the overlay to dismiss
+            newOverlay.addEventListener("touchstart", handleOverlayTap);
+          }
         }
       }
       
       function handleOverlayTap(e) {
         // Check if the tap is on another workout cell
         const targetIsCell = e.target.closest(".cell-wrapper") && 
-                             e.target.closest(".cell-wrapper").querySelector("rect.cell-background").getAttribute("fill") !== "#ebedf0";
+                           e.target.closest(".cell-wrapper").querySelector("rect.cell-background").getAttribute("fill") !== "#ebedf0";
         
         // If tapped on a cell, don't prevent the event - let it bubble to the cell's event handler
         if (targetIsCell) {
