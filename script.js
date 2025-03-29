@@ -199,11 +199,8 @@ function buildTooltipHTML(dayData) {
   // Always include the footer separator
   let footerContent = "";
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // For mobile, show duration and tap to close
-    footerContent = `
-      ${durationInfo ? `<div class="duration-value">${durationInfo}</div>` : ''}
-      <div class="tooltip-dismiss-hint">Tap outside to close</div>
-    `;
+    // For mobile, show duration only (removed tap to close message)
+    footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
   } else {
     // For desktop, only show duration if available
     footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
@@ -543,6 +540,7 @@ function drawYearCalendar(year) {
   }
 }
 
+// This is inside the touchstart event handler
 function addTooltipBehavior(cellSelection, dayData) {
   const rect = cellSelection.select("rect.cell-background");
 
@@ -617,9 +615,16 @@ function addTooltipBehavior(cellSelection, dayData) {
       }
       
       function handleOverlayTap(e) {
-        // Only respond if we tap outside the tooltip itself and not on another workout cell
-        const targetIsCell = e.target.closest(".cell-wrapper") && e.target.closest(".cell-wrapper").querySelector("rect.cell-background").getAttribute("fill") !== "#ebedf0";
+        // Check if the tap is on another workout cell
+        const targetIsCell = e.target.closest(".cell-wrapper") && 
+                             e.target.closest(".cell-wrapper").querySelector("rect.cell-background").getAttribute("fill") !== "#ebedf0";
         
+        // If tapped on a cell, don't prevent the event - let it bubble to the cell's event handler
+        if (targetIsCell) {
+          return;
+        }
+        
+        // If not on a tooltip or cell, close the tooltip
         if (!e.target.closest("#tooltip") && !targetIsCell) {
           e.preventDefault();
           e.stopPropagation();
@@ -637,7 +642,7 @@ function addTooltipBehavior(cellSelection, dayData) {
       }
     });
   } else {
-    // Desktop and fine pointer devices
+    // Desktop and fine pointer devices (unchanged)
     cellSelection
       .on("pointerenter", (event) => {
         rect.attr("stroke", "#333").attr("stroke-width", 2);
