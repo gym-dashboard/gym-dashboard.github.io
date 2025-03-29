@@ -14,12 +14,12 @@ const muscleDisplayNames = {
 };
 
 const muscleColors = {
-  "Chest": "rgba(113, 178, 136, 0.61)",
-  "Triceps": "rgba(136, 113, 178, 0.61)",
-  "Legs": "rgba(198, 83, 83, 0.61)",
-  "Shoulders": "rgba(178, 136, 113, 0.61)",
-  "Back": "rgba(178, 113, 140, 0.61)",
-  "Biceps": "rgba(113, 155, 178, 0.61)",
+  "Chest": "#c8ceee",
+  "Triceps": "#f9c5c7",
+  "Legs": "#f7e5b7",
+  "Shoulders": "#ffc697",
+  "Back": "#cbd3ad",
+  "Biceps": "#c6e2e7",
 };
 
 const monthNames = ["Jan","Feb","Mar","Apr","May","Jun",
@@ -62,14 +62,14 @@ yearSelect.addEventListener("change", () => {
       updateYearlyWorkoutCount(currentYear);
       renderLegend();
       adjustMonthDisplay();
-      updateWeeklyProgress(); // Update weekly progress after loading data
+      updateWeeklyProgress(); 
     });
   } else {
     drawYearCalendar(currentYear);
     updateYearlyWorkoutCount(currentYear);
     renderLegend();
     adjustMonthDisplay();
-    updateWeeklyProgress(); // Update weekly progress with existing data
+    updateWeeklyProgress();
   }
 });
 
@@ -85,64 +85,153 @@ function updateYearlyWorkoutCount(year) {
 }
 
 // ========== Load Data for a Given Year ==========
+// We'll collect not just muscle info but also a "volume" (set count) and a list of unique exercises.
 async function loadDataForYear(year) {
   yearData[year] = Array.from({ length: 12 }, () => []);
   workoutFiles[year] = [];
   let promises = [];
   let start = new Date(year, 0, 1);
   let end = new Date(year, 11, 31);
-  
+
   for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
     const currentDate = new Date(dt);
     const dd = String(currentDate.getDate()).padStart(2, "0");
     const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
     const yyyy = currentDate.getFullYear();
     const fileName = `data/${dd}-${mm}-${yyyy}.json`;
-    
+
     let monthIndex = currentDate.getMonth();
     let promise = d3.json(fileName)
       .then(json => {
-        if (json && json.workout) {
+        // Check if this file actually has a 'workout' array
+        if (json && Array.isArray(json.workout) && json.workout.length > 0) {
           workoutFiles[year].push(fileName);
-          if (json.overall_muscle_group && Array.isArray(json.overall_muscle_group)) {
-            const musclesList = json.overall_muscle_group.filter(mg => muscleGroups.includes(mg));
-            return { day: currentDate.getDate(), muscles: musclesList, volume: musclesList.length };
+
+          // We'll treat each exercise line as "1 set"
+          let totalSets = 0;
+          let exerciseSet = new Set();
+
+          // We'll also still track muscle volume if you need it
+          let volumeMap = {};
+          muscleGroups.forEach(mg => volumeMap[mg] = 0);
+
+          json.workout.forEach(entry => {
+            // 1) Treat each line as one set
+            totalSets += 1;
+
+            // 2) Gather muscle volume
+            const mg = entry["Muscle-Group"] || "Unknown";
+            if (muscleGroups.includes(mg)) {
+              const reps = +entry.Reps || 0;
+              const weight = parseFloat(entry.Weight) || 0;
+              volumeMap[mg] += (reps * weight);
+            }
+
+            // 3) Save the exercise name from "Exercise"
+            if (entry["Exercise"]) {
+              exerciseSet.add(entry["Exercise"]);
+            }
+          });
+
+          // Now decide which muscle(s) to color for that day
+          let musclesList = [];
+          if (Array.isArray(json.overall_muscle_group) && json.overall_muscle_group.length) {
+            musclesList = json.overall_muscle_group.filter(mg => muscleGroups.includes(mg));
           } else {
-            let volumeMap = {};
-            muscleGroups.forEach(mg => volumeMap[mg] = 0);
-            json.workout.forEach(entry => {
-              const mg = entry["Muscle-Group"] || "Unknown";
-              if (muscleGroups.includes(mg)) {
-                const reps = +entry.Reps || 0;
-                const weight = parseFloat(entry.Weight) || 0;
-                volumeMap[mg] += (reps * weight);
-              }
-            });
+            // fallback: pick single muscle with max volume
             let selectedMuscle = null;
-            let maxVolume = 0;
+            let maxVol = 0;
             muscleGroups.forEach(mg => {
-              if (volumeMap[mg] > maxVolume) {
-                maxVolume = volumeMap[mg];
+              if (volumeMap[mg] > maxVol) {
+                maxVol = volumeMap[mg];
                 selectedMuscle = mg;
               }
             });
-            return { day: currentDate.getDate(), muscles: selectedMuscle ? [selectedMuscle] : [], volume: maxVolume };
+            if (selectedMuscle) musclesList.push(selectedMuscle);
           }
-        } else {
-          return { day: currentDate.getDate(), muscles: [], volume: 0 };
+
+          return {
+            day: currentDate.getDate(),
+            muscles: musclesList,
+            // "volume" is the total sets. Just naming it "volume" for the tooltip
+            volume: totalSets,
+            // list of unique exercises from "Exercise" field
+            exercises: Array.from(exerciseSet),
+          };
         }
+        // If no workout or file not found => no data
+        return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [] };
       })
       .catch(err => {
-        return { day: currentDate.getDate(), muscles: [], volume: 0 };
+        // File not found or parse error => no data
+        return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [] };
       })
       .then(result => ({ month: monthIndex, result }));
+
     promises.push(promise);
   }
-  
+
   const results = await Promise.all(promises);
   results.forEach(({ month, result }) => {
     yearData[year][month][result.day - 1] = result;
   });
+}
+
+
+// ========== Tooltip Content Builder ==========
+function buildTooltipHTML(dayData) {
+  if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
+    return "No workout data";
+  }
+  // Format the list of exercises
+  const exerciseList = dayData.exercises
+    .map(ex => `• ${ex}`)
+    .join("<br>");
+  
+  return `
+    <strong>Volume:</strong> ${dayData.volume} Sets<br>
+    ${exerciseList}
+  `;
+}
+
+// ========== Tooltip Show/Hide ==========
+function showTooltip(event, dayData) {
+  const tooltipDiv = d3.select("#tooltip");
+  
+  // Build the HTML from dayData
+  tooltipDiv.html(buildTooltipHTML(dayData));
+
+  // Measure the tooltip
+  const tooltipNode = tooltipDiv.node();
+  const tooltipWidth = tooltipNode.offsetWidth;
+  
+  // Current pointer position
+  const mouseX = event.pageX;
+  const mouseY = event.pageY;
+  
+  // Decide if we have enough space on the right, else place it on the left
+  const spaceToRight = window.innerWidth - mouseX;
+  let newLeft;
+  if (spaceToRight < tooltipWidth + 20) {
+    // Not enough space on the right; go left
+    newLeft = (mouseX - tooltipWidth - 10) + "px";
+  } else {
+    // Enough space, place to the right
+    newLeft = (mouseX + 10) + "px";
+  }
+  
+  // Vertical placement (simple version)
+  const newTop = (mouseY + 10) + "px";
+
+  // Make the tooltip visible
+  tooltipDiv
+    .style("left", newLeft)
+    .style("top", newTop)
+    .style("opacity", 1);
+}
+
+function hideTooltip() {
+  d3.select("#tooltip").style("opacity", 0);
 }
 
 // ========== Responsive Functions ==========
@@ -150,25 +239,17 @@ async function loadDataForYear(year) {
 // Determine appropriate cell size based on screen width
 function calculateResponsiveCellSize() {
   const outerBoxWidth = document.getElementById('outerBox').clientWidth;
-  
-  // Calculate cell size based on available width
-  // We need to fit at least 7 cells horizontally (for days of the week)
-  // plus account for margins, padding and gaps
-  const minCellSize = 16; // Minimum usable cell size
-  const idealCellSize = 20; // Original designed cell size
-  
-  // Account for margins and padding (approx 40px from margins and padding)
-  const availableWidth = outerBoxWidth - 40;
+  const minCellSize = 16;
+  const idealCellSize = 20;
   const cellGap = 4;
   
-  // Calculate how much space 7 cells would take with gaps
+  // Account for margins/padding
+  const availableWidth = outerBoxWidth - 40;
   const cellsWithGapsWidth = (7 * idealCellSize) + (6 * cellGap);
   
-  // If we have enough space, use the ideal size
   if (availableWidth >= cellsWithGapsWidth) {
     return idealCellSize;
   } else {
-    // Calculate a cell size that would fit
     const calculatedSize = Math.floor((availableWidth - (6 * cellGap)) / 7);
     return Math.max(calculatedSize, minCellSize);
   }
@@ -182,47 +263,36 @@ function adjustMonthDisplay() {
   
   if (monthBlocks.length === 0) return;
   
-  // Determine how many months to show based on screen width
   let targetMonthsVisible;
   if (containerWidth < 480) {
-    // For very small screens (phones), show only 2 months
     targetMonthsVisible = Math.min(2, monthBlocks.length);
   } else {
-    // For larger screens, show up to 3 months
     targetMonthsVisible = Math.min(3, monthBlocks.length);
   }
   
-  // Calculate the ideal width for each month
-  // Subtract margins between months (5px × (targetMonthsVisible-1))
   const idealMonthWidth = Math.floor((containerWidth - (5 * (targetMonthsVisible - 1))) / targetMonthsVisible);
-  
-  // Apply the calculated width to each month-block's SVG
   monthBlocks.forEach(block => {
     const svg = block.querySelector('svg');
     if (svg) {
       svg.setAttribute('width', idealMonthWidth);
-      // Need to maintain aspect ratio
       const viewBox = svg.getAttribute('viewBox').split(' ');
       const aspectRatio = parseFloat(viewBox[3]) / parseFloat(viewBox[2]);
       svg.setAttribute('height', Math.floor(idealMonthWidth * aspectRatio));
     }
   });
   
-  // Update the scroll position to show current month
   const now = new Date();
   let currentMonth = now.getMonth();
-  let updatedMonthBlockWidth = idealMonthWidth + 5; // Width + margin
-  const desiredScroll = (currentMonth * updatedMonthBlockWidth) - 
-                        (containerWidth - updatedMonthBlockWidth);
-                        
+  let updatedMonthBlockWidth = idealMonthWidth + 5;
+  const desiredScroll = (currentMonth * updatedMonthBlockWidth)
+                      - (containerWidth - updatedMonthBlockWidth);
   chartContainer.scrollLeft = Math.max(0, desiredScroll);
 }
 
-// ========== Draw Year Calendar: Render 12 Months Horizontally ==========
+// ========== Draw Year Calendar ==========
 function drawYearCalendar(year) {
   chartContainer.innerHTML = "";
   
-  // Define dimensions for each month based on screen size
   const cellSize = calculateResponsiveCellSize(),
         cellGap = 4,
         cols = 7,
@@ -233,12 +303,8 @@ function drawYearCalendar(year) {
   const monthChartWidth = gridWidth + margin.left + margin.right;
   const monthChartHeight = gridHeight + margin.top + margin.bottom;
   
-  // Utility function to generate gradient IDs based on muscle groups
-  const getGradientId = (muscles) => {
-    return `gradient-${muscles.join('-')}`;
-  };
-  
-  // Loop through all 12 months
+  const getGradientId = (muscles) => `gradient-${muscles.join('-')}`;
+
   for (let m = 0; m < 12; m++) {
     const monthDiv = document.createElement("div");
     monthDiv.className = "month-block";
@@ -249,10 +315,9 @@ function drawYearCalendar(year) {
       .attr("viewBox", `0 0 ${monthChartWidth} ${monthChartHeight}`)
       .attr("preserveAspectRatio", "xMinYMin meet");
 
-    // Create defs for gradients
     const defs = svg.append("defs");
 
-    // Month label (3-letter code) above the weekday row
+    // Month label
     svg.append("text")
       .attr("x", margin.left + gridWidth/2)
       .attr("y", margin.top - 25)
@@ -273,38 +338,35 @@ function drawYearCalendar(year) {
         .attr("fill", "#333")
         .text(d => d);
 
-    // Determine number of days and starting weekday
     const numDays = new Date(year, m + 1, 0).getDate();
     const firstDay = new Date(year, m, 1).getDay();
     let cells = [];
     for (let i = 0; i < 35; i++) {
       let dayNumber = i - firstDay + 1;
       if (dayNumber >= 1 && dayNumber <= numDays) {
-        let dayData = (yearData[year] && yearData[year][m]) ? yearData[year][m][dayNumber - 1] : { day: dayNumber, muscles: [] };
+        let dayData = (yearData[year] && yearData[year][m])
+          ? yearData[year][m][dayNumber - 1]
+          : { day: dayNumber, muscles: [], volume: 0, exercises: [] };
         cells.push({ ...dayData, day: dayNumber });
       } else {
         cells.push(null);
       }
     }
     
-    // Create all needed gradients for this month
+    // Create color gradients for multi-muscle squares
     const colorScale = d3.scaleOrdinal()
       .domain(muscleGroups)
       .range(muscleGroups.map(mg => muscleColors[mg]));
     
-    // Find all unique muscle group combinations for this month
     const uniqueCombinations = new Set();
     cells.forEach(cell => {
       if (cell && cell.muscles && cell.muscles.length > 1) {
         uniqueCombinations.add(cell.muscles.join('-'));
       }
     });
-    
-    // Create gradient definitions for each unique combination
     uniqueCombinations.forEach(combo => {
       const muscles = combo.split('-');
       const gradientId = getGradientId(muscles);
-      
       const gradient = defs.append("linearGradient")
         .attr("id", gradientId)
         .attr("x1", "0%")
@@ -312,99 +374,34 @@ function drawYearCalendar(year) {
         .attr("x2", "0%")
         .attr("y2", "100%");
       
-      // Add color stops based on number of muscles with custom transitions
+      // We only handle up to 3 distinct muscles for the gradient
       if (muscles.length === 2) {
-        // First color solid from 0% to 45%
-        gradient.append("stop")
-          .attr("offset", "0%")
-          .attr("stop-color", colorScale(muscles[0]));
-        
-        gradient.append("stop")
-          .attr("offset", "45%")
-          .attr("stop-color", colorScale(muscles[0]));
-        
-        // Smooth transition happens automatically between 45% and 55%
-        
-        // Second color solid from 55% to 100%
-        gradient.append("stop")
-          .attr("offset", "55%")
-          .attr("stop-color", colorScale(muscles[1]));
-        
-        gradient.append("stop")
-          .attr("offset", "100%")
-          .attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "45%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "55%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[1]));
       } else if (muscles.length === 3) {
-        // For 3 muscles, use a similar approach with three regions
-        
-        // First color solid from 0% to 30%
-        gradient.append("stop")
-          .attr("offset", "0%")
-          .attr("stop-color", colorScale(muscles[0]));
-        
-        gradient.append("stop")
-          .attr("offset", "30%")
-          .attr("stop-color", colorScale(muscles[0]));
-        
-        // Smooth transition from 30% to 35%
-        
-        // Second color solid from 35% to 65%
-        gradient.append("stop")
-          .attr("offset", "35%")
-          .attr("stop-color", colorScale(muscles[1]));
-        
-        gradient.append("stop")
-          .attr("offset", "65%")
-          .attr("stop-color", colorScale(muscles[1]));
-        
-        // Smooth transition from 65% to 70%
-        
-        // Third color solid from 70% to 100%
-        gradient.append("stop")
-          .attr("offset", "70%")
-          .attr("stop-color", colorScale(muscles[2]));
-        
-        gradient.append("stop")
-          .attr("offset", "100%")
-          .attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
       } else if (muscles.length > 3) {
-        // For more than 3 muscles, just use the first 3
-        
-        // First color solid from 0% to 30%
-        gradient.append("stop")
-          .attr("offset", "0%")
-          .attr("stop-color", colorScale(muscles[0]));
-        
-        gradient.append("stop")
-          .attr("offset", "30%")
-          .attr("stop-color", colorScale(muscles[0]));
-        
-        // Smooth transition from 30% to 35%
-        
-        // Second color solid from 35% to 65%
-        gradient.append("stop")
-          .attr("offset", "35%")
-          .attr("stop-color", colorScale(muscles[1]));
-        
-        gradient.append("stop")
-          .attr("offset", "65%")
-          .attr("stop-color", colorScale(muscles[1]));
-        
-        // Smooth transition from 65% to 70%
-        
-        // Third color solid from 70% to 100%
-        gradient.append("stop")
-          .attr("offset", "70%")
-          .attr("stop-color", colorScale(muscles[2]));
-        
-        gradient.append("stop")
-          .attr("offset", "100%")
-          .attr("stop-color", colorScale(muscles[2]));
+        // just use the first 3
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
       }
     });
     
     const cellsGroup = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
     
+    // Draw each day cell
     cellsGroup.selectAll("g.cell-wrapper")
       .data(cells)
       .join("g")
@@ -415,9 +412,9 @@ function drawYearCalendar(year) {
           return `translate(${x}, ${y})`;
         })
         .each(function(d) {
-          const cell = d3.select(this);
+          if (!d) return;
           
-          // Add background rectangle
+          const cell = d3.select(this);
           cell.append("rect")
             .attr("class", "cell-background")
             .attr("width", cellSize)
@@ -426,35 +423,53 @@ function drawYearCalendar(year) {
             .attr("ry", 3)
             .attr("stroke", "#ddd")
             .attr("stroke-width", 1)
-            .attr("fill", function(d) {
-              if (d && d.day) {
-                const cellDate = new Date(year, m, d.day);
-                const now = new Date();
-                // Future dates: no fill, only outline
-                if (cellDate > now) return "none";
-                // No workout
-                if (!d.muscles || d.muscles.length === 0) return "#ebedf0";
-                // Single muscle group
-                if (d.muscles.length === 1) return colorScale(d.muscles[0]);
-                // Multiple muscle groups - use gradient
-                return `url(#${getGradientId(d.muscles)})`;
+            .attr("fill", () => {
+              const cellDate = new Date(year, m, d.day);
+              const now = new Date();
+              if (cellDate > now) return "none"; // future date
+              if (!d.muscles || d.muscles.length === 0) return "#ebedf0"; // no workout
+              if (d.muscles.length === 1) {
+                return colorScale(d.muscles[0]);
               }
-              return "none";
+              return `url(#${getGradientId(d.muscles)})`;
             });
           
-          // Add day number text
+          // Day label
           cell.append("text")
             .attr("class", "dayLabel")
             .attr("x", 2)
             .attr("y", 12)
             .attr("font-size", "10px")
             .attr("fill", "#333")
-            .text(d => d && d.day ? d.day : "");
+            .text(d.day);
+
+          // Add pointer events for all devices (pointerenter/move/leave)
+          if (d.muscles && d.muscles.length > 0) {
+            addTooltipBehavior(cell, d);
+          }
         });
     
     monthDiv.appendChild(svg.node());
     chartContainer.appendChild(monthDiv);
   }
+}
+
+function addTooltipBehavior(cellSelection, dayData) {
+  const rect = cellSelection.select("rect.cell-background");
+
+  // Single approach using pointer events for all devices:
+  cellSelection
+    .on("pointerenter", (event) => {
+      rect.attr("stroke", "#333").attr("stroke-width", 2);
+      showTooltip(event, dayData);
+    })
+    .on("pointermove", (event) => {
+      showTooltip(event, dayData);
+    })
+    .on("pointerleave", () => {
+      rect.attr("stroke", "#ddd").attr("stroke-width", 1);
+      hideTooltip();
+    });
 }
 
 // ========== Render Legend ==========
@@ -465,7 +480,6 @@ function renderLegend() {
     .domain(muscleGroups)
     .range(muscleGroups.map(mg => muscleColors[mg]));
   
-  // Add single muscle group items
   muscleGroups.forEach(mg => {
     const item = document.createElement("div");
     item.classList.add("legend-item");
@@ -482,75 +496,54 @@ function renderLegend() {
 
 // ========== Weekly Progress Bar Functions ==========
 
-// Get the start and end dates of the current week (Sunday-Saturday)
 function getCurrentWeekDateRange() {
   const now = new Date();
-  const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
-  
-  // Calculate start of week (Sunday)
+  const currentDay = now.getDay(); 
   const startDate = new Date(now);
   startDate.setDate(now.getDate() - currentDay);
-  
-  // Calculate end of week (Saturday)
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 6);
-  
   return { startDate, endDate };
 }
 
-// Format a date as MM/DD
 function formatShortDate(date) {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-// Update the date range display with responsive formatting
 function updateWeekDateRangeDisplay() {
   const { startDate, endDate } = getCurrentWeekDateRange();
   const dateRangeElem = document.getElementById('weekDateRange');
   const titlePrefix = document.querySelector('.weekly-title-prefix');
   
-  if (dateRangeElem) {
-    // Check if week spans two different months
-    const startMonth = startDate.getMonth();
-    const endMonth = endDate.getMonth();
-    const isSameMonth = startMonth === endMonth;
-    
-    // Adjust title prefix based on screen size
-    if (window.innerWidth <= 767) {
-      // Mobile: shorter prefix
-      titlePrefix.textContent = "";
+  if (!dateRangeElem) return;
+  
+  const startMonth = startDate.getMonth();
+  const endMonth = endDate.getMonth();
+  const isSameMonth = startMonth === endMonth;
+
+  if (window.innerWidth <= 767) {
+    titlePrefix.textContent = "";
+    if (isSameMonth) {
+      const monthName = monthNames[startMonth];
+      dateRangeElem.textContent = `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
     } else {
-      // Desktop: can use longer prefix
-      titlePrefix.textContent = "Current Week:";
+      const startMonthName = monthNames[startMonth];
+      const endMonthName = monthNames[endMonth];
+      dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
     }
-    
-    // Check screen width to determine date format
-    if (window.innerWidth <= 767) {
-      if (isSameMonth) {
-        // Same month: "Mar 23-29"
-        const monthName = monthNames[startMonth];
-        dateRangeElem.textContent = `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
-      } else {
-        // Different months: "Mar 30-Apr 5"
-        const startMonthName = monthNames[startMonth];
-        const endMonthName = monthNames[endMonth];
-        dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
-      }
+  } else {
+    titlePrefix.textContent = "Current Week:";
+    if (isSameMonth) {
+      const monthName = monthNames[startMonth];
+      dateRangeElem.textContent = `${monthName} ${startDate.getDate()} - ${endDate.getDate()}`;
     } else {
-      // Desktop format with month names
-      if (isSameMonth) {
-        const monthName = monthNames[startMonth];
-        dateRangeElem.textContent = `${monthName} ${startDate.getDate()} - ${endDate.getDate()}`;
-      } else {
-        const startMonthName = monthNames[startMonth];
-        const endMonthName = monthNames[endMonth];
-        dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
-      }
+      const startMonthName = monthNames[startMonth];
+      const endMonthName = monthNames[endMonth];
+      dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
     }
   }
 }
 
-// Format date range string for mobile view
 function getFormattedDateRangeForMobile() {
   const { startDate, endDate } = getCurrentWeekDateRange();
   const startMonth = startDate.getMonth();
@@ -558,34 +551,27 @@ function getFormattedDateRangeForMobile() {
   const isSameMonth = startMonth === endMonth;
   
   if (isSameMonth) {
-    // Same month: "Mar 23-29"
     const monthName = monthNames[startMonth];
     return `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
   } else {
-    // Different months: "Mar 30-Apr 5"
     const startMonthName = monthNames[startMonth];
     const endMonthName = monthNames[endMonth];
     return `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
   }
 }
 
-// Count workouts in the current week
 function countCurrentWeekWorkouts() {
   const { startDate, endDate } = getCurrentWeekDateRange();
   let count = 0;
   
-  // Only proceed if we have data for the current year
   if (!yearData[currentYear]) return 0;
   
-  // Loop through each day in the current week
   for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
     const month = day.getMonth();
-    const dayOfMonth = day.getDate() - 1; // Adjust to 0-based index
-    
-    // Check if the day has workout data
-    if (yearData[currentYear][month] && 
-        yearData[currentYear][month][dayOfMonth] && 
-        yearData[currentYear][month][dayOfMonth].muscles && 
+    const dayOfMonth = day.getDate() - 1;
+    if (yearData[currentYear][month] &&
+        yearData[currentYear][month][dayOfMonth] &&
+        yearData[currentYear][month][dayOfMonth].muscles &&
         yearData[currentYear][month][dayOfMonth].muscles.length > 0) {
       count++;
     }
@@ -594,93 +580,67 @@ function countCurrentWeekWorkouts() {
   return count;
 }
 
-// Check if the previous week was completed (had 4 workouts)
 function checkPreviousWeekCompleted() {
   const { startDate } = getCurrentWeekDateRange();
   
-  // Get previous week's end date (Saturday)
   const prevWeekEnd = new Date(startDate);
   prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
   
-  // Get previous week's start date (Sunday)
   const prevWeekStart = new Date(prevWeekEnd);
   prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
   
   let count = 0;
-  
-  // Only proceed if we have data for the year
   if (!yearData[currentYear]) return false;
   
-  // Loop through each day in the previous week
   for (let day = new Date(prevWeekStart); day <= prevWeekEnd; day.setDate(day.getDate() + 1)) {
     const month = day.getMonth();
-    const dayOfMonth = day.getDate() - 1; // Adjust to 0-based index
-    
-    // Check if the day has workout data
-    if (yearData[currentYear][month] && 
-        yearData[currentYear][month][dayOfMonth] && 
-        yearData[currentYear][month][dayOfMonth].muscles && 
+    const dayOfMonth = day.getDate() - 1;
+    if (yearData[currentYear][month] &&
+        yearData[currentYear][month][dayOfMonth] &&
+        yearData[currentYear][month][dayOfMonth].muscles &&
         yearData[currentYear][month][dayOfMonth].muscles.length > 0) {
       count++;
     }
   }
   
-  // Week is completed if there were at least 4 workouts
   return count >= 4;
 }
 
-// Update streak counter
 function updateStreakCounter() {
-  // Format of the key: YYYY-MM-DD
   const startDate = getCurrentWeekDateRange().startDate;
   const weekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
   
-  // Check if we already processed this week
   if (weeklyData.lastCompletedWeek === weekKey) {
-    return; // Already processed this week
+    return;
   }
   
-  // Check if previous week was completed
   const prevWeekCompleted = checkPreviousWeekCompleted();
-  
-  // Reset streak if previous week wasn't completed
   if (!prevWeekCompleted) {
     weeklyData.weekStreakCount = 0;
   }
   
-  // Check if current week is completed
   const currentWeekCompleted = weeklyData.currentWeekWorkouts >= 4;
-  
-  // Update streak if current week is completed
   if (currentWeekCompleted) {
     weeklyData.weekStreakCount++;
     weeklyData.lastCompletedWeek = weekKey;
   }
   
-  // Update the streak display
   const streakIndicator = document.getElementById('streakIndicator');
   if (streakIndicator) {
-    if (weeklyData.weekStreakCount > 0) {
-      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
-      streakIndicator.classList.add('active');
-      if (weeklyData.weekStreakCount > 1) {
-        streakIndicator.textContent += 's';
-      }
-    } else {
-      streakIndicator.textContent = '';
-      streakIndicator.classList.remove('active');
+    streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
+    streakIndicator.classList.add('active');
+    if (weeklyData.weekStreakCount > 1) {
+      streakIndicator.textContent += 's';
     }
   }
 }
 
-// Update progress bar segments based on workout count
 function updateProgressBar(workoutCount) {
   const segments = document.querySelectorAll('.segment');
   const progressText = document.getElementById('progressText');
   
   if (!segments.length || !progressText) return;
   
-  // Update each segment
   segments.forEach((segment, index) => {
     if (index < workoutCount) {
       segment.classList.add('filled');
@@ -689,7 +649,6 @@ function updateProgressBar(workoutCount) {
     }
   });
   
-  // Update text with date range for mobile
   if (window.innerWidth <= 767) {
     const dateRange = getFormattedDateRangeForMobile();
     progressText.textContent = `${workoutCount}/4 workouts (${dateRange})`;
@@ -697,33 +656,27 @@ function updateProgressBar(workoutCount) {
     progressText.textContent = `${workoutCount}/4 Workouts This Week`;
   }
   
-  // Update streak if we've reached the goal
   if (workoutCount >= 4) {
     updateStreakCounter();
   }
 }
 
-// Main function to update weekly progress
 function updateWeeklyProgress() {
   updateWeekDateRangeDisplay();
-  
   const workoutCount = countCurrentWeekWorkouts();
   weeklyData.currentWeekWorkouts = workoutCount;
-  
   updateProgressBar(workoutCount);
   updateStreakCounter();
 }
 
 // ========== Window Resize Handler ==========
 window.addEventListener('resize', function() {
-  // Add a small delay to avoid too many redraws during resizing
   if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
   this.resizeTimeout = setTimeout(function() {
     drawYearCalendar(currentYear);
-    adjustMonthDisplay(); // Add adjustment after redrawing
-    updateWeekDateRangeDisplay(); // Update date format based on screen size
+    adjustMonthDisplay();
+    updateWeekDateRangeDisplay();
     
-    // Also update progress text for mobile/desktop format
     const workoutCount = countCurrentWeekWorkouts();
     updateProgressBar(workoutCount);
   }, 200);
@@ -738,5 +691,5 @@ window.addEventListener('resize', function() {
   updateYearlyWorkoutCount(currentYear);
   renderLegend();
   adjustMonthDisplay();
-  updateWeeklyProgress(); // Initialize weekly progress bar
+  updateWeeklyProgress();
 })();
