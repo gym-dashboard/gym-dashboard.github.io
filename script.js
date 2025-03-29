@@ -198,37 +198,35 @@ function buildTooltipHTML(dayData) {
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
   
-  // Build the HTML from dayData
+  // Build tooltip content
   tooltipDiv.html(buildTooltipHTML(dayData));
-
-  // Measure the tooltip
   const tooltipNode = tooltipDiv.node();
   const tooltipWidth = tooltipNode.offsetWidth;
   
-  // Current pointer position
-  const mouseX = event.pageX;
-  const mouseY = event.pageY;
+  // Use clientX/Y adjusted with page offsets to account for zoom and scroll
+  const mouseX = event.clientX + window.pageXOffset;
+  const mouseY = event.clientY + window.pageYOffset;
   
-  // Decide if we have enough space on the right, else place it on the left
-  const spaceToRight = window.innerWidth - mouseX;
+  // Use document's client width for positioning calculations
+  const viewportWidth = document.documentElement.clientWidth;
+  
   let newLeft;
-  if (spaceToRight < tooltipWidth + 20) {
-    // Not enough space on the right; go left
+  if (viewportWidth - event.clientX < tooltipWidth + 20) {
+    // Not enough space on the right; position tooltip on the left
     newLeft = (mouseX - tooltipWidth - 10) + "px";
   } else {
-    // Enough space, place to the right
+    // Enough space; position tooltip to the right
     newLeft = (mouseX + 10) + "px";
   }
   
-  // Vertical placement (simple version)
   const newTop = (mouseY + 10) + "px";
-
-  // Make the tooltip visible
+  
   tooltipDiv
     .style("left", newLeft)
     .style("top", newTop)
     .style("opacity", 1);
 }
+
 
 function hideTooltip() {
   d3.select("#tooltip").style("opacity", 0);
@@ -457,20 +455,41 @@ function drawYearCalendar(year) {
 function addTooltipBehavior(cellSelection, dayData) {
   const rect = cellSelection.select("rect.cell-background");
 
-  // Single approach using pointer events for all devices:
-  cellSelection
-    .on("pointerenter", (event) => {
+  // Check for a coarse pointer (likely a touch device)
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    cellSelection.on("touchstart", (event) => {
+      // Prevent the touchstart from propagating to avoid immediate dismissal.
+      event.stopPropagation();
       rect.attr("stroke", "#333").attr("stroke-width", 2);
       showTooltip(event, dayData);
-    })
-    .on("pointermove", (event) => {
-      showTooltip(event, dayData);
-    })
-    .on("pointerleave", () => {
-      rect.attr("stroke", "#ddd").attr("stroke-width", 1);
-      hideTooltip();
+
+      // Attach a one-time listener to hide the tooltip when tapping outside.
+      document.addEventListener("touchstart", function hideOnOutsideTouch(e) {
+        // If the touch is outside the cell and tooltip, hide the tooltip.
+        if (!e.target.closest(".cell-wrapper") && !e.target.closest("#tooltip")) {
+          rect.attr("stroke", "#ddd").attr("stroke-width", 1);
+          hideTooltip();
+          document.removeEventListener("touchstart", hideOnOutsideTouch);
+        }
+      });
     });
+  } else {
+    // Desktop and fine pointer devices
+    cellSelection
+      .on("pointerenter", (event) => {
+        rect.attr("stroke", "#333").attr("stroke-width", 2);
+        showTooltip(event, dayData);
+      })
+      .on("pointermove", (event) => {
+        showTooltip(event, dayData);
+      })
+      .on("pointerleave", () => {
+        rect.attr("stroke", "#ddd").attr("stroke-width", 1);
+        hideTooltip();
+      });
+  }
 }
+
 
 // ========== Render Legend ==========
 function renderLegend() {
