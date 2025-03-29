@@ -157,14 +157,16 @@ async function loadDataForYear(year) {
             volume: totalSets,
             // list of unique exercises from "Exercise" field
             exercises: Array.from(exerciseSet),
+            // Add duration if available
+            duration: json.total_time || null
           };
         }
         // If no workout or file not found => no data
-        return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [] };
+        return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [], duration: null };
       })
       .catch(err => {
         // File not found or parse error => no data
-        return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [] };
+        return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [], duration: null };
       })
       .then(result => ({ month: monthIndex, result }));
 
@@ -177,20 +179,40 @@ async function loadDataForYear(year) {
   });
 }
 
-
 // ========== Tooltip Content Builder ==========
 function buildTooltipHTML(dayData) {
   if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
     return "No workout data";
   }
-  // Format the list of exercises
+  
+  // Format the list of exercises with no-wrap to prevent inconsistent line breaks
   const exerciseList = dayData.exercises
-    .map(ex => `• ${ex}`)
+    .map(ex => `• <span class="exercise-name">${ex}</span>`)
     .join("<br>");
+  
+  // Add duration information if available
+  let durationInfo = "";
+  if (dayData.duration && dayData.duration !== "NaN") {
+    durationInfo = dayData.duration;
+  }
+  
+  // Always include the footer separator
+  let footerContent = "";
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    // For mobile, show duration and tap to close
+    footerContent = `
+      ${durationInfo ? `<div class="duration-value">${durationInfo}</div>` : ''}
+      <div class="tooltip-dismiss-hint">Tap outside to close</div>
+    `;
+  } else {
+    // For desktop, only show duration if available
+    footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
+  }
   
   return `
     <strong>Volume:</strong> ${dayData.volume} Sets<br>
     ${exerciseList}
+    <div class="tooltip-footer">${footerContent}</div>
   `;
 }
 
@@ -198,14 +220,8 @@ function buildTooltipHTML(dayData) {
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
   
-  // Add a dismiss hint for mobile
-  let tooltipContent = buildTooltipHTML(dayData);
-  if (window.matchMedia('(pointer: coarse)').matches) {
-    tooltipContent += '<div class="tooltip-dismiss-hint">Tap outside to close</div>';
-  }
-  
   // Build the HTML content
-  tooltipDiv.html(tooltipContent);
+  tooltipDiv.html(buildTooltipHTML(dayData));
 
   // Make the tooltip visible first so we can measure it
   tooltipDiv.style("opacity", 1);
@@ -268,7 +284,7 @@ function showTooltip(event, dayData) {
     posY = posY + 10;
   }
   
-  // Apply final positioning
+  // Apply final positioning without setting a fixed width
   tooltipDiv
     .style("left", posX + "px")
     .style("top", posY + "px")
@@ -278,11 +294,32 @@ function showTooltip(event, dayData) {
 // Add a helper function to ensure all tooltips are closed
 function hideAllTooltips() {
   d3.select("#tooltip").style("opacity", 0).style("pointer-events", "none");
+  d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
+  d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
 }
 
 // Update the existing hideTooltip function
 function hideTooltip() {
   hideAllTooltips();
+}
+
+// Add this function to fetch workout details including duration
+async function fetchWorkoutDetails(year, month, day) {
+  const dd = String(day).padStart(2, "0");
+  const mm = String(month + 1).padStart(2, "0");
+  const yyyy = year;
+  const fileName = `data/${dd}-${mm}-${yyyy}.json`;
+  
+  try {
+    const json = await d3.json(fileName);
+    if (json && json.total_time) {
+      return { duration: json.total_time };
+    }
+  } catch (err) {
+    console.error("Error fetching workout details:", err);
+  }
+  
+  return { duration: null };
 }
 
 // ========== Responsive Functions ==========
@@ -397,7 +434,7 @@ function drawYearCalendar(year) {
       if (dayNumber >= 1 && dayNumber <= numDays) {
         let dayData = (yearData[year] && yearData[year][m])
           ? yearData[year][m][dayNumber - 1]
-          : { day: dayNumber, muscles: [], volume: 0, exercises: [] };
+          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
         cells.push({ ...dayData, day: dayNumber });
       } else {
         cells.push(null);
@@ -457,6 +494,7 @@ function drawYearCalendar(year) {
       .data(cells)
       .join("g")
         .attr("class", "cell-wrapper")
+        .attr("data-month", m)
         .attr("transform", (d, i) => {
           const x = (i % cols) * (cellSize + cellGap);
           const y = Math.floor(i / cols) * (cellSize + cellGap);
@@ -510,51 +548,84 @@ function addTooltipBehavior(cellSelection, dayData) {
 
   // Check for a coarse pointer (likely a touch device)
   if (window.matchMedia('(pointer: coarse)').matches) {
-    cellSelection.on("touchstart", (event) => {
+    cellSelection.on("touchstart", async (event) => {
       // Prevent default touch behavior that might interfere
       event.preventDefault();
       event.stopPropagation();
       
-      // Hide any existing tooltip first (in case another one is open)
-      hideAllTooltips();
+      // Add duration information from the full workout JSON if available
+      if (!dayData.duration && dayData.day) {
+        try {
+          const year = currentYear;
+          const month = +cellSelection.attr("data-month") || 0;
+          const details = await fetchWorkoutDetails(year, month, dayData.day);
+          dayData.duration = details.duration;
+        } catch (err) {
+          console.error("Error fetching workout details:", err);
+        }
+      }
       
-      // Highlight the selected cell
-      d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
-      rect.attr("stroke", "#333").attr("stroke-width", 2);
+      // Check if we're clicking on the same cell or a new one
+      const isNewCell = !cellSelection.classed("active-tooltip-cell");
+      const overlay = document.getElementById("tooltip-overlay");
       
-      // Mark this cell as active
-      cellSelection.classed("active-tooltip-cell", true);
-      
-      // Show the tooltip
-      showTooltip(event, dayData);
-      
-      // Add a semi-transparent overlay to make it clear the tooltip is modal
-      if (!document.getElementById("tooltip-overlay")) {
-        const overlay = document.createElement("div");
-        overlay.id = "tooltip-overlay";
-        overlay.style.position = "fixed";
-        overlay.style.top = "0";
-        overlay.style.left = "0";
-        overlay.style.right = "0";
-        overlay.style.bottom = "0";
-        overlay.style.zIndex = "9000";
-        overlay.style.background = "transparent";
-        document.body.appendChild(overlay);
+      // If there's already an active tooltip for another cell, update it for this cell
+      if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
+        // Hide previous cell highlight
+        d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
+        d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
         
-        // Listen for taps on the overlay to dismiss
-        overlay.addEventListener("touchstart", handleOverlayTap);
+        // Highlight the new cell
+        rect.attr("stroke", "#333").attr("stroke-width", 2);
+        cellSelection.classed("active-tooltip-cell", true);
+        
+        // Show the tooltip for this cell
+        showTooltip(event, dayData);
+        return;
+      }
+      
+      // If tooltip is not showing yet or this is the same cell again
+      if (isNewCell) {
+        // Hide any existing tooltip first (in case another one is open)
+        hideAllTooltips();
+        
+        // Highlight the selected cell
+        rect.attr("stroke", "#333").attr("stroke-width", 2);
+        
+        // Mark this cell as active
+        cellSelection.classed("active-tooltip-cell", true);
+        
+        // Show the tooltip
+        showTooltip(event, dayData);
+        
+        // Add a semi-transparent overlay to make it clear the tooltip is modal
+        if (!overlay) {
+          const overlay = document.createElement("div");
+          overlay.id = "tooltip-overlay";
+          overlay.style.position = "fixed";
+          overlay.style.top = "0";
+          overlay.style.left = "0";
+          overlay.style.right = "0";
+          overlay.style.bottom = "0";
+          overlay.style.zIndex = "9000";
+          overlay.style.background = "transparent";
+          document.body.appendChild(overlay);
+          
+          // Listen for taps on the overlay to dismiss
+          overlay.addEventListener("touchstart", handleOverlayTap);
+        }
       }
       
       function handleOverlayTap(e) {
-        // Only respond if we tap outside the tooltip itself
-        if (!e.target.closest("#tooltip")) {
+        // Only respond if we tap outside the tooltip itself and not on another workout cell
+        const targetIsCell = e.target.closest(".cell-wrapper") && e.target.closest(".cell-wrapper").querySelector("rect.cell-background").getAttribute("fill") !== "#ebedf0";
+        
+        if (!e.target.closest("#tooltip") && !targetIsCell) {
           e.preventDefault();
           e.stopPropagation();
           
           // Clean up
           hideAllTooltips();
-          d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
-          d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
           
           // Remove the overlay
           const overlay = document.getElementById("tooltip-overlay");
