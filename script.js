@@ -543,7 +543,7 @@ function addTooltipBehavior(cellSelection, dayData) {
     let touchStartTime = 0;
     let isTouchMoving = false;
     const MOVE_THRESHOLD = 10; // pixels of movement to consider it a scroll not a tap
-    const TIME_THRESHOLD = 100; // milliseconds to wait before considering it a deliberate tap
+    const TIME_THRESHOLD = 40; // milliseconds to wait before considering it a deliberate tap
 
     // Touch start handler
     cellSelection.on("touchstart", (event) => {
