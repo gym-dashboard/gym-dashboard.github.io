@@ -198,38 +198,91 @@ function buildTooltipHTML(dayData) {
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
   
-  // Build tooltip content
-  tooltipDiv.html(buildTooltipHTML(dayData));
-  const tooltipNode = tooltipDiv.node();
-  const tooltipWidth = tooltipNode.offsetWidth;
-  
-  // Use clientX/Y adjusted with page offsets to account for zoom and scroll
-  const mouseX = event.clientX + window.pageXOffset;
-  const mouseY = event.clientY + window.pageYOffset;
-  
-  // Use document's client width for positioning calculations
-  const viewportWidth = document.documentElement.clientWidth;
-  
-  let newLeft;
-  if (viewportWidth - event.clientX < tooltipWidth + 20) {
-    // Not enough space on the right; position tooltip on the left
-    newLeft = (mouseX - tooltipWidth - 10) + "px";
-  } else {
-    // Enough space; position tooltip to the right
-    newLeft = (mouseX + 10) + "px";
+  // Add a dismiss hint for mobile
+  let tooltipContent = buildTooltipHTML(dayData);
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    tooltipContent += '<div class="tooltip-dismiss-hint">Tap outside to close</div>';
   }
   
-  const newTop = (mouseY + 10) + "px";
+  // Build the HTML content
+  tooltipDiv.html(tooltipContent);
+
+  // Make the tooltip visible first so we can measure it
+  tooltipDiv.style("opacity", 1);
   
+  // Measure the tooltip
+  const tooltipNode = tooltipDiv.node();
+  const tooltipWidth = tooltipNode.offsetWidth;
+  const tooltipHeight = tooltipNode.offsetHeight;
+  
+  let posX, posY;
+  
+  // For mobile touchscreen devices
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    // Get the position of the tapped cell
+    const cell = event.currentTarget;
+    const cellRect = cell.getBoundingClientRect();
+    
+    // Position tooltip centered below the cell
+    const targetRect = d3.select(cell).select("rect").node().getBoundingClientRect();
+    
+    // Account for visualViewport (crucial for zoom)
+    const visualViewport = window.visualViewport || {
+      offsetLeft: 0,
+      offsetTop: 0,
+      scale: 1
+    };
+    
+    // Calculate the absolute position considering zoom and scroll
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Center the tooltip under the cell
+    posX = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2);
+    posY = targetRect.bottom + 10;
+    
+    // Add scroll offset to get page coordinates
+    posX += scrollLeft;
+    posY += scrollTop;
+    
+    // Adjust for viewport boundaries
+    const viewportWidth = visualViewport.width || window.innerWidth;
+    if (posX < 0) posX = 10;
+    if (posX + tooltipWidth > viewportWidth) posX = viewportWidth - tooltipWidth - 10;
+  } else {
+    // For desktop/mouse devices
+    posX = event.pageX;
+    posY = event.pageY;
+    
+    // Decide if we have enough space on the right, else place it on the left
+    const spaceToRight = window.innerWidth - posX;
+    if (spaceToRight < tooltipWidth + 20) {
+      // Not enough space on the right; go left
+      posX = posX - tooltipWidth - 10;
+    } else {
+      // Enough space, place to the right
+      posX = posX + 10;
+    }
+    
+    // Vertical positioning
+    posY = posY + 10;
+  }
+  
+  // Apply final positioning
   tooltipDiv
-    .style("left", newLeft)
-    .style("top", newTop)
-    .style("opacity", 1);
+    .style("left", posX + "px")
+    .style("top", posY + "px")
+    .style("pointer-events", "auto"); // Make tooltip interactive on mobile
 }
 
+// Add a helper function to ensure all tooltips are closed
+function hideAllTooltips() {
+  d3.select("#tooltip").style("opacity", 0).style("pointer-events", "none");
+}
 
+// Update the existing hideTooltip function
 function hideTooltip() {
-  d3.select("#tooltip").style("opacity", 0);
+  hideAllTooltips();
 }
 
 // ========== Responsive Functions ==========
@@ -458,20 +511,59 @@ function addTooltipBehavior(cellSelection, dayData) {
   // Check for a coarse pointer (likely a touch device)
   if (window.matchMedia('(pointer: coarse)').matches) {
     cellSelection.on("touchstart", (event) => {
-      // Prevent the touchstart from propagating to avoid immediate dismissal.
+      // Prevent default touch behavior that might interfere
+      event.preventDefault();
       event.stopPropagation();
+      
+      // Hide any existing tooltip first (in case another one is open)
+      hideAllTooltips();
+      
+      // Highlight the selected cell
+      d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
       rect.attr("stroke", "#333").attr("stroke-width", 2);
+      
+      // Mark this cell as active
+      cellSelection.classed("active-tooltip-cell", true);
+      
+      // Show the tooltip
       showTooltip(event, dayData);
-
-      // Attach a one-time listener to hide the tooltip when tapping outside.
-      document.addEventListener("touchstart", function hideOnOutsideTouch(e) {
-        // If the touch is outside the cell and tooltip, hide the tooltip.
-        if (!e.target.closest(".cell-wrapper") && !e.target.closest("#tooltip")) {
-          rect.attr("stroke", "#ddd").attr("stroke-width", 1);
-          hideTooltip();
-          document.removeEventListener("touchstart", hideOnOutsideTouch);
+      
+      // Add a semi-transparent overlay to make it clear the tooltip is modal
+      if (!document.getElementById("tooltip-overlay")) {
+        const overlay = document.createElement("div");
+        overlay.id = "tooltip-overlay";
+        overlay.style.position = "fixed";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.right = "0";
+        overlay.style.bottom = "0";
+        overlay.style.zIndex = "9000";
+        overlay.style.background = "transparent";
+        document.body.appendChild(overlay);
+        
+        // Listen for taps on the overlay to dismiss
+        overlay.addEventListener("touchstart", handleOverlayTap);
+      }
+      
+      function handleOverlayTap(e) {
+        // Only respond if we tap outside the tooltip itself
+        if (!e.target.closest("#tooltip")) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Clean up
+          hideAllTooltips();
+          d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
+          d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
+          
+          // Remove the overlay
+          const overlay = document.getElementById("tooltip-overlay");
+          if (overlay) {
+            overlay.removeEventListener("touchstart", handleOverlayTap);
+            document.body.removeChild(overlay);
+          }
         }
-      });
+      }
     });
   } else {
     // Desktop and fine pointer devices
@@ -489,7 +581,6 @@ function addTooltipBehavior(cellSelection, dayData) {
       });
   }
 }
-
 
 // ========== Render Legend ==========
 function renderLegend() {
