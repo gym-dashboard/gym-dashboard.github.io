@@ -214,52 +214,66 @@ function buildTooltipHTML(dayData) {
 }
 
 // ========== Tooltip Show/Hide ==========
+// ========== Tooltip Show/Hide with Zoom Support ==========
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
   
   // Build the HTML content
   tooltipDiv.html(buildTooltipHTML(dayData));
 
-  // Make the tooltip visible first so we can measure it
-  tooltipDiv.style("opacity", 1);
+  // Switch to fixed positioning which handles zoom better
+  tooltipDiv
+    .style("position", "fixed")
+    .style("opacity", 1);
   
-  // Measure the tooltip
+  // Measure the tooltip after content is added
   const tooltipNode = tooltipDiv.node();
-  const tooltipWidth = tooltipNode.offsetWidth;
-  const tooltipHeight = tooltipNode.offsetHeight;
+  const tooltipRect = tooltipNode.getBoundingClientRect();
+  const tooltipWidth = tooltipRect.width;
+  const tooltipHeight = tooltipRect.height;
   
   let posX, posY;
   
   // For mobile touchscreen devices
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // For touchend event, event.touches will be empty
-    // In this case, we need to use the cell's position
+    // Get the cell element
     const cell = event.currentTarget || event.target.closest('.cell-wrapper');
     if (!cell) return;
     
+    // Use getBoundingClientRect() which accounts for transforms including zoom
     const cellRect = cell.getBoundingClientRect();
     
-    // Position tooltip centered below the cell
+    // Position tooltip centered below the cell (using fixed positioning)
     posX = cellRect.left + (cellRect.width / 2) - (tooltipWidth / 2);
     posY = cellRect.bottom + 10;
     
-    // Add scroll offset to get page coordinates
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    posX += scrollLeft;
-    posY += scrollTop;
+    // Adjust for viewport boundaries - use visualViewport when available for better zoom support
+    const viewportWidth = window.visualViewport ? 
+                          window.visualViewport.width : 
+                          document.documentElement.clientWidth;
+    const viewportHeight = window.visualViewport ? 
+                           window.visualViewport.height : 
+                           document.documentElement.clientHeight;
     
-    // Adjust for viewport boundaries
-    const viewportWidth = window.innerWidth;
-    if (posX < 0) posX = 10;
-    if (posX + tooltipWidth > viewportWidth) posX = viewportWidth - tooltipWidth - 10;
+    // Ensure tooltip stays within viewport
+    if (posX < 10) posX = 10;
+    if (posX + tooltipWidth > viewportWidth - 10) posX = viewportWidth - tooltipWidth - 10;
+    if (posY + tooltipHeight > viewportHeight - 10) posY = cellRect.top - tooltipHeight - 10; // flip to above if no room below
   } else {
-    // For desktop/mouse devices
-    posX = event.pageX;
-    posY = event.pageY;
+    // For desktop/mouse devices - using clientX/Y directly with fixed positioning
+    posX = event.clientX;
+    posY = event.clientY;
+    
+    // Get viewport dimensions with zoom support
+    const viewportWidth = window.visualViewport ? 
+                          window.visualViewport.width : 
+                          document.documentElement.clientWidth;
+    const viewportHeight = window.visualViewport ? 
+                           window.visualViewport.height : 
+                           document.documentElement.clientHeight;
     
     // Decide if we have enough space on the right, else place it on the left
-    const spaceToRight = window.innerWidth - posX;
+    const spaceToRight = viewportWidth - posX;
     if (spaceToRight < tooltipWidth + 20) {
       // Not enough space on the right; go left
       posX = posX - tooltipWidth - 10;
@@ -268,46 +282,70 @@ function showTooltip(event, dayData) {
       posX = posX + 10;
     }
     
-    // Vertical positioning
-    posY = posY + 10;
+    // Vertical positioning (flip to above if no room below)
+    const spaceBelow = viewportHeight - posY;
+    if (spaceBelow < tooltipHeight + 20) {
+      posY = posY - tooltipHeight - 10;
+    } else {
+      posY = posY + 10;
+    }
   }
   
-  // Apply final positioning
+  // Apply final positioning (with fixed position)
   tooltipDiv
     .style("left", posX + "px")
     .style("top", posY + "px")
     .style("pointer-events", "auto"); // Make tooltip interactive on mobile
 }
 
-// Add a helper function to ensure all tooltips are closed
-function hideAllTooltips() {
-  d3.select("#tooltip").style("opacity", 0).style("pointer-events", "none");
+// Update the existing hideTooltip function
+function hideTooltip() {
+  const tooltipDiv = d3.select("#tooltip");
+  tooltipDiv
+    .style("opacity", 0)
+    .style("pointer-events", "none");
+  
+  // Reset to the original absolute positioning when hidden
+  setTimeout(() => {
+    tooltipDiv.style("position", "absolute");
+  }, 200); // Wait for fade-out transition to complete
+  
   d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
   d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
 }
 
-// Update the existing hideTooltip function
-function hideTooltip() {
-  hideAllTooltips();
+// Add this function to handle zoom changes
+function handleViewportChanges() {
+  // If a tooltip is currently visible, reposition it
+  const tooltipDiv = d3.select("#tooltip");
+  if (tooltipDiv.style("opacity") == 1) {
+    const activeCell = d3.select(".active-tooltip-cell").node();
+    if (activeCell) {
+      // Get the day data
+      const monthIndex = +activeCell.getAttribute("data-month");
+      const dayIndex = +activeCell.querySelector(".dayLabel").textContent - 1;
+      
+      if (yearData[currentYear] && 
+          yearData[currentYear][monthIndex] && 
+          yearData[currentYear][monthIndex][dayIndex]) {
+        // Create a mock event with the cell as the currentTarget
+        const mockEvent = { currentTarget: activeCell };
+        showTooltip(mockEvent, yearData[currentYear][monthIndex][dayIndex]);
+      }
+    } else {
+      // If we can't find the active cell, just hide the tooltip
+      hideTooltip();
+    }
+  }
 }
 
-// Add this function to fetch workout details including duration
-async function fetchWorkoutDetails(year, month, day) {
-  const dd = String(day).padStart(2, "0");
-  const mm = String(month + 1).padStart(2, "0");
-  const yyyy = year;
-  const fileName = `data/${dd}-${mm}-${yyyy}.json`;
-  
-  try {
-    const json = await d3.json(fileName);
-    if (json && json.total_time) {
-      return { duration: json.total_time };
-    }
-  } catch (err) {
-    console.error("Error fetching workout details:", err);
-  }
-  
-  return { duration: null };
+// Listen for visualViewport changes when available (handles zoom better)
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', handleViewportChanges);
+  window.visualViewport.addEventListener('scroll', handleViewportChanges);
+} else {
+  // Fallback to window resize
+  window.addEventListener('resize', handleViewportChanges);
 }
 
 // ========== Responsive Functions ==========
