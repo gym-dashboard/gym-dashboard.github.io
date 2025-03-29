@@ -10,7 +10,7 @@ const muscleDisplayNames = {
   "Legs": "Legs",
   "Shoulders": "Shoulders",
   "Back": "Back",
-  "Biceps": "Biceps",
+  "Biceps": "Bicepsz",
 };
 
 const muscleColors = {
