@@ -104,7 +104,7 @@ body {
 /* Modified outerBox styling for desktop - now works with flexbox */
 #outerBox {
   flex: 1;
-  min-width: 400px;
+  min-width: 300px;
   max-width: calc(50% - 10px); /* Half width minus half the gap */
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
@@ -115,7 +115,7 @@ body {
 /* Second visualization container - UPDATED */
 #secondPlot {
   flex: 1;
-  min-width: 400px;
+  min-width: 300px;
   max-width: calc(50% - 10px);
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
