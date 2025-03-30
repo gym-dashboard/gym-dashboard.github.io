@@ -4,6 +4,76 @@ body {
   background: #f9f9f9;
 }
 
+/* Workout count with improved styling (now outside divs) */
+#yearlyWorkoutsCount {
+  position: relative;
+  padding-left: 15px;
+  font-size: 1.8rem;
+  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  color: #4a4a4a;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
+  max-width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* This creates the vertical bar */
+#yearlyWorkoutsCount::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #e74c3c;
+  border-radius: 2px;
+}
+
+/* CSS Grid Layout for Headers */
+.header-grid {
+  display: grid;
+  grid-template-rows: auto 1px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  width: 100%;
+  grid-row: 2;
+}
+
+.content-title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0;
+  color: #333;
+}
+
+/* Year selector with fixed width */
+#yearSelect {
+  min-width: 90px;
+  width: 90px;
+  flex-shrink: 0;
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  font-size: 0.8rem;
+}
+
+/* Create empty spacer in second header */
+.header-spacer {
+  width: 90px;
+}
+
 .dashboard-container {
   display: flex;
   flex-wrap: wrap;
@@ -24,7 +94,7 @@ body {
   box-sizing: border-box;
 }
 
-/* Second visualization container */
+/* Second visualization container - UPDATED */
 #secondPlot {
   flex: 1;
   min-width: 400px;
@@ -32,12 +102,12 @@ body {
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  /* display: none; - Removed to make always visible */
+  display: block; /* Changed from 'none' to 'block' to always show */
 }
 
 /* Chart placeholder for the second visualization */
 .chart-placeholder {
-  height: 300px;
+  height: 350px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,16 +117,14 @@ body {
   font-style: italic;
 }
 
-
-
 /* Add this to control how many months are visible */
 #chartContainer {
   overflow-x: auto;
   white-space: nowrap;
   width: 100%;
   max-width: 100%;
-  margin: 0 auto 15px auto;
-  padding-bottom: 5px;
+  margin: 0 auto 0px auto;
+  padding-bottom: 0px;
   scroll-padding: 0 20px;
 }
 
@@ -101,7 +169,7 @@ svg {
   justify-content: start;
   align-content: space-between;
   flex: 1;
-  max-width: 280px;
+  max-width: 200px;
   margin: 0;
   padding: 12px;
   background-color: #f8f9fa;
@@ -132,7 +200,7 @@ svg {
   border-radius: 8px;
   background-color: #f8f9fa;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  max-width: 450px;
+  max-width: 650px;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -237,137 +305,6 @@ svg {
   text-align: center;
 }
 
-/* Medium screens adjustments - updated to apply to both containers */
-@media (max-width: 991px) {
-  /* Restore full width for tablets and mobile */
-  #outerBox, #secondPlot {
-    max-width: 100%;
-    flex: 0 0 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  #chartContainer svg {
-    max-width: none;
-  }
-  .legend-progress-container {
-    gap: 12px;
-  }
-  #legend {
-    gap: 10px 16px;
-    padding: 10px;
-    max-width: 220px;
-  }
-  .legend-item {
-    font-size: 0.85rem;
-    gap: 6px;
-  }
-  .colorBox {
-    width: 14px;
-    height: 14px;
-  }
-  #weeklyProgressContainer {
-    padding: 10px;
-  }
-  .progress-segments {
-    height: 22px;
-  }
-  .streak-badge {
-    font-size: 0.85rem;
-    padding: 2px 8px;
-    height: 28px;
-  }
-  .streak-badge.active::before {
-    width: 14px;
-    height: 14px;
-  }
-  #progressText {
-    font-size: 0.8rem;
-    margin-top: 8px;
-  }
-}
-
-/* Mobile devices */
-@media (max-width: 767px) {
-  .legend-progress-container {
-    gap: 8px;
-    width: 100%;
-  }
-  #legend {
-    gap: 8px 10px;
-    padding: 8px;
-    flex: 0.4;
-    max-width: 45%;
-  }
-  .legend-item {
-    font-size: 0.75rem;
-    gap: 5px;
-  }
-  .colorBox {
-    width: 12px;
-    height: 12px;
-  }
-  #weeklyProgressContainer {
-    padding: 8px;
-    flex: 0.6;
-    max-width: 55%;
-  }
-  .streak-badge {
-    font-size: 0.8rem;
-    padding: 0;
-    height: 22px;
-  }
-  .streak-badge.active::before {
-    width: 14px;
-    height: 14px;
-    margin-right: 5px;
-  }
-  .progress-segments {
-    height: 22px;
-  }
-  #progressText {
-    font-size: 0.75rem;
-    margin-top: 6px;
-  }
-}
-
-/* Very small screens */
-@media (max-width: 374px) {
-  .legend-progress-container {
-    gap: 6px;
-  }
-  #legend {
-    gap: 5px 6px;
-    padding: 6px;
-    max-width: 42%;
-  }
-  .legend-item {
-    font-size: 0.7rem;
-    gap: 4px;
-  }
-  .colorBox {
-    width: 10px;
-    height: 10px;
-  }
-  #weeklyProgressContainer {
-    padding: 6px;
-    max-width: 58%;
-  }
-  .streak-badge {
-    font-size: 0.75rem;
-    padding: 0;
-    height: 20px;
-  }
-  .streak-badge.active::before {
-    width: 12px;
-    height: 12px;
-    margin-right: 4px;
-  }
-  .progress-segments {
-    height: 20px;
-  }
-}
-
 /* Updated tooltip styling with dynamic background color */
 .tooltip {
   position: absolute;
@@ -389,7 +326,7 @@ svg {
 /* Update tooltip footer to work with any background color */
 .tooltip-footer {
   margin-top: 6px;
-  padding-top: 0;
+  padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.3); /* Semi-transparent white border */
   text-align: center;
 }
@@ -412,6 +349,188 @@ svg {
   font-size: 0.75rem;
   opacity: 0.8;
   padding-top: 2px;
+}
+
+/* Medium screens - UPDATED to handle layout stacking */
+@media (max-width: 991px) {
+  /* Restore full width for tablets and mobile */
+  #outerBox, #secondPlot {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  
+  /* Add margin between the stacked elements */
+  #outerBox {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  #chartContainer svg {
+    max-width: none;
+  }
+  
+  .legend-progress-container {
+    gap: 12px;
+  }
+  
+  #legend {
+    gap: 10px 16px;
+    padding: 10px;
+    max-width: 220px;
+  }
+  
+  .legend-item {
+    font-size: 0.85rem;
+    gap: 6px;
+  }
+  
+  .colorBox {
+    width: 14px;
+    height: 14px;
+  }
+  
+  #weeklyProgressContainer {
+    padding: 10px;
+  }
+  
+  .progress-segments {
+    height: 22px;
+  }
+  
+  .streak-badge {
+    font-size: 0.85rem;
+    padding: 2px 8px;
+    height: 28px;
+  }
+  
+  .streak-badge.active::before {
+    width: 14px;
+    height: 14px;
+  }
+  
+  #progressText {
+    font-size: 0.8rem;
+    margin-top: 8px;
+  }
+}
+
+/* Mobile devices */
+@media (max-width: 767px) {
+  .legend-progress-container {
+    gap: 8px;
+    width: 100%;
+  }
+  
+  #legend {
+    gap: 8px 10px;
+    padding: 8px;
+    flex: 0.4;
+    max-width: 45%;
+  }
+  
+  .legend-item {
+    font-size: 0.75rem;
+    gap: 5px;
+  }
+  
+  .colorBox {
+    width: 12px;
+    height: 12px;
+  }
+  
+  #weeklyProgressContainer {
+    padding: 8px;
+    flex: 0.6;
+    max-width: 55%;
+  }
+  
+  .streak-badge {
+    font-size: 0.8rem;
+    padding: 0;
+    height: 22px;
+  }
+  
+  .streak-badge.active::before {
+    width: 14px;
+    height: 14px;
+    margin-right: 5px;
+  }
+  
+  .progress-segments {
+    height: 22px;
+  }
+  
+  #progressText {
+    font-size: 0.75rem;
+    margin-top: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  #yearSelect {
+    min-width: 80px;
+    width: 80px;
+  }
+  
+  .header-spacer {
+    width: 80px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 374px) {
+  .legend-progress-container {
+    gap: 6px;
+  }
+  
+  #legend {
+    gap: 5px 6px;
+    padding: 6px;
+    max-width: 42%;
+  }
+  
+  .legend-item {
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+  
+  .colorBox {
+    width: 10px;
+    height: 10px;
+  }
+  
+  #weeklyProgressContainer {
+    padding: 6px;
+    max-width: 58%;
+  }
+  
+  .streak-badge {
+    font-size: 0.75rem;
+    padding: 0;
+    height: 20px;
+  }
+  
+  .streak-badge.active::before {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+  }
+  
+  .progress-segments {
+    height: 20px;
+  }
+  
+  #yearSelect {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.4rem;
+    min-width: 70px;
+    width: 70px;
+  }
+  
+  .header-spacer {
+    width: 70px;
+  }
 }
 
 /* Adjust tooltip for mobile devices */

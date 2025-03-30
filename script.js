@@ -78,11 +78,13 @@ function computeYearlyWorkoutCount(year) {
   return workoutFiles[year] ? workoutFiles[year].length : 0;
 }
 
+// ========== Update Yearly Workout Count ==========
 function updateYearlyWorkoutCount(year) {
   const total = computeYearlyWorkoutCount(year);
   const countElem = document.getElementById("yearlyWorkoutsCount");
-  countElem.textContent = `${total} Logged Workouts in the last year`;
+  countElem.textContent = `You have logged ${total} workouts this year`;
 }
+
 
 // ========== Load Data for a Given Year ==========
 async function loadDataForYear(year) {
