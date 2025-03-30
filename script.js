@@ -1,5 +1,5 @@
 /***********************************************
- * script.js
+ * script.js - Simplified version without text wrapping detection
  **********************************************/
 
 // ====== Calendar config ======
@@ -84,8 +84,6 @@ function updateYearlyWorkoutCount(year) {
   countElem.textContent = `${total} Logged Workouts in the last year`;
 }
 
-// ========== Load Data for a Given Year ==========
-// We'll collect not just muscle info but also a "volume" (set count) and a list of unique exercises.
 // ========== Load Data for a Given Year ==========
 async function loadDataForYear(year) {
   yearData[year] = Array.from({ length: 12 }, () => []);
@@ -223,12 +221,8 @@ function buildTooltipHTML(dayData) {
   
   // Always include the footer separator
   let footerContent = "";
-  if (window.matchMedia('(pointer: coarse)').matches) {
-    // For mobile, show duration only
-    footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
-  } else {
-    // For desktop, only show duration if available
-    footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
+  if (durationInfo) {
+    footerContent = `<div class="duration-value">${durationInfo}</div>`;
   }
   
   return `
@@ -448,7 +442,6 @@ function calculateResponsiveCellSize() {
 }
 
 // Adjust month blocks to show exactly the desired number of months
-// Adjust month blocks to show exactly the desired number of months
 function adjustMonthDisplay() {
   const chartContainer = document.getElementById('chartContainer');
   const containerWidth = chartContainer.clientWidth;
@@ -456,12 +449,11 @@ function adjustMonthDisplay() {
   
   if (monthBlocks.length === 0) return;
   
-  // Change this to always show 2 months on desktop
   let targetMonthsVisible;
   if (containerWidth < 480) {
     targetMonthsVisible = Math.min(2, monthBlocks.length);
   } else {
-    targetMonthsVisible = Math.min(2, monthBlocks.length); // Changed from 3 to 2
+    targetMonthsVisible = Math.min(3, monthBlocks.length);
   }
   
   const idealMonthWidth = Math.floor((containerWidth - (5 * (targetMonthsVisible - 1))) / targetMonthsVisible);
@@ -900,6 +892,22 @@ function renderLegend() {
 
 // ========== Weekly Progress Bar Functions ==========
 
+// Get formatted date range for current week
+function getFormattedDateRange() {
+  const { startDate, endDate } = getCurrentWeekDateRange();
+  const startMonth = startDate.getMonth();
+  const endMonth = endDate.getMonth();
+  
+  if (startMonth === endMonth) {
+    const monthName = monthNames[startMonth];
+    return `${monthName} ${startDate.getDate()} - ${endDate.getDate()}`;
+  } else {
+    const startMonthName = monthNames[startMonth];
+    const endMonthName = monthNames[endMonth];
+    return `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
+  }
+}
+
 function getCurrentWeekDateRange() {
   const now = new Date();
   const currentDay = now.getDay(); 
@@ -910,58 +918,12 @@ function getCurrentWeekDateRange() {
   return { startDate, endDate };
 }
 
-function formatShortDate(date) {
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-}
-
 function updateWeekDateRangeDisplay() {
-  const { startDate, endDate } = getCurrentWeekDateRange();
   const dateRangeElem = document.getElementById('weekDateRange');
-  const titlePrefix = document.querySelector('.weekly-title-prefix');
-  
   if (!dateRangeElem) return;
   
-  const startMonth = startDate.getMonth();
-  const endMonth = endDate.getMonth();
-  const isSameMonth = startMonth === endMonth;
-
-  if (window.innerWidth <= 767) {
-    titlePrefix.textContent = "";
-    if (isSameMonth) {
-      const monthName = monthNames[startMonth];
-      dateRangeElem.textContent = `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
-    } else {
-      const startMonthName = monthNames[startMonth];
-      const endMonthName = monthNames[endMonth];
-      dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
-    }
-  } else {
-    titlePrefix.textContent = "Current Week:";
-    if (isSameMonth) {
-      const monthName = monthNames[startMonth];
-      dateRangeElem.textContent = `${monthName} ${startDate.getDate()} - ${endDate.getDate()}`;
-    } else {
-      const startMonthName = monthNames[startMonth];
-      const endMonthName = monthNames[endMonth];
-      dateRangeElem.textContent = `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
-    }
-  }
-}
-
-function getFormattedDateRangeForMobile() {
-  const { startDate, endDate } = getCurrentWeekDateRange();
-  const startMonth = startDate.getMonth();
-  const endMonth = endDate.getMonth();
-  const isSameMonth = startMonth === endMonth;
-  
-  if (isSameMonth) {
-    const monthName = monthNames[startMonth];
-    return `${monthName} ${startDate.getDate()}-${endDate.getDate()}`;
-  } else {
-    const startMonthName = monthNames[startMonth];
-    const endMonthName = monthNames[endMonth];
-    return `${startMonthName} ${startDate.getDate()}-${endMonthName} ${endDate.getDate()}`;
-  }
+  const dateRange = getFormattedDateRange();
+  dateRangeElem.textContent = dateRange;
 }
 
 function countCurrentWeekWorkouts() {
@@ -1081,12 +1043,9 @@ function updateProgressBar(workoutCount) {
     }
   });
   
-  if (window.innerWidth <= 767) {
-    const dateRange = getFormattedDateRangeForMobile();
-    progressText.textContent = `${workoutCount}/4 workouts (${dateRange})`;
-  } else {
-    progressText.textContent = `${workoutCount}/4 Workouts This Week`;
-  }
+  // Always use the same format with date range
+  const dateRange = getFormattedDateRange();
+  progressText.textContent = `${workoutCount}/4 Workouts (${dateRange})`;
   
   if (workoutCount >= 4) {
     updateStreakCounter();
@@ -1107,7 +1066,6 @@ window.addEventListener('resize', function() {
   this.resizeTimeout = setTimeout(function() {
     drawYearCalendar(currentYear);
     adjustMonthDisplay();
-    updateWeekDateRangeDisplay();
     
     const workoutCount = countCurrentWeekWorkouts();
     updateProgressBar(workoutCount);

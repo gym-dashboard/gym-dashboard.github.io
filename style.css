@@ -4,17 +4,50 @@ body {
   background: #f9f9f9;
 }
 
-/* Modified outerBox styling for desktop - reduced width */
+.dashboard-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Modified outerBox styling for desktop - now works with flexbox */
 #outerBox {
-  max-width: 800px; /* Reduced from 1000px */
-  width: 92%; /* Slightly less than 100% to create some margin */
-  margin: 0 auto;
+  flex: 1;
+  min-width: 400px;
+  max-width: calc(50% - 10px); /* Half width minus half the gap */
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  padding: 15px;
   box-sizing: border-box;
 }
+
+/* Second visualization container */
+#secondPlot {
+  flex: 1;
+  min-width: 400px;
+  max-width: calc(50% - 10px);
+  background: #fff;
+  box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  /* display: none; - Removed to make always visible */
+}
+
+/* Chart placeholder for the second visualization */
+.chart-placeholder {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+
 
 /* Add this to control how many months are visible */
 #chartContainer {
@@ -106,23 +139,20 @@ svg {
   justify-content: space-between;
 }
 
+/* Simplified weekly header - streak only */
 .weekly-header {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 15px;
 }
 
+/* Hide the weekly title since we're using a simplified layout */
 .weekly-title {
-  font-size: 1rem;
-  color: #333;
-  margin-bottom: 0;
-  font-weight: 500;
-  flex: 1;
+  display: none;
 }
 
-/* Streak badge */
+/* Streak badge - centered and consistent across all screen sizes */
 .streak-badge {
   padding: 2px 10px;
   border-radius: 6px;
@@ -133,14 +163,16 @@ svg {
   transition: opacity 0.5s ease;
   background-color: rgba(84, 107, 206, 0.85);
   white-space: nowrap;
-  margin-left: 8px;
   height: 32px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  justify-content: center;
+  text-align: center;
 }
 
 .streak-badge.active {
   opacity: 1;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -201,18 +233,20 @@ svg {
 
 #progressText {
   margin-top: 10px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   text-align: center;
 }
 
-/* Medium screens adjustments */
-@media (max-width: 768px) {
-  /* Restore full width for tablets */
-  #outerBox {
+/* Medium screens adjustments - updated to apply to both containers */
+@media (max-width: 991px) {
+  /* Restore full width for tablets and mobile */
+  #outerBox, #secondPlot {
     max-width: 100%;
-    width: 100%;
+    flex: 0 0 100%;
   }
-  
+}
+
+@media (max-width: 768px) {
   #chartContainer svg {
     max-width: none;
   }
@@ -235,9 +269,6 @@ svg {
   #weeklyProgressContainer {
     padding: 10px;
   }
-  .weekly-title {
-    font-size: 0.95rem;
-  }
   .progress-segments {
     height: 22px;
   }
@@ -251,7 +282,7 @@ svg {
     height: 14px;
   }
   #progressText {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin-top: 8px;
   }
 }
@@ -281,25 +312,10 @@ svg {
     flex: 0.6;
     max-width: 55%;
   }
-  .weekly-title {
-    display: none;
-  }
-  .weekly-header {
-    margin-bottom: 8px;
-  }
   .streak-badge {
     font-size: 0.8rem;
     padding: 0;
-    margin-left: 0;
-    width: 100%;
-    justify-content: center;
-    text-align: center;
     height: 22px;
-    background-color: rgba(84, 107, 206, 0.85);
-  }
-  .streak-badge.active {
-    width: 100%;
-    display: flex;
   }
   .streak-badge.active::before {
     width: 14px;
@@ -341,7 +357,6 @@ svg {
     font-size: 0.75rem;
     padding: 0;
     height: 20px;
-    background-color: rgba(84, 107, 206, 0.85);
   }
   .streak-badge.active::before {
     width: 12px;

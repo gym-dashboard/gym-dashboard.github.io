@@ -29,32 +29,49 @@
     </div>
   </div>
 
-  <div id="outerBox" class="p-3 rounded bg-white">
-    <!-- Calendar Container: horizontal scrolling with responsive width -->
-    <div id="chartContainer"></div>
-    
-    <!-- Wrap legend and progress bar in a flex container -->
-    <div class="legend-progress-container">
-      <!-- Legend for Muscle Groups -->
-      <div id="legend"></div>
+  <!-- New dashboard-container to hold both visualizations -->
+  <div class="dashboard-container">
+    <!-- Original Calendar Container -->
+    <div id="outerBox" class="p-3 rounded bg-white">
+      <!-- Calendar Container: horizontal scrolling with responsive width -->
+      <div id="chartContainer"></div>
       
-      <!-- Weekly Progress Bar -->
-      <div id="weeklyProgressContainer">
-        <!-- Header always side-by-side, text changes based on screen size -->
-        <div class="weekly-header">
-          <div class="weekly-title"><span class="weekly-title-prefix">Week:</span> <span id="weekDateRange"></span></div>
-          <div id="streakIndicator" class="streak-badge"></div>
-        </div>
+      <!-- Wrap legend and progress bar in a flex container -->
+      <div class="legend-progress-container">
+        <!-- Legend for Muscle Groups -->
+        <div id="legend"></div>
         
-        <div class="progress-container">
-          <div class="progress-segments">
-            <div class="segment" data-index="0"></div>
-            <div class="segment" data-index="1"></div>
-            <div class="segment" data-index="2"></div>
-            <div class="segment" data-index="3"></div>
+        <!-- Weekly Progress Bar - Simplified layout -->
+        <div id="weeklyProgressContainer">
+          <!-- Simplified weekly header with just the streak indicator -->
+          <div class="weekly-header">
+            <div id="streakIndicator" class="streak-badge"></div>
           </div>
+          
+          <!-- Progress bar segments -->
+          <div class="progress-container">
+            <div class="progress-segments">
+              <div class="segment" data-index="0"></div>
+              <div class="segment" data-index="1"></div>
+              <div class="segment" data-index="2"></div>
+              <div class="segment" data-index="3"></div>
+            </div>
+          </div>
+          
+          <!-- Progress text with workouts count and date range -->
+          <div id="progressText">0/4 Workouts (Mar 30 - Apr 5)</div>
+          
+          <!-- Hidden element to store date range (used by JavaScript) -->
+          <div id="weekDateRange" style="display: none;"></div>
         </div>
-        <div id="progressText">0/4 Workouts This Week</div>
+      </div>
+    </div>
+    
+    <!-- New container for the second plot (only visible on desktop) -->
+    <div id="secondPlot" class="p-3 rounded bg-white">
+      <h4>Workout Analysis</h4>
+      <div id="secondChartArea" class="chart-placeholder">
+        Your second visualization will appear here
       </div>
     </div>
   </div>
