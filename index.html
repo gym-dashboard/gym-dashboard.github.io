@@ -27,11 +27,11 @@
   <div class="dashboard-container">
     <!-- Original Calendar Container -->
     <div id="outerBox" class="p-3 rounded bg-white">
-      <!-- Calendar Title & Year Selector -->
-      <div class="content-header d-flex justify-content-between align-items-center mb-3">
+      <div class="content-header d-flex justify-content-between align-items-center">
         <h3 class="content-title">Workout Calendar</h3>
-        <select id="yearSelect" class="form-select form-select-sm" style="width:auto;"></select>
+        <select id="yearSelect" class="form-select form-select-sm"></select>
       </div>
+      <hr class="simple-divider">
       
       <!-- Calendar Container: horizontal scrolling with responsive width -->
       <div id="chartContainer"></div>
@@ -67,9 +67,12 @@
       </div>
     </div>
     
-    <!-- Second plot container (now visible on all screen sizes) -->
+    <!-- Second plot container -->
     <div id="secondPlot" class="p-3 rounded bg-white">
-      <h3 class="content-title">Weight Analysis</h3>
+      <div class="content-header">
+        <h3 class="content-title">Weight Analysis</h3>
+      </div>
+      <hr class="simple-divider">
       <div id="secondChartArea" class="chart-placeholder">
         Your second visualization will appear here
       </div>
