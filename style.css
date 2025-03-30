@@ -4,10 +4,10 @@ body {
   background: #f9f9f9;
 }
 
-/* Modify the outerBox styling */
+/* Modified outerBox styling for desktop - reduced width */
 #outerBox {
-  max-width: 1000px;
-  width: 100%; /* Use full width of parent */
+  max-width: 800px; /* Reduced from 1000px */
+  width: 92%; /* Slightly less than 100% to create some margin */
   margin: 0 auto;
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
@@ -207,6 +207,12 @@ svg {
 
 /* Medium screens adjustments */
 @media (max-width: 768px) {
+  /* Restore full width for tablets */
+  #outerBox {
+    max-width: 100%;
+    width: 100%;
+  }
+  
   #chartContainer svg {
     max-width: none;
   }
@@ -260,7 +266,7 @@ svg {
     gap: 8px 10px;
     padding: 8px;
     flex: 0.4;
-    max-width: 40%;
+    max-width: 45%;
   }
   .legend-item {
     font-size: 0.75rem;
@@ -273,7 +279,7 @@ svg {
   #weeklyProgressContainer {
     padding: 8px;
     flex: 0.6;
-    max-width: 60%;
+    max-width: 55%;
   }
   .weekly-title {
     display: none;
@@ -317,7 +323,7 @@ svg {
   #legend {
     gap: 5px 6px;
     padding: 6px;
-    max-width: 38%;
+    max-width: 42%;
   }
   .legend-item {
     font-size: 0.7rem;
@@ -329,7 +335,7 @@ svg {
   }
   #weeklyProgressContainer {
     padding: 6px;
-    max-width: 62%;
+    max-width: 58%;
   }
   .streak-badge {
     font-size: 0.75rem;

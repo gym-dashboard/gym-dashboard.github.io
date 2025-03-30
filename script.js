@@ -448,6 +448,7 @@ function calculateResponsiveCellSize() {
 }
 
 // Adjust month blocks to show exactly the desired number of months
+// Adjust month blocks to show exactly the desired number of months
 function adjustMonthDisplay() {
   const chartContainer = document.getElementById('chartContainer');
   const containerWidth = chartContainer.clientWidth;
@@ -455,11 +456,12 @@ function adjustMonthDisplay() {
   
   if (monthBlocks.length === 0) return;
   
+  // Change this to always show 2 months on desktop
   let targetMonthsVisible;
   if (containerWidth < 480) {
     targetMonthsVisible = Math.min(2, monthBlocks.length);
   } else {
-    targetMonthsVisible = Math.min(3, monthBlocks.length);
+    targetMonthsVisible = Math.min(2, monthBlocks.length); // Changed from 3 to 2
   }
   
   const idealMonthWidth = Math.floor((containerWidth - (5 * (targetMonthsVisible - 1))) / targetMonthsVisible);
