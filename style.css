@@ -325,7 +325,7 @@ svg {
   position: absolute;
   /* The background-color is set dynamically by JavaScript */
   color: #fff; /* Default color - will be adjusted by JS based on bg brightness */
-  padding: 12px 16px;
+  padding: 6px 8px;
   border-radius: 8px;
   font-size: 0.85rem;
   min-width: 160px;
@@ -352,14 +352,14 @@ svg {
   align-items: baseline;
   margin-bottom: 4px;
   white-space: nowrap; /* Keep bullet and exercise text together */
+  gap: 3px; /* Small controlled gap instead of unpredictable space */
 }
 
-/* Style for the bullet point */
+/* Style for the bullet point - REMOVED WIDTH to prevent indentation */
 .bullet {
   display: inline-block;
-  width: 12px;
-  text-align: center;
   flex-shrink: 0;
+  /* width property removed to prevent indentation */
 }
 
 /* Exercise name stays with its bullet */
@@ -583,11 +583,10 @@ svg {
   
   .exercise-line {
     margin-bottom: 6px;
+    gap: 4px; /* Slightly larger but still tight gap for mobile */
   }
   
-  .bullet {
-    width: 15px;
-  }
+  /* REMOVED: width property for bullet points on mobile to avoid indentation */
   
   .tooltip-footer {
     margin-top: 8px;

@@ -198,18 +198,18 @@ function buildTooltipHTML(dayData) {
   // Check if exercises are in the new format (objects with name and count)
   const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
   
-  // Format the list of exercises with set counts
+  // Format the list of exercises with set counts - with tighter bullet points
   let exerciseList;
   
   if (isNewFormat) {
-    // New format: Keep bullet points but make each item a non-breaking unit
+    // New format: Keep bullet points tight with text
     exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line"><span class="bullet">•</span> <span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
+      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
       .join("");
   } else {
-    // Old format: Still use non-breaking exercise lines
+    // Old format: Also use tight spacing
     exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line"><span class="bullet">•</span> <span class="exercise-name">${ex}</span></div>`)
+      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex}</span></div>`)
       .join("");
   }
   
@@ -655,7 +655,7 @@ function addTooltipBehavior(cellSelection, dayData) {
     let touchStartTime = 0;
     let isTouchMoving = false;
     const MOVE_THRESHOLD = 10; // pixels of movement to consider it a scroll not a tap
-    const TIME_THRESHOLD = 40; // milliseconds to wait before considering it a deliberate tap
+    const TIME_THRESHOLD = 25; // milliseconds to wait before considering it a deliberate tap
 
     // Touch start handler
     cellSelection.on("touchstart", (event) => {
