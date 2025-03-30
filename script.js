@@ -86,6 +86,7 @@ function updateYearlyWorkoutCount(year) {
 
 // ========== Load Data for a Given Year ==========
 // We'll collect not just muscle info but also a "volume" (set count) and a list of unique exercises.
+// ========== Load Data for a Given Year ==========
 async function loadDataForYear(year) {
   yearData[year] = Array.from({ length: 12 }, () => []);
   workoutFiles[year] = [];
@@ -109,7 +110,9 @@ async function loadDataForYear(year) {
 
           // We'll treat each exercise line as "1 set"
           let totalSets = 0;
-          let exerciseSet = new Set();
+          
+          // Use an object to count sets per exercise instead of just collecting names
+          let exerciseCounts = {};
 
           // We'll also still track muscle volume if you need it
           let volumeMap = {};
@@ -127,9 +130,10 @@ async function loadDataForYear(year) {
               volumeMap[mg] += (reps * weight);
             }
 
-            // 3) Save the exercise name from "Exercise"
+            // 3) Count sets per exercise
             if (entry["Exercise"]) {
-              exerciseSet.add(entry["Exercise"]);
+              const exerciseName = entry["Exercise"];
+              exerciseCounts[exerciseName] = (exerciseCounts[exerciseName] || 0) + 1;
             }
           });
 
@@ -150,13 +154,19 @@ async function loadDataForYear(year) {
             if (selectedMuscle) musclesList.push(selectedMuscle);
           }
 
+          // Convert exercise counts to array of objects with name and count
+          const exercisesWithCounts = Object.entries(exerciseCounts).map(([name, count]) => ({
+            name,
+            count
+          }));
+
           return {
             day: currentDate.getDate(),
             muscles: musclesList,
             // "volume" is the total sets. Just naming it "volume" for the tooltip
             volume: totalSets,
-            // list of unique exercises from "Exercise" field
-            exercises: Array.from(exerciseSet),
+            // list of exercises with their set counts
+            exercises: exercisesWithCounts,
             // Add duration if available
             duration: json.total_time || null
           };
@@ -180,15 +190,30 @@ async function loadDataForYear(year) {
 }
 
 // ========== Tooltip Content Builder ==========
+// Updated tooltip builder with backward compatibility
 function buildTooltipHTML(dayData) {
   if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
     return "No workout data";
   }
   
-  // Format the list of exercises with no-wrap to prevent inconsistent line breaks
-  const exerciseList = dayData.exercises
-    .map(ex => `• <span class="exercise-name">${ex}</span>`)
-    .join("<br>");
+  // Check if exercises are in the new format (objects with name and count)
+  // or old format (just strings)
+  const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
+  
+  // Format the list of exercises with set counts
+  let exerciseList;
+  
+  if (isNewFormat) {
+    // New format: array of objects with name and count
+    exerciseList = dayData.exercises
+      .map(ex => `• <span class="exercise-name">${ex.name} (${ex.count})</span>`)
+      .join("<br>");
+  } else {
+    // Old format: array of strings, no count information
+    exerciseList = dayData.exercises
+      .map(ex => `• <span class="exercise-name">${ex}</span>`)
+      .join("<br>");
+  }
   
   // Add duration information if available
   let durationInfo = "";
@@ -199,7 +224,7 @@ function buildTooltipHTML(dayData) {
   // Always include the footer separator
   let footerContent = "";
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // For mobile, show duration only (removed tap to close message)
+    // For mobile, show duration only
     footerContent = durationInfo ? `<div class="duration-value">${durationInfo}</div>` : '';
   } else {
     // For desktop, only show duration if available
@@ -220,6 +245,25 @@ function showTooltip(event, dayData) {
   // Build the HTML content
   tooltipDiv.html(buildTooltipHTML(dayData));
 
+  // Get the muscle group color to use for the background
+  let bgColor = "#6a6a6a"; // Default fallback color
+  
+  // If there are muscles, use the first one's color
+  if (dayData.muscles && dayData.muscles.length > 0) {
+    const firstMuscle = dayData.muscles[0];
+    // Get the color from muscleColors, make it slightly darker for better readability
+    const baseColor = muscleColors[firstMuscle];
+    // Convert hex to rgb and darken it slightly for better contrast
+    bgColor = darkenColor(baseColor, 0.2);
+  }
+  
+  // Apply the background color
+  tooltipDiv.style("background-color", bgColor);
+  
+  // Adjust text color based on background brightness
+  const textColor = isColorDark(bgColor) ? "#ffffff" : "#333333";
+  tooltipDiv.style("color", textColor);
+  
   // Make the tooltip visible first so we can measure it
   tooltipDiv.style("opacity", 1);
   
@@ -279,6 +323,52 @@ function showTooltip(event, dayData) {
     .style("pointer-events", "auto"); // Make tooltip interactive on mobile
 }
 
+// Helper function to darken color
+function darkenColor(hexColor, factor) {
+  // Parse hex color
+  let r = parseInt(hexColor.substring(1, 3), 16);
+  let g = parseInt(hexColor.substring(3, 5), 16);
+  let b = parseInt(hexColor.substring(5, 7), 16);
+  
+  // Darken each component
+  r = Math.floor(r * (1 - factor));
+  g = Math.floor(g * (1 - factor));
+  b = Math.floor(b * (1 - factor));
+  
+  // Ensure values are within bounds
+  r = Math.max(0, Math.min(255, r));
+  g = Math.max(0, Math.min(255, g));
+  b = Math.max(0, Math.min(255, b));
+  
+  // Convert back to hex
+  return `rgba(${r}, ${g}, ${b}, 0.95)`;
+}
+
+// Helper function to determine if a color is dark (for text contrast)
+function isColorDark(color) {
+  // Extract RGB values
+  let rgb;
+  
+  // Handle rgba format
+  if (color.startsWith('rgba')) {
+    const values = color.match(/\d+/g);
+    rgb = [parseInt(values[0]), parseInt(values[1]), parseInt(values[2])];
+  } 
+  // Handle hex format
+  else if (color.startsWith('#')) {
+    const r = parseInt(color.substring(1, 3), 16);
+    const g = parseInt(color.substring(3, 5), 16);
+    const b = parseInt(color.substring(5, 7), 16);
+    rgb = [r, g, b];
+  }
+  
+  // Calculate relative luminance
+  const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+  
+  // Return true if color is dark (luminance < 0.5)
+  return luminance < 0.5;
+}
+
 // Add a helper function to ensure all tooltips are closed
 function hideAllTooltips() {
   d3.select("#tooltip").style("opacity", 0).style("pointer-events", "none");
@@ -300,14 +390,40 @@ async function fetchWorkoutDetails(year, month, day) {
   
   try {
     const json = await d3.json(fileName);
+    
+    // Return duration if available
     if (json && json.total_time) {
+      // Also process exercise counts if workout data is available
+      if (json && Array.isArray(json.workout) && json.workout.length > 0) {
+        let exerciseCounts = {};
+        
+        // Count exercises
+        json.workout.forEach(entry => {
+          if (entry["Exercise"]) {
+            const exerciseName = entry["Exercise"];
+            exerciseCounts[exerciseName] = (exerciseCounts[exerciseName] || 0) + 1;
+          }
+        });
+        
+        // Convert to array of objects
+        const exercisesWithCounts = Object.entries(exerciseCounts).map(([name, count]) => ({
+          name,
+          count
+        }));
+        
+        return { 
+          duration: json.total_time,
+          exercises: exercisesWithCounts
+        };
+      }
+      
       return { duration: json.total_time };
     }
   } catch (err) {
     console.error("Error fetching workout details:", err);
   }
   
-  return { duration: null };
+  return { duration: null, exercises: [] };
 }
 
 // ========== Responsive Functions ==========
@@ -580,13 +696,44 @@ function addTooltipBehavior(cellSelection, dayData) {
         event.preventDefault();
         event.stopPropagation();
         
-        // Add duration information from the full workout JSON if available
-        if (!dayData.duration && dayData.day) {
+        // Get additional workout details including duration and exercise counts
+        if (dayData.day) {
           try {
             const year = currentYear;
             const month = +cellSelection.attr("data-month") || 0;
             const details = await fetchWorkoutDetails(year, month, dayData.day);
-            dayData.duration = details.duration;
+            
+            // Update duration if available
+            if (details.duration) {
+              dayData.duration = details.duration;
+            }
+            
+            // Update exercises with counts if available
+            if (details.exercises && details.exercises.length > 0) {
+              // If exercises were in the old format (array of strings), 
+              // or we don't have exercise data yet, use the fetched data
+              const hasExerciseObjects = dayData.exercises && 
+                                         dayData.exercises.length > 0 && 
+                                         typeof dayData.exercises[0] === 'object' &&
+                                         'count' in dayData.exercises[0];
+              
+              if (!hasExerciseObjects) {
+                // Convert the existing exercises array to a set for easy lookup
+                const exerciseNames = new Set(
+                  Array.isArray(dayData.exercises) ? dayData.exercises : []
+                );
+                
+                // If we had existing exercise names, filter to match them
+                // Otherwise use all fetched exercises
+                if (exerciseNames.size > 0) {
+                  dayData.exercises = details.exercises.filter(ex => 
+                    exerciseNames.has(ex.name)
+                  );
+                } else {
+                  dayData.exercises = details.exercises;
+                }
+              }
+            }
           } catch (err) {
             console.error("Error fetching workout details:", err);
           }
@@ -672,10 +819,49 @@ function addTooltipBehavior(cellSelection, dayData) {
       }
     });
   } else {
-    // Desktop and fine pointer devices (unchanged)
+    // Desktop and fine pointer devices
     cellSelection
-      .on("pointerenter", (event) => {
+      .on("pointerenter", async (event) => {
         rect.attr("stroke", "#333").attr("stroke-width", 2);
+        
+        // For desktop, we can also update exercise data before showing the tooltip
+        if (dayData.day) {
+          try {
+            const year = currentYear;
+            const month = +cellSelection.attr("data-month") || 0;
+            const details = await fetchWorkoutDetails(year, month, dayData.day);
+            
+            // Update duration if available
+            if (details.duration) {
+              dayData.duration = details.duration;
+            }
+            
+            // Update exercises with counts if available and if not already in the right format
+            if (details.exercises && details.exercises.length > 0) {
+              const hasExerciseObjects = dayData.exercises && 
+                                        dayData.exercises.length > 0 && 
+                                        typeof dayData.exercises[0] === 'object' &&
+                                        'count' in dayData.exercises[0];
+              
+              if (!hasExerciseObjects) {
+                const exerciseNames = new Set(
+                  Array.isArray(dayData.exercises) ? dayData.exercises : []
+                );
+                
+                if (exerciseNames.size > 0) {
+                  dayData.exercises = details.exercises.filter(ex => 
+                    exerciseNames.has(ex.name)
+                  );
+                } else {
+                  dayData.exercises = details.exercises;
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Error fetching workout details:", err);
+          }
+        }
+        
         showTooltip(event, dayData);
       })
       .on("pointermove", (event) => {
@@ -797,6 +983,10 @@ function countCurrentWeekWorkouts() {
 }
 
 function checkPreviousWeekCompleted() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  
+  // Get the dates for the previous week
   const { startDate } = getCurrentWeekDateRange();
   
   const prevWeekEnd = new Date(startDate);
@@ -806,15 +996,25 @@ function checkPreviousWeekCompleted() {
   prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
   
   let count = 0;
-  if (!yearData[currentYear]) return false;
+  const prevWeekYear = prevWeekStart.getFullYear();
+  
+  // Ensure data exists for the year we're checking
+  if (!yearData[prevWeekYear]) return false;
   
   for (let day = new Date(prevWeekStart); day <= prevWeekEnd; day.setDate(day.getDate() + 1)) {
+    const dayYear = day.getFullYear();
     const month = day.getMonth();
     const dayOfMonth = day.getDate() - 1;
-    if (yearData[currentYear][month] &&
-        yearData[currentYear][month][dayOfMonth] &&
-        yearData[currentYear][month][dayOfMonth].muscles &&
-        yearData[currentYear][month][dayOfMonth].muscles.length > 0) {
+    
+    // Skip if we don't have data for this day
+    if (!yearData[dayYear] || !yearData[dayYear][month] || 
+        !yearData[dayYear][month][dayOfMonth]) {
+      continue;
+    }
+    
+    // Count if there was a workout
+    if (yearData[dayYear][month][dayOfMonth].muscles && 
+        yearData[dayYear][month][dayOfMonth].muscles.length > 0) {
       count++;
     }
   }
@@ -823,30 +1023,44 @@ function checkPreviousWeekCompleted() {
 }
 
 function updateStreakCounter() {
-  const startDate = getCurrentWeekDateRange().startDate;
-  const weekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
-  
-  if (weeklyData.lastCompletedWeek === weekKey) {
-    return;
-  }
-  
   const prevWeekCompleted = checkPreviousWeekCompleted();
-  if (!prevWeekCompleted) {
+  const currentWeekCount = countCurrentWeekWorkouts();
+  const currentWeekCompleted = currentWeekCount >= 4;
+  
+  // Initialize streak if not set
+  if (typeof weeklyData.weekStreakCount === 'undefined') {
     weeklyData.weekStreakCount = 0;
   }
   
-  const currentWeekCompleted = weeklyData.currentWeekWorkouts >= 4;
-  if (currentWeekCompleted) {
-    weeklyData.weekStreakCount++;
-    weeklyData.lastCompletedWeek = weekKey;
+  // Only reset streak if previous week was not completed
+  // and this week is not already completed
+  if (!prevWeekCompleted && !currentWeekCompleted) {
+    weeklyData.weekStreakCount = 0;
+  } else if (currentWeekCompleted) {
+    // Check if we already counted this week
+    const { startDate } = getCurrentWeekDateRange();
+    const weekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
+    
+    if (weeklyData.lastCompletedWeek !== weekKey) {
+      weeklyData.weekStreakCount++;
+      weeklyData.lastCompletedWeek = weekKey;
+    }
+  } else if (prevWeekCompleted && weeklyData.weekStreakCount === 0) {
+    // If previous week was completed and streak is 0, initialize to at least 1
+    weeklyData.weekStreakCount = 1;
   }
   
   const streakIndicator = document.getElementById('streakIndicator');
   if (streakIndicator) {
-    streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
-    streakIndicator.classList.add('active');
-    if (weeklyData.weekStreakCount > 1) {
-      streakIndicator.textContent += 's';
+    if (weeklyData.weekStreakCount > 0) {
+      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
+      if (weeklyData.weekStreakCount > 1) {
+        streakIndicator.textContent += 's';
+      }
+      streakIndicator.classList.add('active');
+    } else {
+      streakIndicator.textContent = '';
+      streakIndicator.classList.remove('active');
     }
   }
 }
@@ -908,4 +1122,10 @@ window.addEventListener('resize', function() {
   renderLegend();
   adjustMonthDisplay();
   updateWeeklyProgress();
+  
+  // Also load previous year data if needed for streak calculation
+  const prevYear = currentYear - 1;
+  if (!yearData[prevYear]) {
+    await loadDataForYear(prevYear);
+  }
 })();
