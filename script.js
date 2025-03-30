@@ -190,29 +190,27 @@ async function loadDataForYear(year) {
 }
 
 // ========== Tooltip Content Builder ==========
-// Updated tooltip builder with backward compatibility
 function buildTooltipHTML(dayData) {
   if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
     return "No workout data";
   }
   
   // Check if exercises are in the new format (objects with name and count)
-  // or old format (just strings)
   const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
   
   // Format the list of exercises with set counts
   let exerciseList;
   
   if (isNewFormat) {
-    // New format: array of objects with name and count
+    // New format: Keep bullet points but make each item a non-breaking unit
     exerciseList = dayData.exercises
-      .map(ex => `• <span class="exercise-name">${ex.name} (${ex.count})</span>`)
-      .join("<br>");
+      .map(ex => `<div class="exercise-line"><span class="bullet">•</span> <span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
+      .join("");
   } else {
-    // Old format: array of strings, no count information
+    // Old format: Still use non-breaking exercise lines
     exerciseList = dayData.exercises
-      .map(ex => `• <span class="exercise-name">${ex}</span>`)
-      .join("<br>");
+      .map(ex => `<div class="exercise-line"><span class="bullet">•</span> <span class="exercise-name">${ex}</span></div>`)
+      .join("");
   }
   
   // Add duration information if available
@@ -228,8 +226,8 @@ function buildTooltipHTML(dayData) {
   }
   
   return `
-    <strong>Volume:</strong> ${dayData.volume} Sets<br>
-    ${exerciseList}
+    <div class="tooltip-header"><strong>Volume:</strong> ${dayData.volume} Sets</div>
+    <div class="tooltip-exercises">${exerciseList}</div>
     <div class="tooltip-footer">${footerContent}</div>
   `;
 }
@@ -247,9 +245,7 @@ function showTooltip(event, dayData) {
   // If there are muscles, use the first one's color
   if (dayData.muscles && dayData.muscles.length > 0) {
     const firstMuscle = dayData.muscles[0];
-    // Get the color from muscleColors, make it slightly darker for better readability
     const baseColor = muscleColors[firstMuscle];
-    // Convert hex to rgb and darken it slightly for better contrast
     bgColor = darkenColor(baseColor, 0.2);
   }
   
@@ -270,45 +266,49 @@ function showTooltip(event, dayData) {
   
   let posX, posY;
   
-  // For mobile touchscreen devices
+  // IMPROVED MOBILE POSITIONING
   if (window.matchMedia('(pointer: coarse)').matches) {
-    // For touchend event, event.touches will be empty
-    // In this case, we need to use the cell's position
     const cell = event.currentTarget || event.target.closest('.cell-wrapper');
     if (!cell) return;
     
     const cellRect = cell.getBoundingClientRect();
     
-    // Position tooltip centered below the cell
-    posX = cellRect.left + (cellRect.width / 2) - (tooltipWidth / 2);
-    posY = cellRect.bottom + 10;
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     
-    // Add scroll offset to get page coordinates
+    // Scroll offsets
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    posX += scrollLeft;
-    posY += scrollTop;
     
-    // Adjust for viewport boundaries
-    const viewportWidth = window.innerWidth;
-    if (posX < 0) posX = 10;
-    if (posX + tooltipWidth > viewportWidth) posX = viewportWidth - tooltipWidth - 10;
+    // Position tooltip centered above the cell by default
+    posY = cellRect.top - tooltipHeight - 10 + scrollTop;
+    
+    // If not enough room above, position below
+    if (posY < 10) {
+      posY = cellRect.bottom + 10 + scrollTop;
+    }
+    
+    // Center horizontally but ensure it's within viewport
+    posX = cellRect.left + (cellRect.width / 2) - (tooltipWidth / 2) + scrollLeft;
+    
+    // Make sure tooltip is fully visible horizontally
+    if (posX < 10) posX = 10;
+    if (posX + tooltipWidth > viewportWidth - 10) {
+      posX = viewportWidth - tooltipWidth - 10;
+    }
   } else {
-    // For desktop/mouse devices
+    // Desktop positioning (unchanged)
     posX = event.pageX;
     posY = event.pageY;
     
-    // Decide if we have enough space on the right, else place it on the left
     const spaceToRight = window.innerWidth - posX;
     if (spaceToRight < tooltipWidth + 20) {
-      // Not enough space on the right; go left
       posX = posX - tooltipWidth - 10;
     } else {
-      // Enough space, place to the right
       posX = posX + 10;
     }
     
-    // Vertical positioning
     posY = posY + 10;
   }
   
@@ -316,7 +316,7 @@ function showTooltip(event, dayData) {
   tooltipDiv
     .style("left", posX + "px")
     .style("top", posY + "px")
-    .style("pointer-events", "auto"); // Make tooltip interactive on mobile
+    .style("pointer-events", "auto");
 }
 
 // Helper function to darken color

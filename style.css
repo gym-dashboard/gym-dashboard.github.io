@@ -74,7 +74,6 @@ body {
   width: 90px;
 }
 
-
 /* Simple horizontal divider line */
 .simple-divider {
   height: 1px;
@@ -89,8 +88,6 @@ body {
 .content-header {
   margin-bottom: 0.5rem;
 }
-
-
 
 .dashboard-container {
   display: flex;
@@ -323,22 +320,51 @@ svg {
   text-align: center;
 }
 
-/* Updated tooltip styling with dynamic background color */
+/* UPDATED: Tooltip styling with improved design */
 .tooltip {
   position: absolute;
-  /* The background-color is now set dynamically by JavaScript */
+  /* The background-color is set dynamically by JavaScript */
   color: #fff; /* Default color - will be adjusted by JS based on bg brightness */
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 12px 16px;
+  border-radius: 8px;
   font-size: 0.85rem;
-  min-width: 120px; /* Minimum width */
-  max-width: 280px; /* Maximum width to prevent excessive stretching */
+  min-width: 160px;
+  max-width: 280px;
   text-align: left;
   transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   z-index: 9999;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   pointer-events: none; /* Default for desktop */
-  width: auto; /* Let it size to content */
+}
+
+/* New tooltip internal structure styling */
+.tooltip-header {
+  margin-bottom: 8px;
+}
+
+.tooltip-exercises {
+  margin-bottom: 8px;
+}
+
+/* Important: Make each exercise line with bullet point stay together */
+.exercise-line {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 4px;
+  white-space: nowrap; /* Keep bullet and exercise text together */
+}
+
+/* Style for the bullet point */
+.bullet {
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Exercise name stays with its bullet */
+.exercise-name {
+  display: inline-block;
 }
 
 /* Update tooltip footer to work with any background color */
@@ -347,12 +373,6 @@ svg {
   padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.3); /* Semi-transparent white border */
   text-align: center;
-}
-
-/* Exercise name to prevent unwanted wrapping */
-.exercise-name {
-  white-space: nowrap; /* Prevent exercise names from breaking mid-word */
-  display: inline-block; /* Ensures the entire text stays together */
 }
 
 /* Duration value styling - adapt to any background color */
@@ -555,10 +575,18 @@ svg {
 @media (pointer: coarse) {
   .tooltip {
     pointer-events: auto; /* Allow interaction on mobile */
-    padding: 10px 14px;
+    padding: 14px 18px;
     font-size: 0.9rem;
-    max-width: 280px; /* Slightly wider max on mobile but still auto-sized */
+    max-width: 90vw; /* Use viewport width to ensure it fits on all devices */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  }
+  
+  .exercise-line {
+    margin-bottom: 6px;
+  }
+  
+  .bullet {
+    width: 15px;
   }
   
   .tooltip-footer {
