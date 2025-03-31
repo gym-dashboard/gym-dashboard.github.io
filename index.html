@@ -9,6 +9,10 @@
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
   />
+  <!-- Google Fonts for better typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css" />
   <!-- D3 for the calendar -->
@@ -41,12 +45,8 @@
       
       <!-- Modified Progress and Streak Container -->
       <div class="progress-streak-container">
-        <!-- Streak Container (takes full width where legend was) -->
-        <div id="streakContainer" class="streak-container">
-          <div class="streak-emoji">🔥</div>
-          <div class="streak-text">1 Week Streak</div>
-        </div>
-        
+
+
         <!-- Weekly Progress Bar - No streak indicator -->
         <div id="weeklyProgressContainer">
           <!-- Progress bar segments -->
@@ -60,11 +60,26 @@
           </div>
           
           <!-- Progress text with workouts count and date range -->
-          <div id="progressText">0/4 Workouts (Mar 30 - Apr 5)</div>
+          <div id="progressText">1/4 Workouts (Mar 30 - Apr 5)</div>
           
           <!-- Hidden element to store date range (used by JavaScript) -->
           <div id="weekDateRange" style="display: none;"></div>
         </div>
+
+
+        <!-- Updated streak container with side-by-side layout -->
+        <div class="streak-container">
+          <div class="streak-emoji">🔥</div>
+          <div class="streak-text-container">
+            <div class="streak-number">1</div>
+            <div class="streak-unit">Week</div>
+          </div>
+        </div>
+        
+
+
+
+
       </div>
     </div>
     

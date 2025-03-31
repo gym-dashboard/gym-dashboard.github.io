@@ -98,6 +98,16 @@ body {
   margin-right: auto;
 }
 
+/* Extra fix to remove any possible gaps */
+#outerBox {
+  display: flex;
+  flex-direction: column;
+}
+
+#outerBox > div:not(:last-child) {
+  margin-bottom: 4px; /* Reduce spacing between elements inside outerBox */
+}
+
 /* Modified outerBox styling for desktop - now works with flexbox */
 #outerBox {
   flex: 1;
@@ -138,8 +148,8 @@ body {
   white-space: nowrap;
   width: 100%;
   max-width: 100%;
-  margin: 0 auto 0px auto;
-  padding-bottom: 0px;
+  margin: 0 auto 0 auto; /* Remove bottom margin */
+  padding-bottom: 0; /* Ensure no bottom padding */
   scroll-padding: 0 20px;
 }
 
@@ -148,11 +158,13 @@ body {
   display: inline-block;
   vertical-align: top;
   margin-right: 5px;  /* Reduced gap between months */
+  margin-bottom: 0; /* Ensure no bottom margin */
 }
 
 /* Ensure the SVGs are displayed as block-level elements */
 svg {
   display: block;
+  margin-bottom: 0;
 }
 
 /* Weekday labels styling */
@@ -170,9 +182,9 @@ svg {
   display: grid;
   grid-template-columns: repeat(6, 1fr); /* 6 columns for 6 muscle groups */
   grid-template-rows: auto; /* Single row */
-  width: 90%;
-  margin: -5px auto 10px; /* Reduced top margin from 10px to 4px */
-  padding: 4px;
+  width: 100%;
+  margin: 4px auto 10px; /* Reduce top margin from 10px to 4px */
+  padding: 8px;
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -183,7 +195,7 @@ svg {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.6rem, 1.2vw, 0.75rem); /* Dynamic font for side-by-side */
+  font-size: clamp(0.6rem, 1.2vw, 0.95rem); /* Dynamic font for side-by-side */
   text-align: center;
   padding: 2px;
   overflow: visible;
@@ -205,37 +217,59 @@ svg {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  margin-top: 20px;
+  margin-top: 10px; /* Reduced from 20px */
   width: 100%;
 }
 
-/* NEW: Streak container */
+/* Updated streak container with side-by-side layout */
 .streak-container {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row; /* Changed from column to row */
+  align-items: center; /* Middle align items */
   justify-content: center;
-  padding: 12px;
+  padding: 16px;
   background-color: rgba(84, 107, 206, 0.15);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   max-width: 200px;
 }
 
-/* NEW: Fire emoji styling */
+/* Larger flame emoji */
 .streak-emoji {
-  font-size: 2.5rem;
-  margin-bottom: 8px;
+  font-size: 3.2rem; /* Bigger flame */
+  margin-right: 12px; /* Space between flame and text */
+  margin-bottom: 0; /* Remove bottom margin */
   text-align: center;
+  line-height: 1;
 }
 
-/* NEW: Streak text styling */
-.streak-text {
-  font-size: 1.2rem;
+/* Container for number and "Week" text */
+.streak-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Left align the text */
+}
+
+/* Streak number with better typography */
+.streak-number {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #546bce;
+  font-family: 'Montserrat', 'Arial', sans-serif; /* More stylized font */
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+/* Week text */
+.streak-unit {
+  font-size: 1.1rem;
   font-weight: 500;
   color: #546bce;
-  text-align: center;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
 }
 
 /* Weekly Progress Container - modified without streak */
@@ -388,7 +422,7 @@ svg {
   
   /* Increase font size for legend in stacked layout */
   .legend-item {
-    font-size: clamp(0.75rem, 1.8vw, 0.9rem); /* Larger font for stacked layout */
+    font-size: clamp(0.65rem, 1.8vw, 0.9rem); /* Larger font for stacked layout */
   }
   
   /* Slightly larger color boxes for stacked layout */
@@ -410,10 +444,15 @@ svg {
   }
   
   .streak-emoji {
-    font-size: 2rem;
+    font-size: 2.8rem;
+    margin-right: 10px;
   }
   
-  .streak-text {
+  .streak-number {
+    font-size: 2.1rem;
+  }
+  
+  .streak-unit {
     font-size: 1rem;
   }
   
@@ -456,15 +495,19 @@ svg {
   }
   
   .streak-container {
-    padding: 8px;
+    padding: 12px;
   }
   
   .streak-emoji {
-    font-size: 1.8rem;
-    margin-bottom: 5px;
+    font-size: 2.5rem;
+    margin-right: 8px;
   }
   
-  .streak-text {
+  .streak-number {
+    font-size: 1.8rem;
+  }
+  
+  .streak-unit {
     font-size: 0.9rem;
   }
   
@@ -523,10 +566,15 @@ svg {
   }
   
   .streak-emoji {
-    font-size: 1.5rem;
+    font-size: 2.2rem;
+    margin-right: 6px;
   }
   
-  .streak-text {
+  .streak-number {
+    font-size: 1.6rem;
+  }
+  
+  .streak-unit {
     font-size: 0.8rem;
   }
   

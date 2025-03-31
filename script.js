@@ -1127,14 +1127,13 @@ function updateStreakCounter() {
     weeklyData.weekStreakCount = 1;
   }
   
-  // Update the new streak text
-  const streakText = document.querySelector('.streak-text');
-  if (streakText) {
-    if (weeklyData.weekStreakCount > 0) {
-      streakText.textContent = `${weeklyData.weekStreakCount} Week Streak${weeklyData.weekStreakCount > 1 ? 's' : ''}`;
-    } else {
-      streakText.textContent = 'Start your streak!';
-    }
+  // Update the streak display with proper pluralization
+  const streakNumber = document.querySelector('.streak-number');
+  const streakUnit = document.querySelector('.streak-unit');
+  
+  if (streakNumber && streakUnit) {
+    streakNumber.textContent = weeklyData.weekStreakCount;
+    streakUnit.textContent = weeklyData.weekStreakCount === 1 ? 'Week' : 'Weeks';
   }
 }
 
