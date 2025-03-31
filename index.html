@@ -49,24 +49,28 @@
 
         <!-- Weekly Progress Bar - No streak indicator -->
         <div id="weeklyProgressContainer">
-          <!-- Progress bar segments -->
+          <!-- New title element -->
+          <div class="progress-title">Weekly Workouts</div>
+          
+          <!-- Thin horizontal line -->
+          <hr class="progress-divider">
+          
+          <!-- Progress bar container -->
           <div class="progress-container">
             <div class="progress-segments">
               <div class="segment" data-index="0"></div>
               <div class="segment" data-index="1"></div>
               <div class="segment" data-index="2"></div>
-              <div class="segment" data-index="3"></div>
+              <div class="segment" data-index="3">
+                <!-- Count inside last segment -->
+                <div class="progress-count">1/4</div>
+              </div>
             </div>
           </div>
-          
-          <!-- Progress text with workouts count and date range -->
-          <div id="progressText">1/4 Workouts (Mar 30 - Apr 5)</div>
           
           <!-- Hidden element to store date range (used by JavaScript) -->
           <div id="weekDateRange" style="display: none;"></div>
         </div>
-
-
         <!-- Updated streak container with side-by-side layout -->
         <div class="streak-container">
           <div class="streak-emoji">🔥</div>
@@ -75,10 +79,6 @@
             <div class="streak-unit">Week</div>
           </div>
         </div>
-        
-
-
-
 
       </div>
     </div>

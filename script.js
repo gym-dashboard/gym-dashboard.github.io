@@ -1139,10 +1139,11 @@ function updateStreakCounter() {
 
 function updateProgressBar(workoutCount) {
   const segments = document.querySelectorAll('.segment');
-  const progressText = document.getElementById('progressText');
+  const progressCount = document.querySelector('.progress-count');
   
-  if (!segments.length || !progressText) return;
+  if (!segments.length) return;
   
+  // Fill in segments based on workout count
   segments.forEach((segment, index) => {
     if (index < workoutCount) {
       segment.classList.add('filled');
@@ -1151,21 +1152,35 @@ function updateProgressBar(workoutCount) {
     }
   });
   
-  // Always use the same format with date range
-  const dateRange = getFormattedDateRange();
-  progressText.textContent = `${workoutCount}/4 Workouts (${dateRange})`;
+  // Update the count text
+  if (progressCount) {
+    progressCount.textContent = `${workoutCount}/4`;
+    
+    // Optional: Adjust color if all segments are filled
+    if (workoutCount >= 4) {
+      progressCount.style.color = '#fff'; // White text for better contrast
+    } else {
+      // Only make count white if it's in a filled segment
+      if (workoutCount >= 3) { // If count is in the last segment and that segment is filled
+        progressCount.style.color = '#fff';
+      } else {
+        progressCount.style.color = '#546bce'; // Blue text otherwise
+      }
+    }
+  }
   
   if (workoutCount >= 4) {
     updateStreakCounter();
   }
 }
 
+// Function to update weekly progress (unchanged, just removing the reference to progressText)
 function updateWeeklyProgress() {
   updateWeekDateRangeDisplay();
   const workoutCount = countCurrentWeekWorkouts();
   weeklyData.currentWeekWorkouts = workoutCount;
   updateProgressBar(workoutCount);
-  updateStreakCounter(); // This now updates the streak text in the dedicated container
+  updateStreakCounter();
 }
 
 // ========== Window Resize Handler ==========
