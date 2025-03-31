@@ -202,39 +202,39 @@ function buildTooltipHTML(dayData) {
   let exerciseList;
   
   if (isNewFormat) {
-    // New format: Keep bullet points tight with text
     exerciseList = dayData.exercises
       .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
       .join("");
   } else {
-    // Old format: Also use tight spacing
     exerciseList = dayData.exercises
       .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex}</span></div>`)
       .join("");
   }
   
-  // Add duration information if available
+  // Add duration information if available - more compact for small tooltips
   let durationInfo = "";
   if (dayData.duration && dayData.duration !== "NaN") {
     durationInfo = dayData.duration;
   }
   
-  // Always include the footer separator
+  // Always include the footer separator if we have duration info
   let footerContent = "";
   if (durationInfo) {
-    footerContent = `<div class="duration-value">${durationInfo}</div>`;
+    footerContent = `<div class="tooltip-footer"><div class="duration-value">${durationInfo}</div></div>`;
   }
   
   return `
     <div class="tooltip-header"><strong>Volume:</strong> ${dayData.volume} Sets</div>
     <div class="tooltip-exercises">${exerciseList}</div>
-    <div class="tooltip-footer">${footerContent}</div>
+    ${footerContent}
   `;
 }
 
 // ========== Tooltip Show/Hide ==========
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
+
+  
   
   // Build the HTML content
   tooltipDiv.html(buildTooltipHTML(dayData));
@@ -256,60 +256,133 @@ function showTooltip(event, dayData) {
   const textColor = isColorDark(bgColor) ? "#ffffff" : "#333333";
   tooltipDiv.style("color", textColor);
   
-  // Make the tooltip visible first so we can measure it
-  tooltipDiv.style("opacity", 1);
+  // Get the chart container (to keep tooltip within its bounds)
+  const chartContainerNode = document.getElementById("chartContainer");
+  const chartContainerRect = chartContainerNode.getBoundingClientRect();
+  
+  // First make the tooltip visible with basic font size so we can measure it
+  tooltipDiv
+    .style("opacity", 1)
+    .style("font-size", "0.85rem") // Reset font size to default
+    .style("max-width", "250px"); // Default max width
   
   // Measure the tooltip
   const tooltipNode = tooltipDiv.node();
-  const tooltipWidth = tooltipNode.offsetWidth;
-  const tooltipHeight = tooltipNode.offsetHeight;
+  let tooltipWidth = tooltipNode.offsetWidth;
+  let tooltipHeight = tooltipNode.offsetHeight;
+  
+  // Keep track of whether we need to reduce font size
+  let fontSize = 0.85; // Default font size
+  let fontSizeReduced = false;
+  const minFontSize = 0.65; // Minimum acceptable font size
+  
+  // If tooltip is too wide, reduce the max-width to fit the chart width
+  if (tooltipWidth > chartContainerRect.width * 0.7) {
+    const maxWidth = Math.max(160, Math.floor(chartContainerRect.width * 0.7));
+    tooltipDiv.style("max-width", maxWidth + "px");
+    tooltipWidth = maxWidth;
+  }
+  
+  // If tooltip is still too large after adjusting width, reduce font size incrementally
+  while ((tooltipWidth > chartContainerRect.width * 0.8 || tooltipHeight > chartContainerRect.height * 0.7) && 
+         fontSize > minFontSize) {
+    fontSize -= 0.05; // Reduce font size in small increments
+    fontSizeReduced = true;
+    tooltipDiv.style("font-size", fontSize + "rem");
+    // Re-measure after font size change
+    tooltipWidth = tooltipNode.offsetWidth;
+    tooltipHeight = tooltipNode.offsetHeight;
+  }
+  
+  // If font size was reduced, also reduce padding to make better use of space
+  if (fontSizeReduced) {
+    tooltipDiv.style("padding", "4px 6px");
+  } else {
+    // Reset padding to normal if not reduced
+    tooltipDiv.style("padding", window.matchMedia('(pointer: coarse)').matches ? "14px 18px" : "6px 8px");
+  }
   
   let posX, posY;
   
-  // IMPROVED MOBILE POSITIONING
+  // IMPROVED MOBILE AND DESKTOP POSITIONING THAT STAYS WITHIN CONTAINER
   if (window.matchMedia('(pointer: coarse)').matches) {
     const cell = event.currentTarget || event.target.closest('.cell-wrapper');
     if (!cell) return;
     
     const cellRect = cell.getBoundingClientRect();
     
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // Scroll offsets
+    // Get viewport dimensions and scroll offsets
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Calculate chart container boundaries accounting for scroll
+    const containerLeft = chartContainerRect.left + scrollLeft;
+    const containerRight = containerLeft + chartContainerRect.width;
+    const containerTop = chartContainerRect.top + scrollTop;
+    const containerBottom = containerTop + chartContainerRect.height;
     
     // Position tooltip centered above the cell by default
     posY = cellRect.top - tooltipHeight - 10 + scrollTop;
     
     // If not enough room above, position below
-    if (posY < 10) {
+    if (posY < containerTop) {
       posY = cellRect.bottom + 10 + scrollTop;
     }
     
-    // Center horizontally but ensure it's within viewport
+    // If still outside container vertically, place it at the top of the container with small margin
+    if (posY < containerTop) {
+      posY = containerTop + 5;
+    }
+    
+    // If would go beyond bottom of container, reposition to stay within
+    if (posY + tooltipHeight > containerBottom) {
+      posY = containerBottom - tooltipHeight - 5;
+    }
+    
+    // Center horizontally but ensure it's within chart container
     posX = cellRect.left + (cellRect.width / 2) - (tooltipWidth / 2) + scrollLeft;
     
-    // Make sure tooltip is fully visible horizontally
-    if (posX < 10) posX = 10;
-    if (posX + tooltipWidth > viewportWidth - 10) {
-      posX = viewportWidth - tooltipWidth - 10;
+    // Make sure tooltip is fully visible horizontally within chart container
+    if (posX < containerLeft) {
+      posX = containerLeft + 5;
+    }
+    if (posX + tooltipWidth > containerRight) {
+      posX = containerRight - tooltipWidth - 5;
     }
   } else {
-    // Desktop positioning (unchanged)
-    posX = event.pageX;
-    posY = event.pageY;
+    // Desktop positioning - improved to stay within chart container
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
-    const spaceToRight = window.innerWidth - posX;
-    if (spaceToRight < tooltipWidth + 20) {
-      posX = posX - tooltipWidth - 10;
-    } else {
-      posX = posX + 10;
+    // Calculate chart container boundaries with scroll offset
+    const containerLeft = chartContainerRect.left + scrollLeft;
+    const containerRight = containerLeft + chartContainerRect.width;
+    const containerTop = chartContainerRect.top + scrollTop;
+    const containerBottom = containerTop + chartContainerRect.height;
+    
+    // Initial position based on mouse cursor
+    posX = event.pageX + 10;
+    posY = event.pageY + 10;
+    
+    // Check right edge
+    if (posX + tooltipWidth > containerRight) {
+      posX = event.pageX - tooltipWidth - 10;
     }
     
-    posY = posY + 10;
+    // If still outside left edge, align with left edge
+    if (posX < containerLeft) {
+      posX = containerLeft + 5;
+    }
+    
+    // Check bottom edge
+    if (posY + tooltipHeight > containerBottom) {
+      posY = containerBottom - tooltipHeight - 5;
+    }
+    
+    // Check top edge
+    if (posY < containerTop) {
+      posY = containerTop + 5;
+    }
   }
   
   // Apply final positioning
@@ -318,6 +391,31 @@ function showTooltip(event, dayData) {
     .style("top", posY + "px")
     .style("pointer-events", "auto");
 }
+
+
+function updateTooltipStyles() {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = `
+    /* Additional tooltip styles for better text handling */
+    .tooltip-exercises {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .exercise-line {
+      white-space: normal !important; /* Override the nowrap to allow wrapping */
+      margin-bottom: 3px;
+    }
+    
+    .exercise-name {
+      word-break: break-word;
+    }
+  `;
+  document.head.appendChild(styleElement);
+}
+
+// Call this function during initialization
+document.addEventListener('DOMContentLoaded', updateTooltipStyles);
 
 // Helper function to darken color
 function darkenColor(hexColor, factor) {
