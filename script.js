@@ -549,6 +549,7 @@ function adjustMonthDisplay() {
   
   if (monthBlocks.length === 0) return;
   
+  // Determine how many months should be visible
   let targetMonthsVisible;
   if (containerWidth < 480) {
     targetMonthsVisible = Math.min(2, monthBlocks.length);
@@ -556,6 +557,7 @@ function adjustMonthDisplay() {
     targetMonthsVisible = Math.min(3, monthBlocks.length);
   }
   
+  // Calculate ideal month width - ensure equal distribution
   const idealMonthWidth = Math.floor((containerWidth - (5 * (targetMonthsVisible - 1))) / targetMonthsVisible);
   monthBlocks.forEach(block => {
     const svg = block.querySelector('svg');
@@ -567,12 +569,23 @@ function adjustMonthDisplay() {
     }
   });
   
+  // Get current month
   const now = new Date();
   let currentMonth = now.getMonth();
-  let updatedMonthBlockWidth = idealMonthWidth + 5;
-  const desiredScroll = (currentMonth * updatedMonthBlockWidth)
-                      - (containerWidth - updatedMonthBlockWidth);
-  chartContainer.scrollLeft = Math.max(0, desiredScroll);
+  
+  // Width of a single month block including margin
+  const monthBlockWidth = idealMonthWidth + 5;
+  
+  // If current month fits within the targetMonthsVisible from the beginning,
+  // no need to scroll (January should be leftmost)
+  if (currentMonth < targetMonthsVisible) {
+    chartContainer.scrollLeft = 0;
+  } else {
+    // Current month should be the rightmost visible month
+    // So the leftmost month would be (currentMonth - (targetMonthsVisible - 1))
+    const firstVisibleMonth = currentMonth - (targetMonthsVisible - 1);
+    chartContainer.scrollLeft = firstVisibleMonth * monthBlockWidth;
+  }
 }
 
 // ========== Draw Year Calendar ==========
@@ -1114,17 +1127,13 @@ function updateStreakCounter() {
     weeklyData.weekStreakCount = 1;
   }
   
-  const streakIndicator = document.getElementById('streakIndicator');
-  if (streakIndicator) {
+  // Update the new streak text
+  const streakText = document.querySelector('.streak-text');
+  if (streakText) {
     if (weeklyData.weekStreakCount > 0) {
-      streakIndicator.textContent = `${weeklyData.weekStreakCount} Week Streak`;
-      if (weeklyData.weekStreakCount > 1) {
-        streakIndicator.textContent += 's';
-      }
-      streakIndicator.classList.add('active');
+      streakText.textContent = `${weeklyData.weekStreakCount} Week Streak${weeklyData.weekStreakCount > 1 ? 's' : ''}`;
     } else {
-      streakIndicator.textContent = '';
-      streakIndicator.classList.remove('active');
+      streakText.textContent = 'Start your streak!';
     }
   }
 }
@@ -1157,7 +1166,7 @@ function updateWeeklyProgress() {
   const workoutCount = countCurrentWeekWorkouts();
   weeklyData.currentWeekWorkouts = workoutCount;
   updateProgressBar(workoutCount);
-  updateStreakCounter();
+  updateStreakCounter(); // This now updates the streak text in the dedicated container
 }
 
 // ========== Window Resize Handler ==========
@@ -1166,9 +1175,11 @@ window.addEventListener('resize', function() {
   this.resizeTimeout = setTimeout(function() {
     drawYearCalendar(currentYear);
     adjustMonthDisplay();
+    renderLegend(); // Make sure legend is properly rendered on resize
     
     const workoutCount = countCurrentWeekWorkouts();
     updateProgressBar(workoutCount);
+    updateStreakCounter(); // Update streak display
   }, 200);
 });
 

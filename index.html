@@ -23,7 +23,7 @@
   <!-- Workout count outside divs -->
   <div id="yearlyWorkoutsCount" class="mb-3"></div>
   
-  <!-- New dashboard-container to hold both visualizations -->
+  <!-- Dashboard-container to hold both visualizations -->
   <div class="dashboard-container">
     <!-- Original Calendar Container -->
     <div id="outerBox" class="p-3 rounded bg-white">
@@ -36,18 +36,19 @@
       <!-- Calendar Container: horizontal scrolling with responsive width -->
       <div id="chartContainer"></div>
       
-      <!-- Wrap legend and progress bar in a flex container -->
-      <div class="legend-progress-container">
-        <!-- Legend for Muscle Groups -->
-        <div id="legend"></div>
+      <!-- Legend moved below calendars -->
+      <div id="legend" class="full-width-legend"></div>
+      
+      <!-- Modified Progress and Streak Container -->
+      <div class="progress-streak-container">
+        <!-- Streak Container (takes full width where legend was) -->
+        <div id="streakContainer" class="streak-container">
+          <div class="streak-emoji">🔥</div>
+          <div class="streak-text">1 Week Streak</div>
+        </div>
         
-        <!-- Weekly Progress Bar - Simplified layout -->
+        <!-- Weekly Progress Bar - No streak indicator -->
         <div id="weeklyProgressContainer">
-          <!-- Simplified weekly header with just the streak indicator -->
-          <div class="weekly-header">
-            <div id="streakIndicator" class="streak-badge"></div>
-          </div>
-          
           <!-- Progress bar segments -->
           <div class="progress-container">
             <div class="progress-segments">
