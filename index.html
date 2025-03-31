@@ -20,83 +20,80 @@
 </head>
 <body>
 
-<!-- Tooltip div (hidden by default) -->
-<div id="tooltip" class="tooltip" style="opacity:0; position:absolute; pointer-events:none;"></div>
+  <!-- Tooltip div (hidden by default) -->
+  <div id="tooltip" class="tooltip" style="opacity:0; position:absolute; pointer-events:none;"></div>
 
-<div class="container-fluid my-4">
-  <!-- Workout count outside divs -->
-  <div id="yearlyWorkoutsCount" class="mb-3"></div>
-  
-  <!-- Dashboard-container to hold both visualizations -->
-  <div class="dashboard-container">
-    <!-- Original Calendar Container -->
-    <div id="outerBox" class="p-3 rounded bg-white">
-      <div class="content-header d-flex justify-content-between align-items-center">
-        <h3 class="content-title">Workout Calendar</h3>
-        <select id="yearSelect" class="form-select form-select-sm"></select>
-      </div>
-      <hr class="simple-divider">
-      
-      <!-- Calendar Container: horizontal scrolling with responsive width -->
-      <div id="chartContainer"></div>
-      
-      <!-- Legend moved below calendars -->
-      <div id="legend" class="full-width-legend"></div>
-      
-      <!-- Modified Progress and Streak Container -->
-      <div class="progress-streak-container">
-
-
-        <!-- Weekly Progress Bar - No streak indicator -->
-        <div id="weeklyProgressContainer">
-          <!-- New title element -->
-          <div class="progress-title">Weekly Workouts</div>
-          
-          <!-- Thin horizontal line -->
-          <hr class="progress-divider">
-          
-          <!-- Progress bar container -->
-          <div class="progress-container">
-            <div class="progress-segments">
-              <div class="segment" data-index="0"></div>
-              <div class="segment" data-index="1"></div>
-              <div class="segment" data-index="2"></div>
-              <div class="segment" data-index="3">
-                <!-- Count inside last segment -->
-                <div class="progress-count">1/4</div>
+  <div class="container-fluid my-4">
+    <!-- Workout count outside divs -->
+    <div id="yearlyWorkoutsCount" class="mb-3"></div>
+    
+    <!-- Dashboard container to hold both visualizations -->
+    <div class="dashboard-container">
+      <!-- Original Calendar Container -->
+      <div id="outerBox" class="p-3 rounded bg-white">
+        <div class="content-header d-flex justify-content-between align-items-center">
+          <h3 class="content-title">Workout Calendar</h3>
+          <select id="yearSelect" class="form-select form-select-sm"></select>
+        </div>
+        <hr class="simple-divider">
+        
+        <!-- Calendar Container: horizontal scrolling with responsive width -->
+        <div id="chartContainer"></div>
+        
+        <!-- Legend moved below calendars -->
+        <div id="legend" class="full-width-legend"></div>
+        
+        <!-- Progress & Streak Container -->
+        <!-- Add the "two-boxes" class to use the 60–40 split when the container is narrow -->
+        <div class="progress-streak-container two-boxes">
+          <!-- Weekly Progress Bar -->
+          <div id="weeklyProgressContainer">
+            <div class="progress-title">Weekly Workouts</div>
+            <hr class="progress-divider">
+            <div class="progress-container">
+              <div class="progress-segments">
+                <div class="segment" data-index="0"></div>
+                <div class="segment" data-index="1"></div>
+                <div class="segment" data-index="2"></div>
+                <div class="segment" data-index="3">
+                  <div class="progress-count">1/4</div>
+                </div>
               </div>
             </div>
+            <div id="weekDateRange" style="display: none;"></div>
           </div>
-          
-          <!-- Hidden element to store date range (used by JavaScript) -->
-          <div id="weekDateRange" style="display: none;"></div>
-        </div>
-        <!-- Updated streak container with side-by-side layout -->
-        <div class="streak-container">
-          <div class="streak-emoji">🔥</div>
-          <div class="streak-text-container">
-            <div class="streak-number">1</div>
-            <div class="streak-unit">Week</div>
-          </div>
-        </div>
 
+          <!-- Streak Container -->
+          <div class="streak-container">
+            <div class="streak-emoji">🔥</div>
+            <div class="streak-text-container">
+              <div class="streak-number">1</div>
+              <div class="streak-unit">Week</div>
+            </div>
+          </div>
+
+          <!-- Yearly Workouts (third box) -->
+          <div class="yearly-workouts-desktop">
+            <div class="workouts-count">0</div>
+            <div class="workouts-unit">Workouts</div>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <!-- Second plot container -->
-    <div id="secondPlot" class="p-3 rounded bg-white">
-      <div class="content-header">
-        <h3 class="content-title">Weight Analysis</h3>
-      </div>
-      <hr class="simple-divider">
-      <div id="secondChartArea" class="chart-placeholder">
-        Your second visualization will appear here
+      
+      <!-- Second plot container -->
+      <div id="secondPlot" class="p-3 rounded bg-white">
+        <div class="content-header">
+          <h3 class="content-title">Weight Analysis</h3>
+        </div>
+        <hr class="simple-divider">
+        <div id="secondChartArea" class="chart-placeholder">
+          Your second visualization will appear here
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Main JS -->
-<script src="script.js"></script>
+  <!-- Main JS -->
+  <script src="script.js"></script>
 </body>
 </html>

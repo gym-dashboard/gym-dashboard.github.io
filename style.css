@@ -1,10 +1,18 @@
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+
 /* Basic page styling */
 body {
   font-family: Arial, sans-serif;
   background: #f9f9f9;
 }
 
-/* Workout count with improved styling (now outside divs) */
+/* ==========================================================================
+   Header & Layout Components
+   ========================================================================== */
+
+/* Workout count with improved styling (mobile version) */
 #yearlyWorkoutsCount {
   position: relative;
   padding-left: 15px;
@@ -15,11 +23,9 @@ body {
   letter-spacing: 0.3px;
   line-height: 1.3;
   max-width: 95%;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
 }
 
-/* This creates the vertical bar */
 #yearlyWorkoutsCount::before {
   content: "";
   position: absolute;
@@ -31,7 +37,7 @@ body {
   border-radius: 2px;
 }
 
-/* CSS Grid Layout for Headers */
+/* Header Grid Layout */
 .header-grid {
   display: grid;
   grid-template-rows: auto 1px;
@@ -59,7 +65,6 @@ body {
   color: #333;
 }
 
-/* Year selector with fixed width */
 #yearSelect {
   min-width: 90px;
   width: 90px;
@@ -69,12 +74,10 @@ body {
   font-size: 0.8rem;
 }
 
-/* Create empty spacer in second header */
 .header-spacer {
   width: 90px;
 }
 
-/* Simple horizontal divider line */
 .simple-divider {
   height: 1px;
   margin: 0.5rem 0 1rem 0;
@@ -89,37 +92,35 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* Dashboard container */
 .dashboard-container {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
   width: 95%;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
 }
 
-/* Extra fix to remove any possible gaps */
+/* ==========================================================================
+   Dashboard Boxes
+   ========================================================================== */
+
 #outerBox {
   display: flex;
   flex-direction: column;
-}
-
-#outerBox > div:not(:last-child) {
-  margin-bottom: 4px; /* Reduce spacing between elements inside outerBox */
-}
-
-/* Modified outerBox styling for desktop - now works with flexbox */
-#outerBox {
   flex: 1;
   min-width: 300px;
-  max-width: calc(50% - 10px); /* Half width minus half the gap */
+  max-width: calc(50% - 10px);
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   box-sizing: border-box;
 }
 
-/* Second visualization container - UPDATED */
+#outerBox > div:not(:last-child) {
+  margin-bottom: 4px;
+}
+
 #secondPlot {
   flex: 1;
   min-width: 300px;
@@ -127,81 +128,69 @@ body {
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  display: block; /* Changed from 'none' to 'block' to always show */
+  display: block;
 }
 
-/* Chart placeholder for the second visualization */
-.chart-placeholder {
-  height: 350px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  color: #6c757d;
-  font-style: italic;
-}
+/* ==========================================================================
+   Chart & Calendar Styling
+   ========================================================================== */
 
-/* Add this to control how many months are visible */
 #chartContainer {
   overflow-x: auto;
   white-space: nowrap;
   width: 100%;
   max-width: 100%;
-  margin: 0 auto 0 auto; /* Remove bottom margin */
-  padding-bottom: 0; /* Ensure no bottom padding */
+  margin: 0 auto;
+  padding-bottom: 0;
   scroll-padding: 0 20px;
 }
 
-/* Each month block styling */
 .month-block {
   display: inline-block;
   vertical-align: top;
-  margin-right: 5px;  /* Reduced gap between months */
-  margin-bottom: 0; /* Ensure no bottom margin */
+  margin-right: 5px;
+  margin-bottom: 0;
 }
 
-/* Ensure the SVGs are displayed as block-level elements */
 svg {
   display: block;
   margin-bottom: 0;
 }
 
-/* Weekday labels styling */
 .weekDay {
   font-weight: bold;
 }
 
-/* Day label text inside cells */
 .dayLabel {
   pointer-events: none;
 }
 
-/* Legend styling - always 6x1 grid layout for all screen sizes */
+/* ==========================================================================
+   Legend Styling
+   ========================================================================== */
+
 .full-width-legend {
   display: grid;
-  grid-template-columns: repeat(6, 1fr); /* 6 columns for 6 muscle groups */
-  grid-template-rows: auto; /* Single row */
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: auto;
   width: 100%;
-  margin: 0px auto 10px; /* Reduce top margin from 10px to 4px */
+  margin: 0 auto 10px;
   padding: 2px;
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Legend items - dynamic font sizing based on container width */
 .legend-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.6rem, 1.2vw, 0.95rem); /* Dynamic font for side-by-side */
+  font-size: clamp(0.6rem, 1.2vw, 0.95rem);
   text-align: center;
   padding: 2px;
   overflow: visible;
 }
 
-/* Colored box for muscle groups */
 .colorBox {
   display: block;
   min-width: 12px;
@@ -212,69 +201,49 @@ svg {
   margin: 0 3px 0 0;
 }
 
-/* NEW: Progress and streak container - replaces legend-progress-container */
+/* ==========================================================================
+   Progress & Streak Components
+   ========================================================================== */
+
+/*
+  The progress-streak container is declared as a container.
+  By default (for narrow container sizes) only two boxes (progress and streak) are visible.
+  When the container is at least 480px wide the yearly workouts box appears.
+*/
 .progress-streak-container {
+  container-type: inline-size;
   display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-top: 10px; /* Reduced from 20px */
+  flex-direction: row;
+  gap: 10px;
+  margin-top: 10px;
   width: 100%;
 }
 
-/* Updated streak container with side-by-side layout */
+/* Default for narrow container sizes: only two boxes, each 50% */
+#weeklyProgressContainer,
 .streak-container {
-  flex: 1;
-  display: flex;
-  flex-direction: row; /* Changed from column to row */
-  align-items: center; /* Middle align items */
-  justify-content: center;
-  padding: 16px;
-  background-color: rgba(84, 107, 206, 0.15);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  max-width: 200px;
+  flex: 0 0 50%;
+  max-width: 50%;
 }
 
-/* Larger flame emoji */
-.streak-emoji {
-  font-size: 3.2rem; /* Bigger flame */
-  margin-right: 12px; /* Space between flame and text */
-  margin-bottom: 0; /* Remove bottom margin */
-  text-align: center;
-  line-height: 1;
+/* Two-box layout modifications: when only progress and streak are shown, use a 60–40 split */
+.progress-streak-container.two-boxes #weeklyProgressContainer {
+  flex: 0 0 60%;
+  max-width: 60%;
 }
 
-/* Container for number and "Week" text */
-.streak-text-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* Left align the text */
+.progress-streak-container.two-boxes .streak-container {
+  flex: 0 0 40%;
+  max-width: 40%;
 }
 
-/* Streak number with better typography */
-.streak-number {
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: #546bce;
-  font-family: 'Montserrat', 'Arial', sans-serif; /* More stylized font */
-  line-height: 1;
-  margin: 0;
-  padding: 0;
+/* Yearly workouts is hidden by default */
+.yearly-workouts-desktop {
+  display: none;
 }
 
-/* Week text */
-.streak-unit {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #546bce;
-  line-height: 1.2;
-  margin: 0;
-  padding: 0;
-}
-
-/* Weekly Progress Container - modified without streak */
+/* Common styles for weekly progress */
 #weeklyProgressContainer {
-  flex: 1;
   padding: 16px;
   border-radius: 8px;
   background-color: #f8f9fa;
@@ -283,7 +252,6 @@ svg {
   flex-direction: column;
 }
 
-/* New title element */
 .progress-title {
   font-size: 1.1rem;
   font-weight: 500;
@@ -292,7 +260,6 @@ svg {
   margin-bottom: 2px;
 }
 
-/* Thin horizontal line */
 .progress-divider {
   height: 1px;
   border: none;
@@ -300,16 +267,7 @@ svg {
   margin: 0 0 6px 0;
 }
 
-/* Hide old streak elements */
-.streak-badge {
-  display: none;
-}
-
-.weekly-header {
-  display: none;
-}
-
-/* Progress bar container */
+/* Progress Bar */
 .progress-container {
   width: 100%;
   padding: 0;
@@ -322,7 +280,7 @@ svg {
   height: 30px;
   border-radius: 6px;
   overflow: hidden;
-  position: relative; /* For the count inside */
+  position: relative;
 }
 
 .segment {
@@ -338,7 +296,6 @@ svg {
   border-right: none;
 }
 
-/* Count inside last segment */
 .progress-count {
   position: absolute;
   right: 10px;
@@ -347,11 +304,9 @@ svg {
   font-size: 0.85rem;
   font-weight: 600;
   color: #fff;
-
   z-index: 2;
 }
 
-/* Blue color segments */
 .segment[data-index="0"].filled {
   background-color: #cfe2ff;
 }
@@ -371,62 +326,234 @@ svg {
   text-align: center;
 }
 
-/* Media query adjustments */
+/* Streak Container */
+.streak-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: rgba(84, 107, 206, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.streak-emoji {
+  font-size: 3.2rem;
+  margin-right: 12px;
+  margin-bottom: 0;
+  text-align: center;
+  line-height: 1;
+}
+
+.streak-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.streak-number {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #546bce;
+  font-family: 'Montserrat', 'Arial', sans-serif;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.streak-unit {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #546bce;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   Yearly Workouts (Desktop Version)
+   ========================================================================== */
+
+/* Yearly workouts element is hidden by default but will be shown when the container is wide */
+.yearly-workouts-desktop {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background-color: rgba(84, 107, 206, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.workouts-count {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #546bce;
+  font-family: 'Montserrat', 'Arial', sans-serif;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.workouts-unit {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #546bce;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+/* Mobile version for yearly workouts (if separate) */
+.yearly-workouts-mobile {
+  display: block;
+}
+
+/* Hide legacy elements */
+.streak-badge,
+.weekly-header {
+  display: none;
+}
+
+/* ==========================================================================
+   Container Query: When the container is at least 480px wide, use the three-box layout.
+   This block overrides the two-box modifications.
+   ========================================================================== */
+@container (min-width: 480px) {
+  /* Show the yearly workouts box */
+  .progress-streak-container.two-boxes .yearly-workouts-desktop {
+    display: flex;
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+  /* Revert progress and streak to the three-box split */
+  .progress-streak-container.two-boxes #weeklyProgressContainer {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+  .progress-streak-container.two-boxes .streak-container {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+}
+
+/* ==========================================================================
+   Fallback Media Query: For viewport widths below 479px, show only the two boxes.
+   ========================================================================== */
+@media (max-width: 479px) {
+  .yearly-workouts-desktop {
+    display: none;
+  }
+  #weeklyProgressContainer,
+  .streak-container {
+    /* With two-boxes class the split will be controlled by the 60–40 rule */
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+/* ==========================================================================
+   Additional Legacy Media Queries (Optional)
+   ========================================================================== */
+
+/* Medium screens */
+@media (max-width: 991px) {
+  #outerBox,
+  #secondPlot {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  #outerBox {
+    margin-bottom: 20px;
+  }
+  .legend-item {
+    font-size: clamp(0.65rem, 1.8vw, 0.9rem);
+  }
+  .colorBox {
+    min-width: 14px;
+    width: 14px;
+    height: 14px;
+    margin: 0 4px 0 0;
+  }
+}
+
+/* Small screens (under 768px) */
 @media (max-width: 768px) {
   .progress-title {
     font-size: 1rem;
     margin-bottom: 6px;
   }
-  
   .progress-divider {
     margin-bottom: 10px;
   }
-  
   .progress-segments {
     height: 22px;
   }
-  
   .progress-count {
     font-size: 0.8rem;
     right: 8px;
   }
+  #chartContainer svg {
+    max-width: none;
+  }
+  .full-width-legend {
+    gap: 3px;
+    padding: 5px;
+  }
+  .legend-item {
+    font-size: clamp(0.65rem, 2.5vw, 0.8rem);
+    padding: 1px;
+  }
+  .colorBox {
+    min-width: 10px;
+    width: 10px;
+    height: 10px;
+    margin: 0 2px 0 0;
+  }
 }
 
+/* Extra small screens (under 480px) */
 @media (max-width: 480px) {
   #weeklyProgressContainer {
     padding: 12px;
   }
-  
   .progress-title {
     font-size: 0.9rem;
   }
-  
   .progress-segments {
     height: 20px;
   }
-  
   .progress-count {
     font-size: 0.75rem;
     right: 6px;
   }
+  #yearSelect {
+    min-width: 80px;
+    width: 80px;
+  }
+  .header-spacer {
+    width: 80px;
+  }
 }
 
+/* Very small screens (under 374px) */
 @media (max-width: 374px) {
-  #weeklyProgressContainer {
-    padding: 10px;
+  .full-width-legend {
+    gap: 2px;
+    padding: 4px;
   }
-  
-  .progress-title {
-    font-size: 0.85rem;
-    margin-bottom: 4px;
+  .legend-item {
+    font-size: clamp(0.55rem, 2.2vw, 0.7rem);
+    padding: 1px 0;
   }
-  
-  .progress-divider {
-    margin-bottom: 8px;
-  }
-  
-  .progress-segments {
-    height: 18px;
+  .colorBox {
+    min-width: 8px;
+    width: 8px;
+    height: 8px;
+    margin: 0 2px 0 0;
   }
 }
 
@@ -443,17 +570,14 @@ svg {
   transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   z-index: 9999;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-}
+  pointer-events: none;}
 
-/* New tooltip internal structure styling */
 .tooltip-header {
-  margin-bottom: 8px;
-}
+    margin-bottom: 8px;}
 
 .tooltip-exercises {
-  margin-bottom: 8px;
-}
+    margin-bottom: 8px;}
+
 
 /* Important: Make each exercise line with bullet point stay together */
 .exercise-line {
@@ -461,35 +585,31 @@ svg {
   align-items: baseline;
   margin-bottom: 4px;
   white-space: nowrap; /* Keep bullet and exercise text together */
-  gap: 3px; /* Small controlled gap instead of unpredictable space */
-}
+  gap: 3px; /* Small controlled gap instead of unpredictable space */}
 
 /* Style for the bullet point - REMOVED WIDTH to prevent indentation */
 .bullet {
   display: inline-block;
   flex-shrink: 0;
-  /* width property removed to prevent indentation */
-}
+  /* width property removed to prevent indentation */}
 
 /* Exercise name stays with its bullet */
 .exercise-name {
-  display: inline-block;
-}
+  display: inline-block;}
 
 /* Update tooltip footer to work with any background color */
 .tooltip-footer {
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.3); /* Semi-transparent white border */
-  text-align: center;
-}
+  text-align: center;}
 
 /* Duration value styling - adapt to any background color */
 .duration-value {
   padding-top: 6px;
   font-style: italic;
-  opacity: 0.9;
-}
+  opacity: 0.9;}
+
 
 /* Dismissal hint for mobile tooltips */
 .tooltip-dismiss-hint {
@@ -498,218 +618,22 @@ svg {
   padding-top: 2px;
 }
 
-/* Medium screens - UPDATED for stacked layout with larger font */
-@media (max-width: 991px) {
-  /* Restore full width for tablets and mobile */
-  #outerBox, #secondPlot {
-    max-width: 100%;
-    flex: 0 0 100%;
-  }
-  
-  /* Add margin between the stacked elements */
-  #outerBox {
-    margin-bottom: 20px;
-  }
-  
-  /* Increase font size for legend in stacked layout */
-  .legend-item {
-    font-size: clamp(0.65rem, 1.8vw, 0.9rem); /* Larger font for stacked layout */
-  }
-  
-  /* Slightly larger color boxes for stacked layout */
-  .colorBox {
-    min-width: 14px;
-    width: 14px;
-    height: 14px;
-    margin: 0 4px 0 0;
-  }
-}
-
-@media (max-width: 768px) {
-  #chartContainer svg {
-    max-width: none;
-  }
-  
-  .progress-streak-container {
-    gap: 12px;
-  }
-  
-  .streak-emoji {
-    font-size: 2.8rem;
-    margin-right: 10px;
-  }
-  
-  .streak-number {
-    font-size: 2.1rem;
-  }
-  
-  .streak-unit {
-    font-size: 1rem;
-  }
-  
-  #weeklyProgressContainer {
-    padding: 10px;
-  }
-  
-  .progress-segments {
-    height: 22px;
-  }
-  
-  #progressText {
-    font-size: 0.7rem;
-    margin-top: 8px;
-  }
-}
-
-/* Mobile devices - maintain 6x1 but adjust for smaller screens */
-@media (max-width: 767px) {
-  .full-width-legend {
-    gap: 3px;
-    padding: 5px;
-  }
-  
-  .legend-item {
-    font-size: clamp(0.65rem, 2.5vw, 0.8rem); /* More aggressive dynamic sizing for mobile */
-    padding: 1px;
-  }
-  
-  .colorBox {
-    min-width: 10px;
-    width: 10px;
-    height: 10px;
-    margin: 0 2px 0 0;
-  }
-  
-  .progress-streak-container {
-    gap: 8px;
-    width: 100%;
-  }
-  
-  .streak-container {
-    padding: 12px;
-  }
-  
-  .streak-emoji {
-    font-size: 2.5rem;
-    margin-right: 8px;
-  }
-  
-  .streak-number {
-    font-size: 1.8rem;
-  }
-  
-  .streak-unit {
-    font-size: 0.9rem;
-  }
-  
-  #weeklyProgressContainer {
-    padding: 8px;
-  }
-  
-  .progress-segments {
-    height: 22px;
-  }
-  
-  #progressText {
-    font-size: 0.7rem;
-    margin-top: 6px;
-  }
-}
-
-@media (max-width: 480px) {
-  #yearSelect {
-    min-width: 80px;
-    width: 80px;
-  }
-  
-  .header-spacer {
-    width: 80px;
-  }
-}
-
-/* Very small screens adjustments */
-@media (max-width: 374px) {
-  .full-width-legend {
-    gap: 2px;
-    padding: 4px;
-  }
-  
-  .legend-item {
-    font-size: clamp(0.55rem, 2.2vw, 0.7rem); /* Even smaller for very small screens */
-    padding: 1px 0;
-  }
-  
-  .colorBox {
-    min-width: 8px;
-    width: 8px;
-    height: 8px;
-    margin: 0 2px 0 0;
-  }
-  
-  .progress-streak-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .streak-container {
-    max-width: 100%;
-    padding: 6px;
-  }
-  
-  .streak-emoji {
-    font-size: 2.2rem;
-    margin-right: 6px;
-  }
-  
-  .streak-number {
-    font-size: 1.6rem;
-  }
-  
-  .streak-unit {
-    font-size: 0.8rem;
-  }
-  
-  #weeklyProgressContainer {
-    padding: 6px;
-  }
-  
-  .progress-segments {
-    height: 20px;
-  }
-  
-  #yearSelect {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.4rem;
-    min-width: 70px;
-    width: 70px;
-  }
-  
-  .header-spacer {
-    width: 70px;
-  }
-}
-
-/* Adjust tooltip for mobile devices */
+/* Pointer devices (e.g., mobile touch) */
 @media (pointer: coarse) {
   .tooltip {
-    pointer-events: auto; /* Allow interaction on mobile */
+    pointer-events: auto;
     padding: 14px 18px;
     font-size: 0.9rem;
-    max-width: 90vw; /* Use viewport width to ensure it fits on all devices */
+    max-width: 90vw;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
   }
-  
   .exercise-line {
     margin-bottom: 6px;
-    gap: 4px; /* Slightly larger but still tight gap for mobile */
+    gap: 4px;
   }
-  
-  /* REMOVED: width property for bullet points on mobile to avoid indentation */
-  
   .tooltip-footer {
     margin-top: 8px;
   }
-  
   .duration-value {
     padding-top: 8px;
     padding-bottom: 4px;
