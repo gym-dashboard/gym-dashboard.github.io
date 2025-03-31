@@ -166,7 +166,7 @@ svg {
 }
 
 /* ==========================================================================
-   Legend Styling
+   Legend Styling - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
 .full-width-legend {
@@ -179,42 +179,43 @@ svg {
   background-color: #f8f9fa;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  /* Ensure text doesn't overflow */
+  overflow: hidden;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(0.6rem, 1.2vw, 0.95rem);
+  /* More aggressive font size scaling */
+  font-size: clamp(0.5rem, 1vw, 0.95rem);
   text-align: center;
-  padding: 2px;
-  overflow: visible;
+  padding: 2px 1px;
+  /* Allow text truncation if needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .colorBox {
   display: block;
-  min-width: 12px;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
   flex-shrink: 0;
-  margin: 0 3px 0 0;
+  margin: 0 2px 0 0;
 }
 
 /* ==========================================================================
-   Progress & Streak Components
+   Progress & Streak Components - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
-/*
-  The progress-streak container is declared as a container.
-  By default (for narrow container sizes) only two boxes (progress and streak) are visible.
-  When the container is at least 480px wide the yearly workouts box appears.
-*/
 .progress-streak-container {
   container-type: inline-size;
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 10px; /* Reduced from 20px */
   margin-top: 10px;
   width: 100%;
 }
@@ -222,19 +223,22 @@ svg {
 /* Default for narrow container sizes: only two boxes, each 50% */
 #weeklyProgressContainer,
 .streak-container {
-  flex: 0 0 50%;
-  max-width: 50%;
+  flex: 1 1 50%;
+  min-width: 0; /* Allow shrinking below content size */
 }
 
 /* Two-box layout modifications: when only progress and streak are shown, use a 60–40 split */
 .progress-streak-container.two-boxes #weeklyProgressContainer {
-  flex: 0 0 60%;
-  max-width: 60%;
+  flex: 1 1 60%;
 }
 
 .progress-streak-container.two-boxes .streak-container {
-  flex: 0 0 40%;
-  max-width: 40%;
+  flex: 1 1 40%;
+}
+
+/* Make sure the yearly workouts desktop is really hidden by default */
+.progress-streak-container.two-boxes .yearly-workouts-desktop {
+  display: none; /* Hide by default, will be shown only in container query */
 }
 
 /* Yearly workouts is hidden by default */
@@ -244,34 +248,37 @@ svg {
 
 /* Common styles for weekly progress */
 #weeklyProgressContainer {
-  padding: 16px;
+  padding: 10px; /* Reduced from 16px */
   border-radius: 8px;
   background-color: #f8f9fa;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  overflow: hidden; /* Prevent overflow */
 }
 
 .progress-title {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #333;
-  text-align: left;
-  margin-bottom: 2px;
+  font-size: clamp(0.85rem, 2vw, 1.1rem);
+  font-weight: 600;
+  font-family: 'Montserrat', 'Arial', sans-serif;
+  color: #546bce;
+  text-align: center;
+  margin-bottom: 8px;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.progress-divider {
-  height: 1px;
-  border: none;
-  background-color: rgba(0, 0, 0, 0.1);
-  margin: 0 0 6px 0;
-}
+
 
 /* Progress Bar */
 .progress-container {
   width: 100%;
   padding: 0;
   position: relative;
+  overflow: hidden; /* Prevent overflow */
 }
 
 .progress-segments {
@@ -298,13 +305,17 @@ svg {
 
 .progress-count {
   position: absolute;
-  right: 10px;
+  right: 5px; /* Reduced from 10px */
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.85rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.85rem);
   font-weight: 600;
   color: #fff;
   z-index: 2;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .segment[data-index="0"].filled {
@@ -332,15 +343,16 @@ svg {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 10px; /* Reduced from 16px */
   background-color: rgba(84, 107, 206, 0.15);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden; /* Prevent overflow */
 }
 
 .streak-emoji {
-  font-size: 3.2rem;
-  margin-right: 12px;
+  font-size: clamp(1.8rem, 4vw, 3.2rem);
+  margin-right: 8px; /* Reduced from 12px */
   margin-bottom: 0;
   text-align: center;
   line-height: 1;
@@ -350,29 +362,38 @@ svg {
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 0; /* Allow shrinking below content size */
 }
 
 .streak-number {
-  font-size: 2.4rem;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
   font-weight: 700;
   color: #546bce;
   font-family: 'Montserrat', 'Arial', sans-serif;
   line-height: 1;
   margin: 0;
   padding: 0;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .streak-unit {
-  font-size: 1.1rem;
+  font-size: clamp(0.8rem, 2vw, 1.1rem);
   font-weight: 500;
   color: #546bce;
   line-height: 1.2;
   margin: 0;
   padding: 0;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ==========================================================================
-   Yearly Workouts (Desktop Version)
+   Yearly Workouts (Desktop Version) - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
 /* Yearly workouts element is hidden by default but will be shown when the container is wide */
@@ -381,30 +402,40 @@ svg {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 16px;
+  padding: 10px; /* Reduced from 16px */
   background-color: rgba(84, 107, 206, 0.15);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   text-align: center;
+  overflow: hidden; /* Prevent overflow */
+  min-width: 0; /* Allow shrinking below content size */
 }
 
 .workouts-count {
-  font-size: 2.4rem;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
   font-weight: 700;
   color: #546bce;
   font-family: 'Montserrat', 'Arial', sans-serif;
   line-height: 1;
   margin: 0;
   padding: 0;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workouts-unit {
-  font-size: 1.1rem;
+  font-size: clamp(0.8rem, 2vw, 1.1rem);
   font-weight: 500;
   color: #546bce;
   line-height: 1.2;
   margin: 0;
   padding: 0;
+  /* Prevent text overflow */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Mobile version for yearly workouts (if separate) */
@@ -419,116 +450,123 @@ svg {
 }
 
 /* ==========================================================================
-   Container Query: When the container is at least 480px wide, use the three-box layout.
+   Container Query: When the container is at least 360px wide, use the three-box layout.
    This block overrides the two-box modifications.
    ========================================================================== */
-@container (min-width: 480px) {
+@container (min-width: 360px) {
   /* Show the yearly workouts box */
   .progress-streak-container.two-boxes .yearly-workouts-desktop {
     display: flex;
-    flex: 0 0 25%;
-    max-width: 25%;
+    flex: 1 1 25%;
   }
   /* Revert progress and streak to the three-box split */
   .progress-streak-container.two-boxes #weeklyProgressContainer {
-    flex: 0 0 50%;
-    max-width: 50%;
+    flex: 1 1 50%;
   }
   .progress-streak-container.two-boxes .streak-container {
-    flex: 0 0 25%;
-    max-width: 25%;
+    flex: 1 1 25%;
   }
 }
 
 /* ==========================================================================
-   Fallback Media Query: For viewport widths below 479px, show only the two boxes.
+   Fallback Media Query: For viewport widths below 359px, show only the two boxes.
+   Make sure yearly workouts is hidden and use the 60/40 split for progress/streak
    ========================================================================== */
-@media (max-width: 479px) {
+@media (max-width: 359px) {
+  /* Hide yearly workouts on mobile */
   .yearly-workouts-desktop {
-    display: none;
+    display: none !important;
   }
-  #weeklyProgressContainer,
-  .streak-container {
-    /* With two-boxes class the split will be controlled by the 60–40 rule */
-    flex: 0 0 50%;
-    max-width: 50%;
+  
+  /* Force the 60/40 split for the two remaining boxes */
+  .progress-streak-container.two-boxes #weeklyProgressContainer {
+    flex: 1 1 60% !important;
+  }
+  
+  .progress-streak-container.two-boxes .streak-container {
+    flex: 1 1 40% !important;
   }
 }
 
 /* ==========================================================================
-   Additional Legacy Media Queries (Optional)
+   Additional Legacy Media Queries (Optional) - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
 /* Medium screens */
 @media (max-width: 991px) {
   #outerBox,
   #secondPlot {
-    max-width: 100%;
-    flex: 0 0 100%;
+    flex: 1 1 100%;
+    max-width: 100%; /* Allow it to take full width */
   }
   #outerBox {
     margin-bottom: 20px;
   }
   .legend-item {
-    font-size: clamp(0.65rem, 1.8vw, 0.9rem);
+    font-size: clamp(0.55rem, 1.5vw, 0.9rem);
+    padding: 1px 0;
   }
   .colorBox {
-    min-width: 14px;
-    width: 14px;
-    height: 14px;
-    margin: 0 4px 0 0;
+    min-width: 10px;
+    width: 10px;
+    height: 10px;
+    margin: 0 3px 0 0;
   }
 }
 
 /* Small screens (under 768px) */
 @media (max-width: 768px) {
   .progress-title {
-    font-size: 1rem;
+    font-size: clamp(0.75rem, 1.5vw, 1rem);
     margin-bottom: 6px;
   }
-  .progress-divider {
-    margin-bottom: 10px;
-  }
+
   .progress-segments {
     height: 22px;
   }
   .progress-count {
-    font-size: 0.8rem;
-    right: 8px;
+    font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+    right: 5px;
   }
   #chartContainer svg {
     max-width: none;
   }
   .full-width-legend {
-    gap: 3px;
-    padding: 5px;
+    gap: 2px;
+    padding: 4px;
   }
   .legend-item {
-    font-size: clamp(0.65rem, 2.5vw, 0.8rem);
-    padding: 1px;
+    font-size: clamp(0.5rem, 1.2vw, 0.8rem);
+    padding: 1px 0;
   }
   .colorBox {
-    min-width: 10px;
-    width: 10px;
-    height: 10px;
+    min-width: 8px;
+    width: 8px;
+    height: 8px;
     margin: 0 2px 0 0;
+  }
+  /* Reduce gap between elements */
+  .progress-streak-container {
+    gap: 8px;
   }
 }
 
 /* Extra small screens (under 480px) */
 @media (max-width: 480px) {
-  #weeklyProgressContainer {
-    padding: 12px;
+  #weeklyProgressContainer,
+  .streak-container,
+  .yearly-workouts-desktop {
+    padding: 8px;
   }
   .progress-title {
-    font-size: 0.9rem;
+    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
   }
   .progress-segments {
-    height: 20px;
+    height: 18px;
   }
   .progress-count {
-    font-size: 0.75rem;
-    right: 6px;
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    right: 4px;
   }
   #yearSelect {
     min-width: 80px;
@@ -537,23 +575,125 @@ svg {
   .header-spacer {
     width: 80px;
   }
+  /* Reduce padding and gap further */
+  .progress-streak-container {
+    gap: 6px;
+  }
+  .streak-emoji {
+    font-size: clamp(1.6rem, 3vw, 2.5rem);
+    margin-right: 6px;
+  }
+  .streak-number {
+    font-size: clamp(1.3rem, 3vw, 2rem);
+  }
+  .streak-unit {
+    font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+  }
+  .workouts-count {
+    font-size: clamp(1.3rem, 3vw, 2rem);
+  }
+  .workouts-unit {
+    font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+  }
+  /* Make legend items even smaller */
+  .full-width-legend {
+    gap: 1px;
+    padding: 3px;
+  }
+  .legend-item {
+    font-size: clamp(0.48rem, 1.1vw, 0.7rem);
+    padding: 1px 0;
+  }
+  .colorBox {
+    min-width: 7px;
+    width: 7px;
+    height: 7px;
+    margin: 0 2px 0 0;
+  }
 }
 
 /* Very small screens (under 374px) */
 @media (max-width: 374px) {
   .full-width-legend {
-    gap: 2px;
-    padding: 4px;
+    gap: 1px;
+    padding: 2px;
   }
   .legend-item {
-    font-size: clamp(0.55rem, 2.2vw, 0.7rem);
-    padding: 1px 0;
+    font-size: clamp(0.45rem, 1vw, 0.65rem);
+    padding: 0;
   }
   .colorBox {
-    min-width: 8px;
-    width: 8px;
-    height: 8px;
-    margin: 0 2px 0 0;
+    min-width: 6px;
+    width: 6px;
+    height: 6px;
+    margin: 0 1px 0 0;
+  }
+  /* Make items even smaller */
+  .progress-count {
+    font-size: clamp(0.5rem, 0.9vw, 0.65rem);
+    right: 3px;
+  }
+  .progress-streak-container {
+    gap: 4px;
+  }
+  #weeklyProgressContainer,
+  .streak-container,
+  .yearly-workouts-desktop {
+    padding: 6px;
+  }
+  .streak-emoji {
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    margin-right: 4px;
+  }
+}
+
+/* Extra small screens (under 340px) - ADDED for even smaller screens */
+@media (max-width: 340px) {
+  .full-width-legend {
+    padding: 1px;
+  }
+  .legend-item {
+    font-size: clamp(0.4rem, 0.9vw, 0.6rem);
+    padding: 0;
+  }
+  .colorBox {
+    min-width: 5px;
+    width: 5px;
+    height: 5px;
+    margin: 0 1px 0 0;
+  }
+  .progress-count {
+    font-size: clamp(0.45rem, 0.85vw, 0.6rem);
+    right: 2px;
+  }
+  .streak-emoji {
+    font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+    margin-right: 3px;
+  }
+  .streak-number {
+    font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  }
+  .streak-unit {
+    font-size: clamp(0.6rem, 1.3vw, 0.8rem);
+  }
+  .workouts-count {
+    font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  }
+  .workouts-unit {
+    font-size: clamp(0.6rem, 1.3vw, 0.8rem);
+  }
+  
+  /* Reinforce the two-box layout on very small screens */
+  .yearly-workouts-desktop {
+    display: none !important;
+  }
+  
+  .progress-streak-container.two-boxes #weeklyProgressContainer {
+    flex: 1 1 60% !important;
+  }
+  
+  .progress-streak-container.two-boxes .streak-container {
+    flex: 1 1 40% !important;
   }
 }
 
