@@ -211,6 +211,36 @@ svg {
    Progress & Streak Components - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
+
+/* Animated Streak Flame Styling */
+.streak-flame-svg {
+  width: 40px;
+  height: 40px;
+  margin-right: 6px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Adjust sizing for small screens */
+@media (max-width: 480px) {
+  .streak-flame-svg {
+    width: 30px;
+    height: 30px;
+    margin-right: 4px;
+  }
+}
+
+/* For very small screens */
+@media (max-width: 340px) {
+  .streak-flame-svg {
+    width: 24px;
+    height: 24px;
+    margin-right: 3px;
+  }
+}
+
+
+
 .progress-streak-container {
   container-type: inline-size;
   display: flex;

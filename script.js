@@ -1287,6 +1287,56 @@ window.addEventListener('resize', function() {
   }, 200);
 });
 
+
+// Initialize flame animation when the DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  initFlameAnimation();
+});
+
+// Function to initialize flame animation
+function initFlameAnimation() {
+  // Make sure GSAP is loaded and SVG exists
+  if (typeof gsap !== 'undefined') {
+    const sparks = Array.from(document.querySelectorAll('.spark'));
+    sparks.forEach(function (s) {
+      gsap.timeline({
+        repeat: -1,
+        onRepeat: function () {
+          this.duration(Math.random() + 0.2);
+        }
+      })
+      .fromTo(s, {
+        scale: 2,
+        y: 40,
+        transformOrigin: 'center bottom'
+      }, {
+        scale: 0,
+        y: -60,
+        duration: 0.2
+      });
+    });
+    
+    const flames = Array.from(document.querySelectorAll('.flame'));
+    flames.forEach(function (f, idx) {
+      gsap.timeline({
+        repeat: -1,
+        onRepeat: function () {
+          this.duration(Math.random() * 0.4 + 0.2);
+        }
+      })
+      .to(f, {
+        scaleY: 1.1 + (idx ? 0.2 : 0),
+        scaleX: idx ? 1 : 0.8,
+        transformOrigin: 'center bottom',
+        duration: 0.2,
+        repeat: 1,
+        yoyo: true
+      });
+    });
+  }
+}
+
+
 // ========== Init on Page Load ==========
 (async function init() {
   // Load streak data first
