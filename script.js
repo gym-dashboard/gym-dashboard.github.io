@@ -35,7 +35,42 @@ let weeklyData = {
   currentWeekWorkouts: 0,
   weekStreakCount: 0,
   lastCompletedWeek: null,
+  completedWeeks: [] // Added for tracking consecutive weeks
 };
+
+// Load saved streak data from localStorage
+function loadStreakData() {
+  try {
+    const savedData = localStorage.getItem('workoutStreakData');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      // Merge with defaults for any missing properties
+      weeklyData = {
+        currentWeekWorkouts: 0, // Always recalculate this
+        weekStreakCount: parsedData.weekStreakCount || 0,
+        lastCompletedWeek: parsedData.lastCompletedWeek || null,
+        // Add tracking for consecutive weeks
+        completedWeeks: parsedData.completedWeeks || []
+      };
+    } else {
+      // Initialize with completedWeeks array if not present
+      weeklyData.completedWeeks = [];
+    }
+  } catch (err) {
+    console.error('Error loading streak data:', err);
+    // Ensure completedWeeks exists even on error
+    weeklyData.completedWeeks = weeklyData.completedWeeks || [];
+  }
+}
+
+// Save streak data to localStorage
+function saveStreakData() {
+  try {
+    localStorage.setItem('workoutStreakData', JSON.stringify(weeklyData));
+  } catch (err) {
+    console.error('Error saving streak data:', err);
+  }
+}
 
 // DOM elements
 const yearSelect = document.getElementById("yearSelect");
@@ -81,8 +116,16 @@ function computeYearlyWorkoutCount(year) {
 // ========== Update Yearly Workout Count ==========
 function updateYearlyWorkoutCount(year) {
   const total = computeYearlyWorkoutCount(year);
+  
+  // Update the header text display
   const countElem = document.getElementById("yearlyWorkoutsCount");
   countElem.textContent = `You have logged ${total} workouts this year`;
+  
+  // Also update the count in the yearly-workouts-desktop box
+  const workoutsCountElem = document.querySelector(".workouts-count");
+  if (workoutsCountElem) {
+    workoutsCountElem.textContent = total;
+  }
 }
 
 
@@ -1099,33 +1142,80 @@ function checkPreviousWeekCompleted() {
   return count >= 4;
 }
 
+// Helper function to convert week key back to date
+function getDateFromWeekKey(weekKey) {
+  const [year, month, day] = weekKey.split('-').map(Number);
+  return new Date(year, month, day);
+}
+
+// IMPROVED: Completely rewritten updateStreakCounter function
 function updateStreakCounter() {
   const prevWeekCompleted = checkPreviousWeekCompleted();
   const currentWeekCount = countCurrentWeekWorkouts();
   const currentWeekCompleted = currentWeekCount >= 4;
   
-  // Initialize streak if not set
-  if (typeof weeklyData.weekStreakCount === 'undefined') {
-    weeklyData.weekStreakCount = 0;
+  // Get week identifiers for current and previous week
+  const { startDate } = getCurrentWeekDateRange();
+  const currentWeekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
+  
+  // Get previous week key
+  const prevWeekEnd = new Date(startDate);
+  prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
+  const prevWeekStart = new Date(prevWeekEnd);
+  prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
+  const prevWeekKey = `${prevWeekStart.getFullYear()}-${prevWeekStart.getMonth()}-${prevWeekStart.getDate()}`;
+  
+  // Initialize completedWeeks array if it doesn't exist
+  if (!Array.isArray(weeklyData.completedWeeks)) {
+    weeklyData.completedWeeks = [];
   }
   
-  // Only reset streak if previous week was not completed
-  // and this week is not already completed
-  if (!prevWeekCompleted && !currentWeekCompleted) {
-    weeklyData.weekStreakCount = 0;
-  } else if (currentWeekCompleted) {
-    // Check if we already counted this week
-    const { startDate } = getCurrentWeekDateRange();
-    const weekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
-    
-    if (weeklyData.lastCompletedWeek !== weekKey) {
-      weeklyData.weekStreakCount++;
-      weeklyData.lastCompletedWeek = weekKey;
-    }
-  } else if (prevWeekCompleted && weeklyData.weekStreakCount === 0) {
-    // If previous week was completed and streak is 0, initialize to at least 1
-    weeklyData.weekStreakCount = 1;
+  // Handle current week completion
+  if (currentWeekCompleted && !weeklyData.completedWeeks.includes(currentWeekKey)) {
+    weeklyData.completedWeeks.push(currentWeekKey);
+    weeklyData.lastCompletedWeek = currentWeekKey;
   }
+  
+  // Handle previous week tracking
+  const hadPrevWeekCompleted = weeklyData.completedWeeks.includes(prevWeekKey);
+  if (prevWeekCompleted && !hadPrevWeekCompleted) {
+    // If we just detected that previous week was completed but wasn't in our records
+    weeklyData.completedWeeks.push(prevWeekKey);
+  }
+  
+  // Sort completed weeks chronologically
+  weeklyData.completedWeeks.sort();
+  
+  // Calculate streak by checking for consecutive weeks
+  let streak = 0;
+  const sortedWeeks = [...weeklyData.completedWeeks].sort();
+  
+  if (sortedWeeks.length > 0) {
+    // Start with at least 1 for the most recent completed week
+    streak = 1;
+    
+    // Go backwards from the most recent week
+    for (let i = sortedWeeks.length - 1; i > 0; i--) {
+      const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
+      const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
+      
+      // Check if these weeks are consecutive (7 days apart)
+      const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
+      
+      if (dayDiff === 7) {
+        streak++;
+      } else {
+        // Break on first non-consecutive week
+        break;
+      }
+    }
+  }
+  
+  // Update the streak count
+  weeklyData.weekStreakCount = streak;
+  
+  // Save updated streak data
+  saveStreakData();
   
   // Update the streak display with proper pluralization
   const streakNumber = document.querySelector('.streak-number');
@@ -1199,6 +1289,9 @@ window.addEventListener('resize', function() {
 
 // ========== Init on Page Load ==========
 (async function init() {
+  // Load streak data first
+  loadStreakData();
+  
   if (!yearData[currentYear]) {
     await loadDataForYear(currentYear);
   }

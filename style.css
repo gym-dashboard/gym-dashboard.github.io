@@ -229,11 +229,11 @@ svg {
 
 /* Two-box layout modifications: when only progress and streak are shown, use a 60–40 split */
 .progress-streak-container.two-boxes #weeklyProgressContainer {
-  flex: 1 1 60%;
+  flex: 1 1 70%;
 }
 
 .progress-streak-container.two-boxes .streak-container {
-  flex: 1 1 40%;
+  flex: 1 1 30%;
 }
 
 /* Make sure the yearly workouts desktop is really hidden by default */
@@ -271,7 +271,9 @@ svg {
   white-space: nowrap;
 }
 
-
+.progress-divider {
+  display: none;
+}
 
 /* Progress Bar */
 .progress-container {
@@ -337,59 +339,50 @@ svg {
   text-align: center;
 }
 
-/* Streak Container */
 .streak-container {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  padding: 10px; /* Reduced from 16px */
+  flex-direction: column;
+  padding: 10px;
   background-color: rgba(84, 107, 206, 0.15);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden; /* Prevent overflow */
+  overflow: hidden;
+  text-align: center;
+}
+
+.streak-top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2px;
+  gap: 12px; /* Controls space between flame and number */
+}
+
+.streak-bottom {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px; /* Controls space between Week and Streak */
 }
 
 .streak-emoji {
-  font-size: clamp(1.8rem, 4vw, 3.2rem);
-  margin-right: 8px; /* Reduced from 12px */
-  margin-bottom: 0;
-  text-align: center;
+  font-size: clamp(1.5rem, 3vw, 2.4rem); /* Smaller flame */
   line-height: 1;
 }
 
-.streak-text-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 0; /* Allow shrinking below content size */
-}
-
 .streak-number {
-  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem); /* Bigger number */
   font-weight: 700;
   color: #546bce;
   font-family: 'Montserrat', 'Arial', sans-serif;
   line-height: 1;
-  margin: 0;
-  padding: 0;
-  /* Prevent text overflow */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.streak-unit {
+.streak-unit, .streak-label {
   font-size: clamp(0.8rem, 2vw, 1.1rem);
   font-weight: 500;
   color: #546bce;
   line-height: 1.2;
-  margin: 0;
-  padding: 0;
-  /* Prevent text overflow */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -453,7 +446,7 @@ svg {
    Container Query: When the container is at least 360px wide, use the three-box layout.
    This block overrides the two-box modifications.
    ========================================================================== */
-@container (min-width: 360px) {
+@container (min-width: 480px) {
   /* Show the yearly workouts box */
   .progress-streak-container.two-boxes .yearly-workouts-desktop {
     display: flex;
@@ -472,7 +465,7 @@ svg {
    Fallback Media Query: For viewport widths below 359px, show only the two boxes.
    Make sure yearly workouts is hidden and use the 60/40 split for progress/streak
    ========================================================================== */
-@media (max-width: 359px) {
+@media (max-width: 479px) {
   /* Hide yearly workouts on mobile */
   .yearly-workouts-desktop {
     display: none !important;
@@ -480,11 +473,11 @@ svg {
   
   /* Force the 60/40 split for the two remaining boxes */
   .progress-streak-container.two-boxes #weeklyProgressContainer {
-    flex: 1 1 60% !important;
+    flex: 1 1 70% !important;
   }
   
   .progress-streak-container.two-boxes .streak-container {
-    flex: 1 1 40% !important;
+    flex: 1 1 30% !important;
   }
 }
 
@@ -520,7 +513,9 @@ svg {
     font-size: clamp(0.75rem, 1.5vw, 1rem);
     margin-bottom: 6px;
   }
-
+  .progress-divider {
+    margin-bottom: 8px;
+  }
   .progress-segments {
     height: 22px;
   }
@@ -689,11 +684,11 @@ svg {
   }
   
   .progress-streak-container.two-boxes #weeklyProgressContainer {
-    flex: 1 1 60% !important;
+    flex: 1 1 70% !important;
   }
   
   .progress-streak-container.two-boxes .streak-container {
-    flex: 1 1 40% !important;
+    flex: 1 1 30% !important;
   }
 }
 
