@@ -1,0 +1,87 @@
+{
+  "date": "01-04-2025",
+  "participants": [
+    "André D.",
+    "Tomás T."
+  ],
+  "start_time": "07:51",
+  "end_time": "08:30",
+  "total_time": "0 hours 39 minutes",
+  "overall_muscle_group": [
+    "Biceps"
+  ],
+  "workout": [
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 30,
+      "Weight": "13 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 15,
+      "Weight": "18 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 12,
+      "Weight": "22.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Spider Curls",
+      "Reps": 12,
+      "Weight": "5 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Biceps",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Spider Curls",
+      "Reps": 12,
+      "Weight": "7.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Biceps",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Spider Curls",
+      "Reps": 12,
+      "Weight": "7.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Biceps",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 30,
+      "Weight": "10 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    }
+  ]
+}
