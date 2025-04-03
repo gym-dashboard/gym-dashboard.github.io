@@ -419,6 +419,40 @@ svg {
    Yearly Workouts (Desktop Version) - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
+
+/* Diagonal Gradient Text Animation for Streak Container */
+@keyframes diagonal-pulse {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Apply gradient text effect to streak number, unit, and label */
+.streak-container .streak-number,
+.streak-container .streak-unit,
+.streak-container .streak-label {
+  background: linear-gradient(135deg, #ec512f 0%, #fa9c49 50%, #ec512f 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: diagonal-pulse 3s linear infinite;
+}
+
+/* Optional: Add a text shadow for better readability on lighter backgrounds */
+.streak-container .streak-number {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+
+
+
 /* Yearly workouts element is hidden by default but will be shown when the container is wide */
 .yearly-workouts-desktop {
   display: none;
@@ -604,10 +638,6 @@ svg {
   .progress-streak-container {
     gap: 6px;
   }
-  .streak-emoji {
-    font-size: clamp(1.6rem, 3vw, 2.5rem);
-    margin-right: 6px;
-  }
   .streak-number {
     font-size: clamp(1.3rem, 3vw, 2rem);
   }
@@ -666,10 +696,6 @@ svg {
   .yearly-workouts-desktop {
     padding: 6px;
   }
-  .streak-emoji {
-    font-size: clamp(1.4rem, 2.5vw, 2rem);
-    margin-right: 4px;
-  }
 }
 
 /* Extra small screens (under 340px) - ADDED for even smaller screens */
@@ -690,10 +716,6 @@ svg {
   .progress-count {
     font-size: clamp(0.45rem, 0.85vw, 0.6rem);
     right: 2px;
-  }
-  .streak-emoji {
-    font-size: clamp(1.2rem, 2.2vw, 1.8rem);
-    margin-right: 3px;
   }
   .streak-number {
     font-size: clamp(1.1rem, 2.5vw, 1.8rem);
