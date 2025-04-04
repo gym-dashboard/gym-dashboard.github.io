@@ -262,7 +262,7 @@ svg {
   font-size: clamp(0.85rem, 2vw, 1.1rem);
   font-weight: 600;
   font-family: 'Montserrat', 'Arial', sans-serif;
-  color: #546bce;
+  color: #5e5e5e;
   text-align: center;
   margin-bottom: 8px;
   /* Prevent text overflow */
@@ -321,16 +321,16 @@ svg {
 }
 
 .segment[data-index="0"].filled {
-  background-color: #cfe2ff;
+  background-color: #ffed89b0;
 }
 .segment[data-index="1"].filled {
-  background-color: #9ec5fe;
+  background-color: #ffdc89b0;
 }
 .segment[data-index="2"].filled {
-  background-color: #6ea8fe;
+  background-color: #ffbc89b0;
 }
 .segment[data-index="3"].filled {
-  background-color: rgba(84, 107, 206, 0.85);
+  background-color: #ffa489b0;
 }
 
 #progressText {
@@ -344,7 +344,7 @@ svg {
   display: flex;
   flex-direction: column;
   padding: 10px;
-  background-color: rgba(84, 107, 206, 0.15);
+  background-color: rgba(255, 179, 0, 0.15);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   overflow: hidden;
@@ -366,7 +366,7 @@ svg {
     to right,
     rgba(255, 255, 255, 0) 0%,
     rgba(255, 225, 2, 0.05) 20%,
-    rgba(255, 213, 0, 0.2) 50%,
+    rgba(255, 128, 0, 0.2) 50%,
     rgba(255, 137, 3, 0.05) 80%,
     rgba(255, 255, 255, 0) 100%
   );
@@ -392,9 +392,9 @@ svg {
 }
 
 .streak-title {
-  font-size: clamp(0.85rem, 2vw, 1.1rem);
+  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
   font-weight: 600;
-  color: #546bce;
+  color: #5e5e5e;
   text-align: center;
   margin-bottom: 4px;
   overflow: hidden;
@@ -450,7 +450,7 @@ svg {
 .streak-container .streak-title,
 .streak-container .streak-subtitle {
   background: none;
-  color: #546bce;
+  color: #5e5e5e;;
   animation: none;
 }
 

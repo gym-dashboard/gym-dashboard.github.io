@@ -1254,7 +1254,7 @@ function updateProgressBar(workoutCount) {
       if (workoutCount >= 3) { // If count is in the last segment and that segment is filled
         progressCount.style.color = '#fff';
       } else {
-        progressCount.style.color = '#546bce'; // Blue text otherwise
+        progressCount.style.color = '#5e5e5e'; // Blue text otherwise
       }
     }
   }
