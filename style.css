@@ -211,36 +211,6 @@ svg {
    Progress & Streak Components - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
 
-
-/* Animated Streak Flame Styling */
-.streak-flame-svg {
-  width: 40px;
-  height: 40px;
-  margin-right: 6px;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Adjust sizing for small screens */
-@media (max-width: 480px) {
-  .streak-flame-svg {
-    width: 30px;
-    height: 30px;
-    margin-right: 4px;
-  }
-}
-
-/* For very small screens */
-@media (max-width: 340px) {
-  .streak-flame-svg {
-    width: 24px;
-    height: 24px;
-    margin-right: 3px;
-  }
-}
-
-
-
 .progress-streak-container {
   container-type: inline-size;
   display: flex;
@@ -369,6 +339,7 @@ svg {
   text-align: center;
 }
 
+/* Streak Container - Updated for the new structure with center alignment */
 .streak-container {
   display: flex;
   flex-direction: column;
@@ -378,49 +349,81 @@ svg {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   text-align: center;
-}
-
-.streak-top {
-  display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 2px;
-  gap: 12px; /* Controls space between flame and number */
+  position: relative; /* Required for shimmer positioning */
 }
 
-.streak-bottom {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 6px; /* Controls space between Week and Streak */
+/* Professional shimmer effect for streak container */
+.streak-container::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 400%;
+  height: 400%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 225, 2, 0.05) 20%,
+    rgba(255, 213, 0, 0.2) 50%,
+    rgba(255, 137, 3, 0.05) 80%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(30deg);
+  animation: shimmer-sweep 3.5s infinite linear;
+  pointer-events: none; /* Ensure it doesn't interfere with clicks */
+  z-index: 1; /* Above the background, below the content */
 }
 
-.streak-emoji {
-  font-size: clamp(1.5rem, 3vw, 2.4rem); /* Smaller flame */
-  line-height: 1;
+/* Ensure content appears above the shimmer */
+.streak-container > * {
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: rotate(30deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(30deg) translateX(100%);
+  }
+}
+
+.streak-title {
+  font-size: clamp(0.85rem, 2vw, 1.1rem);
+  font-weight: 600;
+  color: #546bce;
+  text-align: center;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .streak-number {
-  font-size: clamp(1.8rem, 4.5vw, 2.8rem); /* Bigger number */
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
   font-weight: 700;
   color: #546bce;
   font-family: 'Montserrat', 'Arial', sans-serif;
   line-height: 1;
+  margin: 4px 0;
+  text-align: center;
 }
 
-.streak-unit, .streak-label {
-  font-size: clamp(0.8rem, 2vw, 1.1rem);
+.streak-subtitle {
+  font-size: clamp(0.8rem, 2vw, 1rem);
   font-weight: 500;
   color: #546bce;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
 }
 
-/* ==========================================================================
-   Yearly Workouts (Desktop Version) - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
-   ========================================================================== */
-
-
-/* Diagonal Gradient Text Animation for Streak Container */
+/* Diagonal Gradient Text Animation */
 @keyframes diagonal-pulse {
   0% {
     background-position: 0% 50%;
@@ -433,25 +436,27 @@ svg {
   }
 }
 
-/* Apply gradient text effect to streak number, unit, and label */
-.streak-container .streak-number,
-.streak-container .streak-unit,
-.streak-container .streak-label {
+/* Apply gradient effect only to the streak number */
+.streak-container .streak-number {
   background: linear-gradient(135deg, #ec512f 0%, #fa9c49 50%, #ec512f 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: diagonal-pulse 3s linear infinite;
-}
-
-/* Optional: Add a text shadow for better readability on lighter backgrounds */
-.streak-container .streak-number {
   text-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
+.streak-container .streak-title,
+.streak-container .streak-subtitle {
+  background: none;
+  color: #546bce;
+  animation: none;
+}
 
-
+/* ==========================================================================
+   Yearly Workouts (Desktop Version) - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
+   ========================================================================== */
 
 /* Yearly workouts element is hidden by default but will be shown when the container is wide */
 .yearly-workouts-desktop {
@@ -502,7 +507,13 @@ svg {
 
 /* Hide legacy elements */
 .streak-badge,
-.weekly-header {
+.weekly-header,
+.streak-flame-svg,
+.streak-emoji,
+.streak-unit,
+.streak-label,
+.streak-top,
+.streak-bottom {
   display: none;
 }
 
@@ -641,7 +652,7 @@ svg {
   .streak-number {
     font-size: clamp(1.3rem, 3vw, 2rem);
   }
-  .streak-unit {
+  .streak-subtitle {
     font-size: clamp(0.7rem, 1.5vw, 0.9rem);
   }
   .workouts-count {
@@ -720,7 +731,7 @@ svg {
   .streak-number {
     font-size: clamp(1.1rem, 2.5vw, 1.8rem);
   }
-  .streak-unit {
+  .streak-subtitle {
     font-size: clamp(0.6rem, 1.3vw, 0.8rem);
   }
   .workouts-count {

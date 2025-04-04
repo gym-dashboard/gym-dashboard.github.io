@@ -2,6 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  
+  <!-- Immediate inline styles to prevent flash of dark mode -->
+  <style>
+    html {
+      background-color: #ffffff !important;
+      color-scheme: light only !important;
+    }
+    body {
+      background-color: #f9f9f9 !important;
+      color: #4a4a4a !important;
+    }
+    
+    /* Force specific Bootstrap elements to light mode */
+    .bg-white {
+      background-color: #ffffff !important;
+    }
+    
+    .form-select, .form-control {
+      background-color: #ffffff !important;
+      color: #212529 !important;
+      border-color: #dee2e6 !important;
+    }
+  </style>
+  
   <title>Calendar + Chunked Timeline</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <!-- Bootstrap for layout (optional) -->
@@ -64,15 +90,11 @@
           </div>
 
           <!-- Streak Container -->
-        <div class="streak-container">
-          <div class="streak-top">
-            <div class="streak-number">1</div>
+          <div class="streak-container">
+            <div class="streak-title">Current Streak</div>
+            <div class="streak-number">7</div>
+            <div class="streak-subtitle">Weeks in a row</div>
           </div>
-          <div class="streak-bottom">
-            <div class="streak-unit">Week</div>
-            <div class="streak-label">Streak</div>
-          </div>
-        </div>
 
           <!-- Yearly Workouts (third box) -->
           <div class="yearly-workouts-desktop">
@@ -94,10 +116,29 @@
       </div>
     </div>
   </div>
-
   
-
   <!-- Main JS -->
   <script src="script.js"></script>
+  
+  <!-- Optional: Forced light mode script for dynamically loaded content -->
+  <script>
+    // This ensures that any dynamically added content also respects light mode
+    document.addEventListener('DOMContentLoaded', function() {
+      // Force light mode on SVG elements created by D3
+      const observer = new MutationObserver(function(mutations) {
+        document.querySelectorAll('svg text').forEach(function(text) {
+          text.style.fill = '#333333';
+        });
+        document.querySelectorAll('svg rect.day').forEach(function(rect) {
+          rect.style.stroke = '#ffffff';
+        });
+      });
+      
+      observer.observe(document.getElementById('chartContainer'), { 
+        childList: true, 
+        subtree: true 
+      });
+    });
+  </script>
 </body>
 </html>
