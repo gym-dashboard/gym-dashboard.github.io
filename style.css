@@ -391,8 +391,12 @@ svg {
   }
 }
 
-.streak-title {
-  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+/* .streak-title {
+  width: 90%;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: clamp(0.4rem, 1.8vw, 1.2rem); 
   font-weight: 600;
   color: #5e5e5e;
   text-align: center;
@@ -400,7 +404,17 @@ svg {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+} */
+
+.streak-title {
+  max-width: 100%;
+  margin: 0 auto;
+  font-weight: 600;
+  color: #5e5e5e;
+  white-space: nowrap;
+
 }
+
 
 .streak-number {
   font-size: clamp(1.8rem, 4.5vw, 2.8rem);

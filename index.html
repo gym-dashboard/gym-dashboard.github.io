@@ -145,3 +145,49 @@
 
 </body>
 </html>
+
+
+
+<script>
+  function adjustStreakTitleFontSize() {
+  const title = document.querySelector('.streak-title');
+  if (!title) return;
+
+  // Assume the container is the direct parent
+  const container = title.parentElement;
+  const containerWidth = container.offsetWidth;
+  const targetWidth = containerWidth * 0.9; // 90% of container width
+
+  // Define minimum and maximum font sizes (in pixels)
+  let minFontSize = 10;
+  let maxFontSize = 22;
+  let fontSize = maxFontSize;
+
+  // Start at the maximum font size and apply it
+  title.style.fontSize = fontSize + 'px';
+
+  // If it already fits, we don’t need to reduce it
+  if (title.scrollWidth <= targetWidth) return;
+
+  // Use binary search for efficiency:
+  while (maxFontSize - minFontSize > 0.5) {
+    fontSize = (minFontSize + maxFontSize) / 2;
+    title.style.fontSize = fontSize + 'px';
+    if (title.scrollWidth > targetWidth) {
+      // Text is too wide – reduce the maximum
+      maxFontSize = fontSize;
+    } else {
+      // Text fits – we might be able to use a larger font
+      minFontSize = fontSize;
+    }
+  }
+  // Set the font size to the best found value
+  title.style.fontSize = minFontSize + 'px';
+}
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', adjustStreakTitleFontSize);
+// Recalculate on window resize
+window.addEventListener('resize', adjustStreakTitleFontSize);
+
+</script>
