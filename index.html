@@ -44,6 +44,8 @@
   <!-- D3 for the calendar -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fitty/2.3.6/fitty.min.js"></script>
 </head>
 <body>
 
@@ -73,29 +75,42 @@
         <!-- Progress & Streak Container -->
         <!-- Add the "two-boxes" class to use the 60–40 split when the container is narrow -->
         <div class="progress-streak-container two-boxes">
+        
           <!-- Weekly Progress Bar -->
           <div id="weeklyProgressContainer">
-            <div class="progress-title">Weekly Workouts</div>
-            <div class="progress-container">
-              <div class="progress-segments">
-                <div class="segment" data-index="0"></div>
-                <div class="segment" data-index="1"></div>
-                <div class="segment" data-index="2"></div>
-                <div class="segment" data-index="3">
-                  <div class="progress-count">1/4</div>
+            <div class="progress-title-wrapper">
+              <div class="progress-title">Weekly Workouts</div>
+            </div>
+            <div class="progress-middle-wrapper">
+              <div class="progress-container">
+                <div class="progress-segments">
+                  <div class="segment" data-index="0"></div>
+                  <div class="segment" data-index="1"></div>
+                  <div class="segment" data-index="2"></div>
+                  <div class="segment" data-index="3">
+                    <div class="progress-count">1/4</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div id="weekDateRange" style="display: none;"></div>
+            <div class="progress-bottom-wrapper">
+              <div id="weekDateRange"></div>
+            </div>
           </div>
 
-          <!-- Streak Container -->
+          <!-- Streak Container - Structure remains the same -->
           <div class="streak-container">
-            <div class="streak-title">Current Streak</div>
-            <div class="streak-number">23</div>
-            <div class="streak-subtitle">Weeks in a row</div>
+            <div class="streak-title-wrapper">
+              <div class="streak-title">Current Streak</div>
+            </div>
+            <div class="streak-middle-wrapper">
+              <div class="streak-number">23</div>
+            </div>
+            <div class="streak-subtitle-wrapper">
+              <div class="streak-subtitle">Weeks in a row</div>
+            </div>
           </div>
-
+          
           <!-- Yearly Workouts (third box) -->
           <div class="yearly-workouts-desktop">
             <div class="workouts-count">0</div>
@@ -140,54 +155,5 @@
       });
     });
   </script>
-
-  
-
 </body>
 </html>
-
-
-
-<script>
-  function adjustStreakTitleFontSize() {
-  const title = document.querySelector('.streak-title');
-  if (!title) return;
-
-  // Assume the container is the direct parent
-  const container = title.parentElement;
-  const containerWidth = container.offsetWidth;
-  const targetWidth = containerWidth * 0.9; // 90% of container width
-
-  // Define minimum and maximum font sizes (in pixels)
-  let minFontSize = 10;
-  let maxFontSize = 22;
-  let fontSize = maxFontSize;
-
-  // Start at the maximum font size and apply it
-  title.style.fontSize = fontSize + 'px';
-
-  // If it already fits, we don’t need to reduce it
-  if (title.scrollWidth <= targetWidth) return;
-
-  // Use binary search for efficiency:
-  while (maxFontSize - minFontSize > 0.5) {
-    fontSize = (minFontSize + maxFontSize) / 2;
-    title.style.fontSize = fontSize + 'px';
-    if (title.scrollWidth > targetWidth) {
-      // Text is too wide – reduce the maximum
-      maxFontSize = fontSize;
-    } else {
-      // Text fits – we might be able to use a larger font
-      minFontSize = fontSize;
-    }
-  }
-  // Set the font size to the best found value
-  title.style.fontSize = minFontSize + 'px';
-}
-
-// Run on page load
-document.addEventListener('DOMContentLoaded', adjustStreakTitleFontSize);
-// Recalculate on window resize
-window.addEventListener('resize', adjustStreakTitleFontSize);
-
-</script>

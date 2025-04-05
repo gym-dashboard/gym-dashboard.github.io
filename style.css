@@ -143,6 +143,8 @@ body {
   margin: 0 auto;
   padding-bottom: 0;
   scroll-padding: 0 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
 }
 
 .month-block {
@@ -210,7 +212,8 @@ svg {
 /* ==========================================================================
    Progress & Streak Components - UPDATED FOR BETTER RESPONSIVE BEHAVIOR
    ========================================================================== */
-
+   
+/* Container layout */
 .progress-streak-container {
   container-type: inline-size;
   display: flex;
@@ -246,47 +249,91 @@ svg {
   display: none;
 }
 
-/* Common styles for weekly progress */
-#weeklyProgressContainer {
-  padding: 10px; /* Reduced from 16px */
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+/* ==========================================================================
+   Vertical Alignment Structure Between Progress and Streak Containers
+   ========================================================================== */
+
+/* Base containers with consistent height and structure */
+#weeklyProgressContainer,
+.streak-container {
+  height: 126px; /* Set fixed height for consistency */
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  overflow: hidden; /* Prevent overflow */
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
+/* Progress container specific styles */
+#weeklyProgressContainer {
+  background-color: #f8f9fa;
+}
+
+/* Streak container specific styles */
+.streak-container {
+  background-color: rgba(255, 179, 0, 0.15);
+  position: relative; /* Required for shimmer positioning */
+  text-align: center;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Top section styling - make them both consistent height */
+.progress-title-wrapper,
+.streak-title-wrapper {
+  width: 100%;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Middle section styling - this is the key to alignment */
+.progress-middle-wrapper,
+.streak-middle-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bottom section styling - consistent height */
+.progress-bottom-wrapper,
+.streak-subtitle-wrapper {
+  width: 100%;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* Progress title styling */
 .progress-title {
+  display: inline-block;
   font-size: clamp(0.85rem, 2vw, 1.1rem);
   font-weight: 600;
   font-family: 'Montserrat', 'Arial', sans-serif;
   color: #5e5e5e;
   text-align: center;
-  margin-bottom: 8px;
-  /* Prevent text overflow */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.progress-divider {
-  display: none;
-}
-
-/* Progress Bar */
+/* Progress container */
 .progress-container {
   width: 100%;
-  padding: 0;
-  position: relative;
-  overflow: hidden; /* Prevent overflow */
+  margin: 0;
 }
 
 .progress-segments {
   display: flex;
   width: 100%;
-  height: 30px;
+  height: 40px;
   border-radius: 6px;
   overflow: hidden;
   position: relative;
@@ -307,14 +354,13 @@ svg {
 
 .progress-count {
   position: absolute;
-  right: 5px; /* Reduced from 10px */
+  right: 5px;
   top: 50%;
   transform: translateY(-50%);
   font-size: clamp(0.65rem, 1.5vw, 0.85rem);
   font-weight: 600;
   color: #fff;
   z-index: 2;
-  /* Prevent text overflow */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -333,25 +379,43 @@ svg {
   background-color: #ffa489b0;
 }
 
-#progressText {
-  margin-top: 10px;
-  font-size: 0.7rem;
+/* Week date range */
+#weekDateRange {
+  display: inline-block;
+  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+  font-weight: 500;
+  color: #5e5e5e;
+  white-space: nowrap;
   text-align: center;
 }
 
-/* Streak Container - Updated for the new structure with center alignment */
-.streak-container {
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  background-color: rgba(255, 179, 0, 0.15);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+/* Streak title properties */
+.streak-title {
+  display: inline-block;
+  font-weight: 600;
+  color: #5e5e5e;
   text-align: center;
-  justify-content: center;
-  align-items: center;
-  position: relative; /* Required for shimmer positioning */
+  white-space: nowrap;
+}
+
+/* Streak number */
+.streak-number {
+  display: inline-block;
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+  font-weight: 700;
+  color: #546bce;
+  font-family: 'Montserrat', 'Arial', sans-serif;
+  line-height: 1;
+  text-align: center;
+}
+
+/* Streak subtitle properties */
+.streak-subtitle {
+  display: inline-block;
+  font-weight: 500;
+  color: #546bce;
+  white-space: nowrap;
+  text-align: center;
 }
 
 /* Professional shimmer effect for streak container */
@@ -372,8 +436,8 @@ svg {
   );
   transform: rotate(30deg);
   animation: shimmer-sweep 3.5s infinite linear;
-  pointer-events: none; /* Ensure it doesn't interfere with clicks */
-  z-index: 1; /* Above the background, below the content */
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Ensure content appears above the shimmer */
@@ -389,52 +453,6 @@ svg {
   100% {
     transform: rotate(30deg) translateX(100%);
   }
-}
-
-/* .streak-title {
-  width: 90%;
-  max-width: 90%;
-  margin-left: auto;
-  margin-right: auto;
-  font-size: clamp(0.4rem, 1.8vw, 1.2rem); 
-  font-weight: 600;
-  color: #5e5e5e;
-  text-align: center;
-  margin-bottom: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-} */
-
-.streak-title {
-  max-width: 100%;
-  margin: 0 auto;
-  font-weight: 600;
-  color: #5e5e5e;
-  white-space: nowrap;
-
-}
-
-
-.streak-number {
-  font-size: clamp(1.8rem, 4.5vw, 2.8rem);
-  font-weight: 700;
-  color: #546bce;
-  font-family: 'Montserrat', 'Arial', sans-serif;
-  line-height: 1;
-  margin: 4px 0;
-  text-align: center;
-}
-
-.streak-subtitle {
-  font-size: clamp(0.8rem, 2vw, 1rem);
-  font-weight: 500;
-  color: #546bce;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
 }
 
 /* Diagonal Gradient Text Animation */
@@ -464,7 +482,7 @@ svg {
 .streak-container .streak-title,
 .streak-container .streak-subtitle {
   background: none;
-  color: #5e5e5e;;
+  color: #5e5e5e;
   animation: none;
 }
 
@@ -527,7 +545,8 @@ svg {
 .streak-unit,
 .streak-label,
 .streak-top,
-.streak-bottom {
+.streak-bottom,
+.progress-divider {
   display: none;
 }
 
@@ -600,10 +619,6 @@ svg {
 @media (max-width: 768px) {
   .progress-title {
     font-size: clamp(0.75rem, 1.5vw, 1rem);
-    margin-bottom: 6px;
-  }
-  .progress-divider {
-    margin-bottom: 8px;
   }
   .progress-segments {
     height: 22px;
@@ -632,6 +647,12 @@ svg {
   /* Reduce gap between elements */
   .progress-streak-container {
     gap: 8px;
+  }
+  
+  /* Adjust container heights for smaller screens */
+  #weeklyProgressContainer,
+  .streak-container {
+    height: 110px;
   }
 }
 
@@ -690,6 +711,19 @@ svg {
     height: 7px;
     margin: 0 2px 0 0;
   }
+  
+  /* Adjust container heights for extra small screens */
+  #weeklyProgressContainer,
+  .streak-container {
+    height: 100px;
+  }
+  
+  .progress-title-wrapper,
+  .streak-title-wrapper,
+  .progress-bottom-wrapper, 
+  .streak-subtitle-wrapper {
+    height: 20px;
+  }
 }
 
 /* Very small screens (under 374px) */
@@ -720,6 +754,19 @@ svg {
   .streak-container,
   .yearly-workouts-desktop {
     padding: 6px;
+  }
+  
+  /* Adjust container heights for very small screens */
+  #weeklyProgressContainer,
+  .streak-container {
+    height: 90px;
+  }
+  
+  .progress-title-wrapper,
+  .streak-title-wrapper,
+  .progress-bottom-wrapper, 
+  .streak-subtitle-wrapper {
+    height: 18px;
   }
 }
 
@@ -766,6 +813,21 @@ svg {
   
   .progress-streak-container.two-boxes .streak-container {
     flex: 1 1 30% !important;
+  }
+  
+  /* Adjust container heights for extra tiny screens */
+  #weeklyProgressContainer,
+  .streak-container {
+    height: 80px;
+  }
+  
+  .progress-title-wrapper,
+  .streak-title-wrapper,
+  .progress-bottom-wrapper, 
+  .streak-subtitle-wrapper {
+    height: 16px;
+    margin-top: 4px;
+    margin-bottom: 4px;
   }
 }
 

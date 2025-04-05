@@ -641,7 +641,7 @@ function drawYearCalendar(year) {
         rows = 5;
   const gridWidth = cols * (cellSize + cellGap) - cellGap;
   const gridHeight = rows * (cellSize + cellGap) - cellGap;
-  const margin = { top: 50, right: 20, bottom: 20, left: 20 };
+  const margin = { top: 50, right: 20, bottom: 10, left: 20 };
   const monthChartWidth = gridWidth + margin.left + margin.right;
   const monthChartHeight = gridHeight + margin.top + margin.bottom;
   
@@ -1250,12 +1250,7 @@ function updateProgressBar(workoutCount) {
     if (workoutCount >= 4) {
       progressCount.style.color = '#fff'; // White text for better contrast
     } else {
-      // Only make count white if it's in a filled segment
-      if (workoutCount >= 3) { // If count is in the last segment and that segment is filled
-        progressCount.style.color = '#fff';
-      } else {
-        progressCount.style.color = '#5e5e5e'; // Blue text otherwise
-      }
+      progressCount.style.color = '#5e5e5e'; // Blue text otherwise
     }
   }
   
@@ -1264,7 +1259,7 @@ function updateProgressBar(workoutCount) {
   }
 }
 
-// Function to update weekly progress (unchanged, just removing the reference to progressText)
+// Function to update weekly progress
 function updateWeeklyProgress() {
   updateWeekDateRangeDisplay();
   const workoutCount = countCurrentWeekWorkouts();
@@ -1284,13 +1279,112 @@ window.addEventListener('resize', function() {
     const workoutCount = countCurrentWeekWorkouts();
     updateProgressBar(workoutCount);
     updateStreakCounter(); // Update streak display
+    
+    // Re-initialize all fitty elements
+    initializeAllFitty();
   }, 200);
 });
 
+// ========== Vertical Alignment and Structure Helpers ==========
 
+// Create or update the DOM structure for alignment
+function updateProgressContainerStructure() {
+  const progressContainer = document.getElementById('weeklyProgressContainer');
+  const streakContainer = document.querySelector('.streak-container');
+  
+  if (!progressContainer || !streakContainer) return;
+  
+  // Skip if already updated
+  if (progressContainer.querySelector('.progress-title-wrapper')) return;
+  
+  // --- Progress Container Structure ---
+  
+  // 1. Create title wrapper if needed
+  const titleElement = progressContainer.querySelector('.progress-title');
+  if (titleElement && !titleElement.parentNode.classList.contains('progress-title-wrapper')) {
+    const titleWrapper = document.createElement('div');
+    titleWrapper.className = 'progress-title-wrapper';
+    titleElement.parentNode.insertBefore(titleWrapper, titleElement);
+    titleWrapper.appendChild(titleElement);
+  }
+  
+  // 2. Create middle wrapper if needed
+  const progressBarElement = progressContainer.querySelector('.progress-container');
+  if (progressBarElement && !progressBarElement.parentNode.classList.contains('progress-middle-wrapper')) {
+    const middleWrapper = document.createElement('div');
+    middleWrapper.className = 'progress-middle-wrapper';
+    progressBarElement.parentNode.insertBefore(middleWrapper, progressBarElement);
+    middleWrapper.appendChild(progressBarElement);
+  }
+  
+  // 3. Create bottom wrapper if needed
+  const dateRangeElement = document.getElementById('weekDateRange');
+  if (dateRangeElement && !dateRangeElement.parentNode.classList.contains('progress-bottom-wrapper')) {
+    const bottomWrapper = document.createElement('div');
+    bottomWrapper.className = 'progress-bottom-wrapper';
+    dateRangeElement.parentNode.insertBefore(bottomWrapper, dateRangeElement);
+    bottomWrapper.appendChild(dateRangeElement);
+  }
+  
+  // --- Streak Container Structure ---
+  // We don't want to change the streak container's HTML structure directly,
+  // but we'll add a middle wrapper that will help with alignment
+  
+  const streakNumber = streakContainer.querySelector('.streak-number');
+  if (streakNumber && !streakContainer.querySelector('.streak-middle-wrapper')) {
+    const middleWrapper = document.createElement('div');
+    middleWrapper.className = 'streak-middle-wrapper';
+    streakNumber.parentNode.insertBefore(middleWrapper, streakNumber);
+    middleWrapper.appendChild(streakNumber);
+  }
+}
 
+// Initialize fitty for all text elements
+function initializeAllFitty() {
+  // Progress container
+  fitty('.progress-title', {
+    multiLine: false,
+    minSize: 12,
+    maxSize: 20
+  });
+  
+  fitty('#weekDateRange', {
+    multiLine: false,
+    minSize: 10,
+    maxSize: 16
+  });
+  
+  // Streak container (already in your code)
+  fitty('.streak-title', {
+    multiLine: false,
+    minSize: 12,
+    maxSize: 20
+  });
+  
+  fitty('.streak-subtitle', {
+    multiLine: false,
+    minSize: 10,
+    maxSize: 16
+  });
+}
 
+// Replace the original initializeStreakTitle function 
+function initializeStreakTitle() {
+  // First update DOM structure
+  updateProgressContainerStructure();
+  
+  // Then initialize fitty for proper text scaling
+  initializeAllFitty();
+}
 
+// ========== Init on Page Load ==========
+document.addEventListener('DOMContentLoaded', function() {
+  // Run structure updates
+  updateProgressContainerStructure();
+  
+  // Initialize fitty for all text elements
+  initializeAllFitty();
+});
 
 // ========== Init on Page Load ==========
 (async function init() {
@@ -1305,6 +1399,9 @@ window.addEventListener('resize', function() {
   renderLegend();
   adjustMonthDisplay();
   updateWeeklyProgress();
+
+  // This now calls our enhanced version that handles both containers
+  initializeStreakTitle();
   
   // Also load previous year data if needed for streak calculation
   const prevYear = currentYear - 1;
