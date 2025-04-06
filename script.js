@@ -317,6 +317,17 @@ function buildTooltipHTML(dayData) {
     durationInfo = dayData.duration;
   }
   
+  // Add month info for overflow days
+  let headerContent = `<div class="tooltip-header"><strong>Volume:</strong> ${dayData.volume} Sets</div>`;
+  if (dayData.isOverflow && dayData.originalMonth !== undefined) {
+    const monthName = monthNames[dayData.originalMonth];
+    headerContent = `<div class="tooltip-header">
+      <div style="text-align: center; margin-bottom: 4px;">${monthName} ${dayData.day}</div>
+      <div style="height: 1px; background-color: rgba(255,255,255,0.3); margin: 4px 0;"></div>
+      <div><strong>Volume:</strong> ${dayData.volume} Sets</div>
+    </div>`;
+  }
+  
   // Always include the footer separator if we have duration info
   let footerContent = "";
   if (durationInfo) {
@@ -324,7 +335,7 @@ function buildTooltipHTML(dayData) {
   }
   
   return `
-    <div class="tooltip-header"><strong>Volume:</strong> ${dayData.volume} Sets</div>
+    ${headerContent}
     <div class="tooltip-exercises">${exerciseList}</div>
     ${footerContent}
   `;
@@ -576,9 +587,235 @@ function hideTooltip() {
 }
 
 // Add this function to fetch workout details including duration
-async function fetchWorkoutDetails(year, month, day) {
+// ========== Draw Year Calendar ==========
+function drawYearCalendar(year) {
+  chartContainer.innerHTML = "";
+  
+  const cellSize = calculateResponsiveCellSize(),
+        cellGap = 4,
+        cols = 7,
+        rows = 5;
+  const gridWidth = cols * (cellSize + cellGap) - cellGap;
+  const gridHeight = rows * (cellSize + cellGap) - cellGap;
+  const margin = { top: 50, right: 20, bottom: 10, left: 20 };
+  const monthChartWidth = gridWidth + margin.left + margin.right;
+  const monthChartHeight = gridHeight + margin.top + margin.bottom;
+  
+  const getGradientId = (muscles) => `gradient-${muscles.join('-')}`;
+  
+  // Array to store overflow days from previous month
+  let overflowDays = [];
+
+  for (let m = 0; m < 12; m++) {
+    const monthDiv = document.createElement("div");
+    monthDiv.className = "month-block";
+    
+    const svg = d3.create("svg")
+      .attr("width", monthChartWidth)
+      .attr("height", monthChartHeight)
+      .attr("viewBox", `0 0 ${monthChartWidth} ${monthChartHeight}`)
+      .attr("preserveAspectRatio", "xMinYMin meet");
+
+    const defs = svg.append("defs");
+
+    // Month label
+    svg.append("text")
+      .attr("x", margin.left + gridWidth/2)
+      .attr("y", margin.top - 25)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "14px")
+      .attr("font-weight", "bold")
+      .text(monthNames[m]);
+
+    // Weekday labels
+    svg.selectAll("text.weekDay")
+      .data(weekDays)
+      .join("text")
+        .attr("class", "weekDay")
+        .attr("x", (d, i) => margin.left + i * (cellSize + cellGap) + cellSize/2)
+        .attr("y", margin.top - 10)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "10px")
+        .attr("fill", "#333")
+        .text(d => d);
+
+    const numDays = new Date(year, m + 1, 0).getDate();
+    const firstDay = new Date(year, m, 1).getDay();
+    
+    // Calculate if we have overflow days
+    const totalCellsNeeded = firstDay + numDays;
+    const hasOverflow = totalCellsNeeded > 35; // 5 rows × 7 columns
+    
+    // Calculate how many days overflow
+    const overflowCount = hasOverflow ? totalCellsNeeded - 35 : 0;
+    
+    // Create cells array for this month
+    let cells = [];
+    let nextMonthOverflowDays = []; // Store overflow days for next month
+    
+    // Fill with overflow days from previous month if available
+    const emptyStartCells = firstDay;
+    let overflowIndex = 0;
+    
+    for (let i = 0; i < emptyStartCells; i++) {
+      if (overflowDays.length > 0 && overflowIndex < overflowDays.length) {
+        // Display overflow day from previous month
+        cells.push({
+          ...overflowDays[overflowIndex],
+          isOverflow: true,
+          fromPreviousMonth: true
+        });
+        overflowIndex++;
+      } else {
+        // No overflow days (or ran out), use empty cell
+        cells.push(null);
+      }
+    }
+    
+    // Fill with current month days
+    for (let dayNumber = 1; dayNumber <= numDays; dayNumber++) {
+      // Check if this day would overflow
+      const cellPosition = firstDay + dayNumber - 1;
+      
+      if (cellPosition < 35) {
+        // Regular day within the 5×7 grid
+        let dayData = (yearData[year] && yearData[year][m])
+          ? yearData[year][m][dayNumber - 1]
+          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
+        
+        cells.push({ ...dayData, day: dayNumber, month: m });
+      } else {
+        // This day overflows - save it for next month
+        let dayData = (yearData[year] && yearData[year][m])
+          ? yearData[year][m][dayNumber - 1]
+          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
+        
+        nextMonthOverflowDays.push({ ...dayData, day: dayNumber, originalMonth: m });
+      }
+    }
+    
+    // Fill remaining cells with null (if needed)
+    while (cells.length < 35) {
+      cells.push(null);
+    }
+    
+    // Save overflow days for next month
+    overflowDays = nextMonthOverflowDays;
+    
+    // Create color gradients for multi-muscle squares
+    const colorScale = d3.scaleOrdinal()
+      .domain(muscleGroups)
+      .range(muscleGroups.map(mg => muscleColors[mg]));
+    
+    const uniqueCombinations = new Set();
+    cells.forEach(cell => {
+      if (cell && cell.muscles && cell.muscles.length > 1) {
+        uniqueCombinations.add(cell.muscles.join('-'));
+      }
+    });
+    uniqueCombinations.forEach(combo => {
+      const muscles = combo.split('-');
+      const gradientId = getGradientId(muscles);
+      const gradient = defs.append("linearGradient")
+        .attr("id", gradientId)
+        .attr("x1", "0%")
+        .attr("y1", "0%")
+        .attr("x2", "0%")
+        .attr("y2", "100%");
+      
+      // We only handle up to 3 distinct muscles for the gradient
+      if (muscles.length === 2) {
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "45%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "55%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[1]));
+      } else if (muscles.length === 3) {
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
+      } else if (muscles.length > 3) {
+        // just use the first 3
+        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
+      }
+    });
+    
+    const cellsGroup = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    // Draw each day cell
+    cellsGroup.selectAll("g.cell-wrapper")
+      .data(cells)
+      .join("g")
+        .attr("class", "cell-wrapper")
+        .attr("data-month", d => d && d.isOverflow ? d.originalMonth : m)
+        .attr("transform", (d, i) => {
+          const x = (i % cols) * (cellSize + cellGap);
+          const y = Math.floor(i / cols) * (cellSize + cellGap);
+          return `translate(${x}, ${y})`;
+        })
+        .each(function(d) {
+          if (!d) return;
+          
+          const cell = d3.select(this);
+          
+          // Determine if this is an overflow day from previous month
+          const isOverflow = d.isOverflow && d.fromPreviousMonth;
+          
+          cell.append("rect")
+            .attr("class", "cell-background")
+            .attr("width", cellSize)
+            .attr("height", cellSize)
+            .attr("rx", 3)
+            .attr("ry", 3)
+            .attr("stroke", "#ddd")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", isOverflow ? "2,2" : null) // Dotted border for overflow days
+            .attr("fill", () => {
+              const cellDate = new Date(year, d.originalMonth || m, d.day);
+              const now = new Date();
+              if (cellDate > now) return "none"; // future date
+              if (!d.muscles || d.muscles.length === 0) return "#ebedf0"; // no workout
+              if (d.muscles.length === 1) {
+                return colorScale(d.muscles[0]);
+              }
+              return `url(#${getGradientId(d.muscles)})`;
+            });
+          
+          // Day label
+          cell.append("text")
+            .attr("class", "dayLabel")
+            .attr("x", 2)
+            .attr("y", 12)
+            .attr("font-size", "10px")
+            .attr("fill", isOverflow ? "#888" : "#333") // Lighter color for overflow days
+            .text(d.day);
+
+          // Add pointer events for all devices (pointerenter/move/leave)
+          if (d.muscles && d.muscles.length > 0) {
+            addTooltipBehavior(cell, d);
+          }
+        });
+    
+    monthDiv.appendChild(svg.node());
+    chartContainer.appendChild(monthDiv);
+  }
+}
+
+// Update the fetchWorkoutDetails function to handle overflow days correctly
+async function fetchWorkoutDetails(year, month, day, originalMonth) {
+  // Use originalMonth if provided (for overflow days)
+  const actualMonth = originalMonth !== undefined ? originalMonth : month;
+  
   const dd = String(day).padStart(2, "0");
-  const mm = String(month + 1).padStart(2, "0");
+  const mm = String(actualMonth + 1).padStart(2, "0");
   const yyyy = year;
   const fileName = `data/${dd}-${mm}-${yyyy}.json`;
   
@@ -689,6 +926,7 @@ function adjustMonthDisplay() {
 }
 
 // ========== Draw Year Calendar ==========
+// ========== Draw Year Calendar ==========
 function drawYearCalendar(year) {
   chartContainer.innerHTML = "";
   
@@ -703,6 +941,9 @@ function drawYearCalendar(year) {
   const monthChartHeight = gridHeight + margin.top + margin.bottom;
   
   const getGradientId = (muscles) => `gradient-${muscles.join('-')}`;
+  
+  // Array to store overflow days from previous month
+  let overflowDays = [];
 
   for (let m = 0; m < 12; m++) {
     const monthDiv = document.createElement("div");
@@ -739,18 +980,66 @@ function drawYearCalendar(year) {
 
     const numDays = new Date(year, m + 1, 0).getDate();
     const firstDay = new Date(year, m, 1).getDay();
+    
+    // Calculate if we have overflow days
+    const totalCellsNeeded = firstDay + numDays;
+    const hasOverflow = totalCellsNeeded > 35; // 5 rows × 7 columns
+    
+    // Calculate how many days overflow
+    const overflowCount = hasOverflow ? totalCellsNeeded - 35 : 0;
+    
+    // Create cells array for this month
     let cells = [];
-    for (let i = 0; i < 35; i++) {
-      let dayNumber = i - firstDay + 1;
-      if (dayNumber >= 1 && dayNumber <= numDays) {
-        let dayData = (yearData[year] && yearData[year][m])
-          ? yearData[year][m][dayNumber - 1]
-          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
-        cells.push({ ...dayData, day: dayNumber });
+    let nextMonthOverflowDays = []; // Store overflow days for next month
+    
+    // Fill with overflow days from previous month if available
+    const emptyStartCells = firstDay;
+    let overflowIndex = 0;
+    
+    for (let i = 0; i < emptyStartCells; i++) {
+      if (overflowDays.length > 0 && overflowIndex < overflowDays.length) {
+        // Display overflow day from previous month
+        cells.push({
+          ...overflowDays[overflowIndex],
+          isOverflow: true,
+          fromPreviousMonth: true
+        });
+        overflowIndex++;
       } else {
+        // No overflow days (or ran out), use empty cell
         cells.push(null);
       }
     }
+    
+    // Fill with current month days
+    for (let dayNumber = 1; dayNumber <= numDays; dayNumber++) {
+      // Check if this day would overflow
+      const cellPosition = firstDay + dayNumber - 1;
+      
+      if (cellPosition < 35) {
+        // Regular day within the 5×7 grid
+        let dayData = (yearData[year] && yearData[year][m])
+          ? yearData[year][m][dayNumber - 1]
+          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
+        
+        cells.push({ ...dayData, day: dayNumber, month: m });
+      } else {
+        // This day overflows - save it for next month
+        let dayData = (yearData[year] && yearData[year][m])
+          ? yearData[year][m][dayNumber - 1]
+          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
+        
+        nextMonthOverflowDays.push({ ...dayData, day: dayNumber, originalMonth: m });
+      }
+    }
+    
+    // Fill remaining cells with null (if needed)
+    while (cells.length < 35) {
+      cells.push(null);
+    }
+    
+    // Save overflow days for next month
+    overflowDays = nextMonthOverflowDays;
     
     // Create color gradients for multi-muscle squares
     const colorScale = d3.scaleOrdinal()
@@ -805,7 +1094,7 @@ function drawYearCalendar(year) {
       .data(cells)
       .join("g")
         .attr("class", "cell-wrapper")
-        .attr("data-month", m)
+        .attr("data-month", d => d && d.isOverflow ? d.originalMonth : m)
         .attr("transform", (d, i) => {
           const x = (i % cols) * (cellSize + cellGap);
           const y = Math.floor(i / cols) * (cellSize + cellGap);
@@ -815,6 +1104,10 @@ function drawYearCalendar(year) {
           if (!d) return;
           
           const cell = d3.select(this);
+          
+          // Determine if this is an overflow day from previous month
+          const isOverflow = d.isOverflow && d.fromPreviousMonth;
+          
           cell.append("rect")
             .attr("class", "cell-background")
             .attr("width", cellSize)
@@ -823,8 +1116,9 @@ function drawYearCalendar(year) {
             .attr("ry", 3)
             .attr("stroke", "#ddd")
             .attr("stroke-width", 1)
+            .attr("stroke-dasharray", isOverflow ? "4,2" : null) // Wider dashed border for overflow days
             .attr("fill", () => {
-              const cellDate = new Date(year, m, d.day);
+              const cellDate = new Date(year, d.originalMonth || m, d.day);
               const now = new Date();
               if (cellDate > now) return "none"; // future date
               if (!d.muscles || d.muscles.length === 0) return "#ebedf0"; // no workout
@@ -840,7 +1134,7 @@ function drawYearCalendar(year) {
             .attr("x", 2)
             .attr("y", 12)
             .attr("font-size", "10px")
-            .attr("fill", "#333")
+            .attr("fill", isOverflow ? "#888" : "#333") // Lighter color for overflow days
             .text(d.day);
 
           // Add pointer events for all devices (pointerenter/move/leave)
@@ -855,6 +1149,7 @@ function drawYearCalendar(year) {
 }
 
 // This is inside the touchstart event handler
+// Update the addTooltipBehavior function to handle overflow days
 function addTooltipBehavior(cellSelection, dayData) {
   const rect = cellSelection.select("rect.cell-background");
 
@@ -908,7 +1203,9 @@ function addTooltipBehavior(cellSelection, dayData) {
           try {
             const year = currentYear;
             const month = +cellSelection.attr("data-month") || 0;
-            const details = await fetchWorkoutDetails(year, month, dayData.day);
+            // Handle overflow days by passing the original month if available
+            const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
+            const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
             
             // Update duration if available
             if (details.duration) {
@@ -1036,7 +1333,9 @@ function addTooltipBehavior(cellSelection, dayData) {
           try {
             const year = currentYear;
             const month = +cellSelection.attr("data-month") || 0;
-            const details = await fetchWorkoutDetails(year, month, dayData.day);
+            // Handle overflow days by using the original month if available
+            const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
+            const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
             
             // Update duration if available
             if (details.duration) {
@@ -1075,7 +1374,10 @@ function addTooltipBehavior(cellSelection, dayData) {
         showTooltip(event, dayData);
       })
       .on("pointerleave", () => {
-        rect.attr("stroke", "#ddd").attr("stroke-width", 1);
+        rect.attr("stroke", dayData.isOverflow ? "#ddd" : "#ddd").attr("stroke-width", 1);
+        if (dayData.isOverflow) {
+          rect.attr("stroke-dasharray", "4,2"); // Restore wider dashed border for overflow days
+        }
         hideTooltip();
       });
   }
