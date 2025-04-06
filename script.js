@@ -325,7 +325,7 @@ function buildTooltipHTML(dayData) {
   // Check if exercises are in the new format (objects with name and count)
   const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
   
-  // Format the list of exercises with set counts - make more compact for desktop
+  // Format the list of exercises with set counts
   let exerciseList;
   
   if (isNewFormat) {
@@ -1296,8 +1296,6 @@ function drawYearCalendar(year) {
 }
 
 // This is inside the touchstart event handler
-// This is the full addTooltipBehavior function with the missing constant defined
-
 function addTooltipBehavior(cellSelection, dayData) {
   const rect = cellSelection.select("rect.cell-background");
   const cellSize = +rect.attr("width");
@@ -1385,13 +1383,12 @@ function addTooltipBehavior(cellSelection, dayData) {
       }
     });
     
-
-    // 2. Modify the showTooltipForMobileCell function to add event listener to the close button
+    // Function to show tooltip for mobile devices with modified behavior
     async function showTooltipForMobileCell(event) {
       event.preventDefault();
       event.stopPropagation();
       
-      // Get additional workout details
+      // Get additional workout details if needed
       if (dayData.day) {
         try {
           const year = currentYear;
@@ -1406,9 +1403,9 @@ function addTooltipBehavior(cellSelection, dayData) {
           
           if (details.exercises && details.exercises.length > 0) {
             const hasExerciseObjects = dayData.exercises && 
-                                    dayData.exercises.length > 0 && 
-                                    typeof dayData.exercises[0] === 'object' &&
-                                    'count' in dayData.exercises[0];
+                                   dayData.exercises.length > 0 && 
+                                   typeof dayData.exercises[0] === 'object' &&
+                                   'count' in dayData.exercises[0];
             
             if (!hasExerciseObjects) {
               const exerciseNames = new Set(
@@ -1444,8 +1441,41 @@ function addTooltipBehavior(cellSelection, dayData) {
       rect.attr("stroke", "#333").attr("stroke-width", 2);
       cellSelection.classed("active-tooltip-cell", true);
       
-      // Show the tooltip
-      showTooltip(event, dayData);
+      // Show the tooltip - modified for better mobile display
+      const tooltipDiv = d3.select("#tooltip");
+      tooltipDiv.html(buildTooltipHTML(dayData));
+      
+      // Get the muscle group color for background
+      let bgColor = "#6a6a6a"; // Default fallback color
+      if (dayData.muscles && dayData.muscles.length > 0) {
+        const firstMuscle = dayData.muscles[0];
+        const baseColor = muscleColors[firstMuscle];
+        bgColor = darkenColor(baseColor, 0.2);
+      }
+      
+      // Apply styling with fixed positioning for mobile
+      tooltipDiv
+        .style("background-color", bgColor)
+        .style("color", isColorDark(bgColor) ? "#ffffff" : "#333333")
+        .style("opacity", 1)
+        .classed("mobile-tooltip", true)
+        .style("position", "fixed")
+        .style("top", "50%")
+        .style("left", "50%")
+        .style("transform", "translate(-50%, -50%)")
+        .style("width", "65%")
+        .style("min-height", "200px")
+        .style("max-height", "70%");
+      
+      // Ensure the exercises container has a good height
+      setTimeout(() => {
+        const exercisesDiv = tooltipDiv.select(".tooltip-exercises").node();
+        if (exercisesDiv) {
+          exercisesDiv.style.minHeight = "100px";
+          exercisesDiv.style.maxHeight = "calc(100% - 80px)";
+          exercisesDiv.style.overflowY = "auto";
+        }
+      }, 10);
       
       // Add overlay for dismissal if not already present
       let overlay = document.getElementById("tooltip-overlay");
@@ -1458,47 +1488,38 @@ function addTooltipBehavior(cellSelection, dayData) {
         overlay.style.right = "0";
         overlay.style.bottom = "0";
         overlay.style.zIndex = "9000";
-        overlay.style.background = "transparent";
+        overlay.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
         document.body.appendChild(overlay);
         
-        // Listen for taps on the overlay to dismiss
-        overlay.addEventListener("touchstart", handleOverlayTap);
+        // Add non-dismissing event handler (just prevents interaction)
+        overlay.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
       }
       
       // Add click handler for close button
       setTimeout(() => {
         const closeBtn = document.querySelector('.tooltip-close-btn');
         if (closeBtn) {
-          closeBtn.addEventListener('click', function(e) {
+          // Remove any existing event listeners
+          const newBtn = closeBtn.cloneNode(true);
+          closeBtn.parentNode.replaceChild(newBtn, closeBtn);
+          
+          // Add the new event listener
+          newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
             hideAllTooltips();
             
             // Remove the overlay
             const overlay = document.getElementById("tooltip-overlay");
             if (overlay) {
-              overlay.removeEventListener("touchstart", handleOverlayTap);
               document.body.removeChild(overlay);
             }
           });
         }
       }, 50);
-    }
-    
-    function handleOverlayTap(e) {
-      // If tapped on the tooltip itself, don't dismiss
-      if (e.target.closest("#tooltip")) {
-        return;
-      }
-      
-      // If tapped elsewhere, dismiss tooltip
-      hideAllTooltips();
-      
-      // Remove the overlay
-      const overlay = document.getElementById("tooltip-overlay");
-      if (overlay) {
-        overlay.removeEventListener("touchstart", handleOverlayTap);
-        document.body.removeChild(overlay);
-      }
     }
   } else {
     // Desktop and fine pointer devices - keep existing behavior
@@ -1556,6 +1577,57 @@ function addTooltipBehavior(cellSelection, dayData) {
         hideTooltip();
       });
   }
+}
+
+// Function for building tooltip HTML with more prominent close button
+function buildTooltipHTML(dayData) {
+  if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
+    return "No workout data";
+  }
+  
+  // Check if exercises are in the new format (objects with name and count)
+  const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
+  
+  // Format the list of exercises with set counts
+  let exerciseList;
+  
+  if (isNewFormat) {
+    exerciseList = dayData.exercises
+      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
+      .join("");
+  } else {
+    exerciseList = dayData.exercises
+      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex}</span></div>`)
+      .join("");
+  }
+  
+  // Add duration information if available
+  let durationInfo = "";
+  if (dayData.duration && dayData.duration !== "NaN") {
+    durationInfo = dayData.duration;
+  }
+  
+  // Add a proper close button for mobile
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const closeButton = isMobile ? '<div class="tooltip-close-btn" style="position:absolute;top:-8px;right:-8px;width:28px;height:28px;background-color:#ff4d4d;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3);z-index:10;">&times;</div>' : '';
+  
+  // Create the header content
+  let headerContent = `<div class="tooltip-header" style="position:relative;">
+    <strong>Volume:</strong> ${dayData.volume} Sets
+    ${closeButton}
+  </div>`;
+  
+  // Footer content with duration if available
+  let footerContent = "";
+  if (durationInfo) {
+    footerContent = `<div class="tooltip-footer"><div class="duration-value">${durationInfo}</div></div>`;
+  }
+  
+  return `
+    ${headerContent}
+    <div class="tooltip-exercises" style="${isMobile ? 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' : ''}">${exerciseList}</div>
+    ${footerContent}
+  `;
 }
 
 // ========== Render Legend ==========
