@@ -316,6 +316,7 @@ const TOOLTIP_DESKTOP_PADDING = "6px 8px";
 
 
 // ========== Tooltip Content Builder ==========
+// Function to build tooltip HTML content with close button
 function buildTooltipHTML(dayData) {
   if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
     return "No workout data";
@@ -343,8 +344,15 @@ function buildTooltipHTML(dayData) {
     durationInfo = dayData.duration;
   }
   
+  // Add a proper close button for mobile
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const closeButton = isMobile ? '<div class="tooltip-close-btn">&times;</div>' : '';
+  
   // Create the header content
-  let headerContent = `<div class="tooltip-header"><strong>Volume:</strong> ${dayData.volume} Sets</div>`;
+  let headerContent = `<div class="tooltip-header">
+    <strong>Volume:</strong> ${dayData.volume} Sets
+    ${closeButton}
+  </div>`;
   
   // Footer content with duration if available
   let footerContent = "";
@@ -357,6 +365,104 @@ function buildTooltipHTML(dayData) {
     <div class="tooltip-exercises">${exerciseList}</div>
     ${footerContent}
   `;
+}
+
+// Function to handle mobile tooltip display and add close button handler
+async function showTooltipForMobileCell(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  // Get additional workout details
+  if (dayData.day) {
+    try {
+      const year = currentYear;
+      const month = +cellSelection.attr("data-month") || 0;
+      const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
+      const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
+      
+      // Update dayData with fetched details
+      if (details.duration) {
+        dayData.duration = details.duration;
+      }
+      
+      if (details.exercises && details.exercises.length > 0) {
+        const hasExerciseObjects = dayData.exercises && 
+                               dayData.exercises.length > 0 && 
+                               typeof dayData.exercises[0] === 'object' &&
+                               'count' in dayData.exercises[0];
+        
+        if (!hasExerciseObjects) {
+          const exerciseNames = new Set(
+            Array.isArray(dayData.exercises) ? dayData.exercises : []
+          );
+          
+          if (exerciseNames.size > 0) {
+            dayData.exercises = details.exercises.filter(ex => 
+              exerciseNames.has(ex.name)
+            );
+          } else {
+            dayData.exercises = details.exercises;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching workout details:", err);
+    }
+  }
+  
+  // Check if we're clicking on the same cell or a new one
+  const isNewCell = !cellSelection.classed("active-tooltip-cell");
+  
+  // If there's already an active tooltip for another cell, hide it
+  if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
+    // Hide previous cell highlight
+    d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
+    d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
+    d3.selectAll("rect.cell-background[stroke-dasharray]").attr("stroke-dasharray", "4,2");
+  }
+  
+  // Always apply highlighting to the tapped cell
+  rect.attr("stroke", "#333").attr("stroke-width", 2);
+  cellSelection.classed("active-tooltip-cell", true);
+  
+  // Show the tooltip
+  showTooltip(event, dayData);
+  
+  // Add overlay for dismissal if not already present
+  let overlay = document.getElementById("tooltip-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "tooltip-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.right = "0";
+    overlay.style.bottom = "0";
+    overlay.style.zIndex = "9000";
+    overlay.style.background = "transparent";
+    document.body.appendChild(overlay);
+    
+    // Listen for taps on the overlay to dismiss
+    overlay.addEventListener("touchstart", handleOverlayTap);
+  }
+  
+  // Add click handler for close button
+  setTimeout(() => {
+    const closeBtn = document.querySelector('.tooltip-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hideAllTooltips();
+        
+        // Remove the overlay
+        const overlay = document.getElementById("tooltip-overlay");
+        if (overlay) {
+          overlay.removeEventListener("touchstart", handleOverlayTap);
+          document.body.removeChild(overlay);
+        }
+      });
+    }
+  }, 50);
 }
 
 // ========== Tooltip Show/Hide ==========
@@ -1279,7 +1385,8 @@ function addTooltipBehavior(cellSelection, dayData) {
       }
     });
     
-    // Helper function to avoid code duplication
+
+    // 2. Modify the showTooltipForMobileCell function to add event listener to the close button
     async function showTooltipForMobileCell(event) {
       event.preventDefault();
       event.stopPropagation();
@@ -1299,9 +1406,9 @@ function addTooltipBehavior(cellSelection, dayData) {
           
           if (details.exercises && details.exercises.length > 0) {
             const hasExerciseObjects = dayData.exercises && 
-                                     dayData.exercises.length > 0 && 
-                                     typeof dayData.exercises[0] === 'object' &&
-                                     'count' in dayData.exercises[0];
+                                    dayData.exercises.length > 0 && 
+                                    typeof dayData.exercises[0] === 'object' &&
+                                    'count' in dayData.exercises[0];
             
             if (!hasExerciseObjects) {
               const exerciseNames = new Set(
@@ -1357,6 +1464,24 @@ function addTooltipBehavior(cellSelection, dayData) {
         // Listen for taps on the overlay to dismiss
         overlay.addEventListener("touchstart", handleOverlayTap);
       }
+      
+      // Add click handler for close button
+      setTimeout(() => {
+        const closeBtn = document.querySelector('.tooltip-close-btn');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            hideAllTooltips();
+            
+            // Remove the overlay
+            const overlay = document.getElementById("tooltip-overlay");
+            if (overlay) {
+              overlay.removeEventListener("touchstart", handleOverlayTap);
+              document.body.removeChild(overlay);
+            }
+          });
+        }
+      }, 50);
     }
     
     function handleOverlayTap(e) {
