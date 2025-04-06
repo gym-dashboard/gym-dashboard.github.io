@@ -256,7 +256,7 @@ svg {
 /* Base containers with consistent height and structure */
 #weeklyProgressContainer,
 .streak-container {
-  height: 126px; /* Set fixed height for consistency */
+  min-height:fit-content;
   display: flex;
   flex-direction: column;
   padding: 10px;
