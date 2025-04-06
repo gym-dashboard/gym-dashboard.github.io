@@ -1111,14 +1111,11 @@ function getFormattedDateRange() {
   const startMonth = startDate.getMonth();
   const endMonth = endDate.getMonth();
   
-  if (startMonth === endMonth) {
-    const monthName = monthNames[startMonth];
-    return `${monthName} ${startDate.getDate()} - ${endDate.getDate()}`;
-  } else {
-    const startMonthName = monthNames[startMonth];
-    const endMonthName = monthNames[endMonth];
-    return `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
-  }
+  // Always include month for both start and end dates
+  const startMonthName = monthNames[startMonth];
+  const endMonthName = monthNames[endMonth];
+  
+  return `${startMonthName} ${startDate.getDate()} - ${endMonthName} ${endDate.getDate()}`;
 }
 
 function getCurrentWeekDateRange() {
