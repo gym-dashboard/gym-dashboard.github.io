@@ -287,7 +287,7 @@ svg {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
 }
 
 /* Middle section styling - this is the key to alignment */
@@ -308,13 +308,12 @@ svg {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 0px;
 }
 
-/* Progress title styling */
+/* Progress title styling - UPDATED to remove fixed font size */
 .progress-title {
   display: inline-block;
-  font-size: clamp(0.85rem, 2vw, 1.1rem);
   font-weight: 600;
   font-family: 'Montserrat', 'Arial', sans-serif;
   color: #5e5e5e;
@@ -333,7 +332,7 @@ svg {
 .progress-segments {
   display: flex;
   width: 100%;
-  height: 40px;
+  height: 32px;
   border-radius: 6px;
   overflow: hidden;
   position: relative;
@@ -379,14 +378,22 @@ svg {
   background-color: #ffa489b0;
 }
 
-/* Week date range */
+/* Week date range - UPDATED to remove fixed font size */
 #weekDateRange {
   display: inline-block;
-  font-size: clamp(0.7rem, 1.5vw, 0.9rem);
   font-weight: 500;
   color: #5e5e5e;
   white-space: nowrap;
   text-align: center;
+}
+
+/* Make progress elements inherit from streak elements */
+.progress-title-wrapper {
+  font-size: inherit;
+}
+
+.progress-bottom-wrapper {
+  font-size: inherit;
 }
 
 /* Streak title properties */
@@ -617,9 +624,7 @@ svg {
 
 /* Small screens (under 768px) */
 @media (max-width: 768px) {
-  .progress-title {
-    font-size: clamp(0.75rem, 1.5vw, 1rem);
-  }
+  /* Remove specific font-size for progress-title */
   .progress-segments {
     height: 22px;
   }
@@ -663,9 +668,7 @@ svg {
   .yearly-workouts-desktop {
     padding: 8px;
   }
-  .progress-title {
-    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
-  }
+  /* Remove specific font-size for progress-title */
   .progress-segments {
     height: 18px;
   }

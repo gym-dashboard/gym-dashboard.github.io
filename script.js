@@ -1148,7 +1148,6 @@ function getDateFromWeekKey(weekKey) {
   return new Date(year, month, day);
 }
 
-// IMPROVED: Completely rewritten updateStreakCounter function
 function updateStreakCounter() {
   const prevWeekCompleted = checkPreviousWeekCompleted();
   const currentWeekCount = countCurrentWeekWorkouts();
@@ -1190,23 +1189,30 @@ function updateStreakCounter() {
   let streak = 0;
   const sortedWeeks = [...weeklyData.completedWeeks].sort();
   
-  if (sortedWeeks.length > 0) {
-    // Start with at least 1 for the most recent completed week
+  // IMPORTANT CHANGE: Only count a streak if the previous week was completed
+  if (sortedWeeks.length > 0 && prevWeekCompleted) {
+    // Start with 1 for the previous week that was just completed
     streak = 1;
     
-    // Go backwards from the most recent week
-    for (let i = sortedWeeks.length - 1; i > 0; i--) {
-      const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
-      const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
-      
-      // Check if these weeks are consecutive (7 days apart)
-      const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
-      
-      if (dayDiff === 7) {
-        streak++;
-      } else {
-        // Break on first non-consecutive week
-        break;
+    // Find the index of the previous week in our sorted array
+    const prevWeekIndex = sortedWeeks.indexOf(prevWeekKey);
+    
+    // If we found the previous week in our completed weeks
+    if (prevWeekIndex > 0) {
+      // Check consecutive weeks working backwards from the previous week
+      for (let i = prevWeekIndex; i > 0; i--) {
+        const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
+        const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
+        
+        // Check if these weeks are consecutive (7 days apart)
+        const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
+        
+        if (dayDiff === 7) {
+          streak++;
+        } else {
+          // Break on first non-consecutive week
+          break;
+        }
       }
     }
   }
@@ -1219,11 +1225,13 @@ function updateStreakCounter() {
   
   // Update the streak display with proper pluralization
   const streakNumber = document.querySelector('.streak-number');
-  const streakUnit = document.querySelector('.streak-unit');
+  const streakSubtitle = document.querySelector('.streak-subtitle');
   
-  if (streakNumber && streakUnit) {
+  if (streakNumber) {
     streakNumber.textContent = weeklyData.weekStreakCount;
-    streakUnit.textContent = weeklyData.weekStreakCount === 1 ? 'Week' : 'Weeks';
+  }
+  if (streakSubtitle) {
+    streakSubtitle.textContent = weeklyData.weekStreakCount === 1 ? 'Week in a row' : 'Weeks in a row';
   }
 }
 
@@ -1280,7 +1288,7 @@ window.addEventListener('resize', function() {
     updateProgressBar(workoutCount);
     updateStreakCounter(); // Update streak display
     
-    // Re-initialize all fitty elements
+    // Re-initialize all fitty elements and sync font sizes
     initializeAllFitty();
   }, 200);
 });
@@ -1339,22 +1347,9 @@ function updateProgressContainerStructure() {
   }
 }
 
-// Initialize fitty for all text elements
+// Initialize fitty for streak elements only
 function initializeAllFitty() {
-  // Progress container
-  fitty('.progress-title', {
-    multiLine: false,
-    minSize: 12,
-    maxSize: 20
-  });
-  
-  fitty('#weekDateRange', {
-    multiLine: false,
-    minSize: 10,
-    maxSize: 16
-  });
-  
-  // Streak container (already in your code)
+  // Only initialize fitty for streak container elements
   fitty('.streak-title', {
     multiLine: false,
     minSize: 12,
@@ -1366,6 +1361,37 @@ function initializeAllFitty() {
     minSize: 10,
     maxSize: 16
   });
+  
+  // Sync progress element font sizes with streak elements
+  syncProgressFontSizes();
+}
+
+// Add new function to sync font sizes between streak and progress elements
+function syncProgressFontSizes() {
+  // Add a small delay to ensure Fitty has completed its work
+  setTimeout(() => {
+    // Get computed styles from the streak elements
+    const streakTitle = document.querySelector('.streak-title');
+    const streakSubtitle = document.querySelector('.streak-subtitle');
+    
+    if (!streakTitle || !streakSubtitle) return;
+    
+    // Get computed font sizes
+    const titleFontSize = window.getComputedStyle(streakTitle).fontSize;
+    const subtitleFontSize = window.getComputedStyle(streakSubtitle).fontSize;
+    
+    // Apply to progress elements
+    const progressTitleWrapper = document.querySelector('.progress-title-wrapper');
+    const progressBottomWrapper = document.querySelector('.progress-bottom-wrapper');
+    
+    if (progressTitleWrapper) {
+      progressTitleWrapper.style.fontSize = titleFontSize;
+    }
+    
+    if (progressBottomWrapper) {
+      progressBottomWrapper.style.fontSize = subtitleFontSize;
+    }
+  }, 100); // Small delay to ensure Fitty is done
 }
 
 // Replace the original initializeStreakTitle function 
