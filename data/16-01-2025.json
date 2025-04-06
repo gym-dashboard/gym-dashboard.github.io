@@ -1,0 +1,86 @@
+{
+  "date": "16-01-2025",
+  "participants": [
+    "André D."
+  ],
+  "start_time": "07:59",
+  "end_time": "08:42",
+  "total_time": "0 hours 43 minutes",
+  "overall_muscle_group": [
+    "Shoulders"
+  ],
+  "workout": [
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 13,
+      "Weight": "30 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "35 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "35 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 20,
+      "Weight": "8 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 20,
+      "Weight": "8 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 15,
+      "Weight": "45 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 12,
+      "Weight": "50 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Front Raises",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Front Raises",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    }
+  ]
+}

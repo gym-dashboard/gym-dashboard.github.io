@@ -1,0 +1,119 @@
+{
+  "date": "31-01-2025",
+  "participants": [
+    "André D."
+  ],
+  "start_time": "17:53",
+  "end_time": "19:01",
+  "total_time": "1 hour 8 minutes",
+  "overall_muscle_group": [
+    "Chest",
+    "Triceps"
+  ],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "25 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "25 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 7,
+      "Weight": "27.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 10,
+      "Weight": "17.5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 10,
+      "Weight": "50 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 10,
+      "Weight": "50 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 10,
+      "Weight": "50 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Tricep Pushdown",
+      "Reps": 15,
+      "Weight": "15 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Tricep Pushdown",
+      "Reps": 12,
+      "Weight": "17.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Overhead Extension",
+      "Reps": 10,
+      "Weight": "15 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Overhead Extension",
+      "Reps": 12,
+      "Weight": "15 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    }
+  ]
+}
