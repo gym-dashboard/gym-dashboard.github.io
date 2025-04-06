@@ -3,84 +3,84 @@
   "participants": [
     "André D."
   ],
-  "start_time": "07:59",
-  "end_time": "08:42",
-  "total_time": "0 hours 43 minutes",
+  "start_time": "18:15",
+  "end_time": "19:29",
+  "total_time": "1 hour 14 minutes",
   "overall_muscle_group": [
-    "Shoulders"
+    "Back"
   ],
   "workout": [
     {
-      "Exercise": "Shoulder Press",
-      "Reps": 13,
-      "Weight": "30 kg",
-      "Effort": "95%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Machine"
+      "Exercise": "Pull-Ups",
+      "Reps": 10,
+      "Weight": "0 kg",
+      "Effort": "60%",
+      "Muscle-Group": "Back",
+      "Location": null
     },
     {
-      "Exercise": "Shoulder Press",
-      "Reps": 8,
-      "Weight": "35 kg",
-      "Effort": "95%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Machine"
+      "Exercise": "Pull-Ups",
+      "Reps": 10,
+      "Weight": "0 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Back",
+      "Location": null
     },
     {
-      "Exercise": "Shoulder Press",
-      "Reps": 8,
-      "Weight": "35 kg",
-      "Effort": "95%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Machine"
+      "Exercise": "Pull-Ups",
+      "Reps": 10,
+      "Weight": "0 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": null
     },
     {
-      "Exercise": "Lateral Raises",
-      "Reps": 20,
-      "Weight": "8 kg",
-      "Effort": "90%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Dumbbells"
-    },
-    {
-      "Exercise": "Lateral Raises",
-      "Reps": 20,
-      "Weight": "8 kg",
-      "Effort": "90%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Dumbbells"
-    },
-    {
-      "Exercise": "Rear Delt Rows",
-      "Reps": 15,
-      "Weight": "45 kg",
-      "Effort": "80%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Machine"
-    },
-    {
-      "Exercise": "Rear Delt Rows",
-      "Reps": 12,
+      "Exercise": "Lat Pull-Down",
+      "Reps": 10,
       "Weight": "50 kg",
-      "Effort": "90%",
-      "Muscle-Group": "Shoulders",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
       "Location": "Machine"
     },
     {
-      "Exercise": "Front Raises",
+      "Exercise": "Lat Pull-Down",
       "Reps": 10,
-      "Weight": "25 kg",
-      "Effort": "90%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Cables"
+      "Weight": "50 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
     },
     {
-      "Exercise": "Front Raises",
+      "Exercise": "Rows",
       "Reps": 10,
-      "Weight": "25 kg",
+      "Weight": "50 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 8,
+      "Weight": "60 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "High Rows",
+      "Reps": 10,
+      "Weight": "40 kg",
       "Effort": "90%",
-      "Muscle-Group": "Shoulders",
-      "Location": "Cables"
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "High Rows",
+      "Reps": 12,
+      "Weight": "40 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
     }
   ]
 }
