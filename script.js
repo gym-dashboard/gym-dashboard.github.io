@@ -289,6 +289,32 @@ async function loadDataForYear(year) {
   });
 }
 
+
+
+// Height constraints
+const TOOLTIP_MAX_HEIGHT_PERCENT = 0.8; // 60% of chart container height
+
+// Font sizes
+const TOOLTIP_MOBILE_FONT_SIZE = 0.85; // rem
+const TOOLTIP_DESKTOP_INITIAL_FONT_SIZE = 0.7; // rem
+const TOOLTIP_DESKTOP_MIN_FONT_SIZE = 0.55; // rem
+const TOOLTIP_FONT_REDUCTION_STEP = 0.05; // rem
+
+// Touch behavior
+const TOUCH_AREA_PADDING = 5; // px
+const TOUCH_MOVE_THRESHOLD = 20; // px
+const TOUCH_TIME_THRESHOLD = 15; // ms
+const TOUCH_LONG_PRESS_DURATION = 300; // ms
+
+// Width constraints
+const TOOLTIP_MOBILE_MAX_WIDTH = "85%";
+const TOOLTIP_DESKTOP_MAX_WIDTH = "280px";
+
+// Padding
+const TOOLTIP_MOBILE_PADDING = "10px 12px";
+const TOOLTIP_DESKTOP_PADDING = "6px 8px";
+
+
 // ========== Tooltip Content Builder ==========
 function buildTooltipHTML(dayData) {
   if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
@@ -298,7 +324,7 @@ function buildTooltipHTML(dayData) {
   // Check if exercises are in the new format (objects with name and count)
   const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
   
-  // Format the list of exercises with set counts - with tighter bullet points
+  // Format the list of exercises with set counts - make more compact for desktop
   let exerciseList;
   
   if (isNewFormat) {
@@ -311,24 +337,16 @@ function buildTooltipHTML(dayData) {
       .join("");
   }
   
-  // Add duration information if available - more compact for small tooltips
+  // Add duration information if available
   let durationInfo = "";
   if (dayData.duration && dayData.duration !== "NaN") {
     durationInfo = dayData.duration;
   }
   
-  // Add month info for overflow days
+  // Create the header content
   let headerContent = `<div class="tooltip-header"><strong>Volume:</strong> ${dayData.volume} Sets</div>`;
-  if (dayData.isOverflow && dayData.originalMonth !== undefined) {
-    const monthName = monthNames[dayData.originalMonth];
-    headerContent = `<div class="tooltip-header">
-      <div style="text-align: center; margin-bottom: 4px;">${monthName} ${dayData.day}</div>
-      <div style="height: 1px; background-color: rgba(255,255,255,0.3); margin: 4px 0;"></div>
-      <div><strong>Volume:</strong> ${dayData.volume} Sets</div>
-    </div>`;
-  }
   
-  // Always include the footer separator if we have duration info
+  // Footer content with duration if available
   let footerContent = "";
   if (durationInfo) {
     footerContent = `<div class="tooltip-footer"><div class="duration-value">${durationInfo}</div></div>`;
@@ -342,10 +360,10 @@ function buildTooltipHTML(dayData) {
 }
 
 // ========== Tooltip Show/Hide ==========
+// Replace your showTooltip function with this version
+
 function showTooltip(event, dayData) {
   const tooltipDiv = d3.select("#tooltip");
-
-  
   
   // Build the HTML content
   tooltipDiv.html(buildTooltipHTML(dayData));
@@ -371,113 +389,130 @@ function showTooltip(event, dayData) {
   const chartContainerNode = document.getElementById("chartContainer");
   const chartContainerRect = chartContainerNode.getBoundingClientRect();
   
-  // First make the tooltip visible with basic font size so we can measure it
+  // Reset all styles first
   tooltipDiv
-    .style("opacity", 1)
-    .style("font-size", "0.85rem") // Reset font size to default
-    .style("max-width", "250px"); // Default max width
+    .style("max-height", null)
+    .style("overflow-y", null)
+    .style("font-size", null)
+    .style("max-width", null)
+    .style("padding", null)
+    .style("opacity", 1);
   
-  // Measure the tooltip
-  const tooltipNode = tooltipDiv.node();
-  let tooltipWidth = tooltipNode.offsetWidth;
-  let tooltipHeight = tooltipNode.offsetHeight;
+  // Detect device type
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  tooltipDiv.classed("mobile-tooltip", isMobile);
   
-  // Keep track of whether we need to reduce font size
-  let fontSize = 0.85; // Default font size
-  let fontSizeReduced = false;
-  const minFontSize = 0.65; // Minimum acceptable font size
-  
-  // If tooltip is too wide, reduce the max-width to fit the chart width
-  if (tooltipWidth > chartContainerRect.width * 0.7) {
-    const maxWidth = Math.max(160, Math.floor(chartContainerRect.width * 0.7));
-    tooltipDiv.style("max-width", maxWidth + "px");
-    tooltipWidth = maxWidth;
-  }
-  
-  // If tooltip is still too large after adjusting width, reduce font size incrementally
-  while ((tooltipWidth > chartContainerRect.width * 0.8 || tooltipHeight > chartContainerRect.height * 0.7) && 
-         fontSize > minFontSize) {
-    fontSize -= 0.05; // Reduce font size in small increments
-    fontSizeReduced = true;
+  // DIFFERENT APPROACHES FOR DESKTOP VS MOBILE
+  if (isMobile) {
+    // ===== MOBILE APPROACH =====
+    // Position tooltip
+    tooltipDiv
+      .style("max-width", TOOLTIP_MOBILE_MAX_WIDTH)
+      .style("font-size", TOOLTIP_MOBILE_FONT_SIZE + "rem")
+      .style("padding", TOOLTIP_MOBILE_PADDING)
+      .style("pointer-events", "auto"); // Allow scrolling on mobile
+    
+    // Calculate target height (60% of chart container)
+    const targetHeight = Math.floor(chartContainerRect.height * TOOLTIP_MAX_HEIGHT_PERCENT);
+    
+    // Measure tooltip
+    const tooltipNode = tooltipDiv.node();
+    let tooltipWidth = tooltipNode.offsetWidth;
+    let tooltipHeight = tooltipNode.offsetHeight;
+    
+    // If tooltip exceeds target height, enable scrolling for exercises
+    if (tooltipHeight > targetHeight) {
+      // Get heights of header and footer (if any)
+      const header = tooltipDiv.select(".tooltip-header").node();
+      const footer = tooltipDiv.select(".tooltip-footer").node();
+      
+      const headerHeight = header ? header.offsetHeight : 0;
+      const footerHeight = footer ? footer.offsetHeight : 0;
+      
+      // Available height for exercises section
+      const availableHeight = targetHeight - headerHeight - footerHeight - 20; // 20px for padding/margin
+      
+      // Enable scrolling on exercises container
+      tooltipDiv.select(".tooltip-exercises")
+        .style("max-height", availableHeight + "px")
+        .style("overflow-y", "auto");
+      
+      // Set overall tooltip height to target
+      tooltipDiv.style("max-height", targetHeight + "px");
+      tooltipHeight = targetHeight;
+    }
+    
+    // Position in center of chart
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Calculate chart container boundaries
+    const containerLeft = chartContainerRect.left + scrollLeft;
+    const containerRight = containerLeft + chartContainerRect.width;
+    const containerTop = chartContainerRect.top + scrollTop;
+    const containerBottom = containerTop + chartContainerRect.height;
+    
+    // Center the tooltip
+    let posX = containerLeft + (chartContainerRect.width / 2) - (tooltipWidth / 2);
+    let posY = containerTop + (chartContainerRect.height / 2) - (tooltipHeight / 2);
+    
+    // Ensure tooltip stays within container boundaries
+    if (posX < containerLeft) posX = containerLeft + 5;
+    if (posX + tooltipWidth > containerRight) posX = containerRight - tooltipWidth - 5;
+    if (posY < containerTop) posY = containerTop + 5;
+    if (posY + tooltipHeight > containerBottom) posY = containerBottom - tooltipHeight - 5;
+    
+    tooltipDiv
+      .style("left", posX + "px")
+      .style("top", posY + "px");
+  } else {
+    // ===== DESKTOP APPROACH =====
+    // For desktop: no scrolling, shrink content to fit if possible
+    tooltipDiv
+      .style("pointer-events", "none") // No scrolling on desktop
+      .style("max-width", TOOLTIP_DESKTOP_MAX_WIDTH)
+      .style("padding", TOOLTIP_DESKTOP_PADDING);
+    
+    // Calculate target height (60% of chart container)
+    const targetHeight = Math.floor(chartContainerRect.height * TOOLTIP_MAX_HEIGHT_PERCENT);
+    
+    // Start with initial font size
+    let fontSize = TOOLTIP_DESKTOP_INITIAL_FONT_SIZE;
     tooltipDiv.style("font-size", fontSize + "rem");
-    // Re-measure after font size change
-    tooltipWidth = tooltipNode.offsetWidth;
-    tooltipHeight = tooltipNode.offsetHeight;
-  }
-  
-  // If font size was reduced, also reduce padding to make better use of space
-  if (fontSizeReduced) {
-    tooltipDiv.style("padding", "4px 6px");
-  } else {
-    // Reset padding to normal if not reduced
-    tooltipDiv.style("padding", window.matchMedia('(pointer: coarse)').matches ? "14px 18px" : "6px 8px");
-  }
-  
-  let posX, posY;
-  
-  // IMPROVED MOBILE AND DESKTOP POSITIONING THAT STAYS WITHIN CONTAINER
-  if (window.matchMedia('(pointer: coarse)').matches) {
-    const cell = event.currentTarget || event.target.closest('.cell-wrapper');
-    if (!cell) return;
     
-    const cellRect = cell.getBoundingClientRect();
+    // Measure the tooltip
+    const tooltipNode = tooltipDiv.node();
+    let tooltipWidth = tooltipNode.offsetWidth;
+    let tooltipHeight = tooltipNode.offsetHeight;
     
-    // Get viewport dimensions and scroll offsets
+    // Try to reduce font size if tooltip exceeds target height
+    const minFontSize = TOOLTIP_DESKTOP_MIN_FONT_SIZE;
+    
+    while (tooltipHeight > targetHeight && fontSize > minFontSize) {
+      fontSize -= TOOLTIP_FONT_REDUCTION_STEP;
+      tooltipDiv.style("font-size", fontSize + "rem");
+      
+      // Re-measure
+      tooltipHeight = tooltipNode.offsetHeight;
+    }
+    
+    // Desktop: Position near cursor
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     
-    // Calculate chart container boundaries accounting for scroll
+    // Calculate chart container boundaries
     const containerLeft = chartContainerRect.left + scrollLeft;
     const containerRight = containerLeft + chartContainerRect.width;
     const containerTop = chartContainerRect.top + scrollTop;
     const containerBottom = containerTop + chartContainerRect.height;
     
-    // Position tooltip centered above the cell by default
-    posY = cellRect.top - tooltipHeight - 10 + scrollTop;
-    
-    // If not enough room above, position below
-    if (posY < containerTop) {
-      posY = cellRect.bottom + 10 + scrollTop;
-    }
-    
-    // If still outside container vertically, place it at the top of the container with small margin
-    if (posY < containerTop) {
-      posY = containerTop + 5;
-    }
-    
-    // If would go beyond bottom of container, reposition to stay within
-    if (posY + tooltipHeight > containerBottom) {
-      posY = containerBottom - tooltipHeight - 5;
-    }
-    
-    // Center horizontally but ensure it's within chart container
-    posX = cellRect.left + (cellRect.width / 2) - (tooltipWidth / 2) + scrollLeft;
-    
-    // Make sure tooltip is fully visible horizontally within chart container
-    if (posX < containerLeft) {
-      posX = containerLeft + 5;
-    }
-    if (posX + tooltipWidth > containerRight) {
-      posX = containerRight - tooltipWidth - 5;
-    }
-  } else {
-    // Desktop positioning - improved to stay within chart container
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    // Calculate chart container boundaries with scroll offset
-    const containerLeft = chartContainerRect.left + scrollLeft;
-    const containerRight = containerLeft + chartContainerRect.width;
-    const containerTop = chartContainerRect.top + scrollTop;
-    const containerBottom = containerTop + chartContainerRect.height;
-    
-    // Initial position based on mouse cursor
-    posX = event.pageX + 10;
-    posY = event.pageY + 10;
+    // Position near cursor
+    let posX = event.pageX + 15;
+    let posY = event.pageY + 15;
     
     // Check right edge
     if (posX + tooltipWidth > containerRight) {
-      posX = event.pageX - tooltipWidth - 10;
+      posX = event.pageX - tooltipWidth - 15;
     }
     
     // If still outside left edge, align with left edge
@@ -485,23 +520,30 @@ function showTooltip(event, dayData) {
       posX = containerLeft + 5;
     }
     
-    // Check bottom edge
+    // Check if tooltip would extend below bottom of chart
     if (posY + tooltipHeight > containerBottom) {
-      posY = containerBottom - tooltipHeight - 5;
+      // First try to position above cursor
+      if (event.pageY - tooltipHeight - 15 >= containerTop) {
+        posY = event.pageY - tooltipHeight - 15;
+      } else {
+        // If too tall to fit above or below, position at top of chart with small offset
+        posY = containerTop + 5;
+      }
     }
     
     // Check top edge
     if (posY < containerTop) {
       posY = containerTop + 5;
     }
+    
+    tooltipDiv
+      .style("left", posX + "px")
+      .style("top", posY + "px");
   }
-  
-  // Apply final positioning
-  tooltipDiv
-    .style("left", posX + "px")
-    .style("top", posY + "px")
-    .style("pointer-events", "auto");
 }
+
+
+
 
 
 function updateTooltipStyles() {
@@ -926,7 +968,6 @@ function adjustMonthDisplay() {
 }
 
 // ========== Draw Year Calendar ==========
-// ========== Draw Year Calendar ==========
 function drawYearCalendar(year) {
   chartContainer.innerHTML = "";
   
@@ -1149,9 +1190,11 @@ function drawYearCalendar(year) {
 }
 
 // This is inside the touchstart event handler
-// Update the addTooltipBehavior function to handle overflow days
+// This is the full addTooltipBehavior function with the missing constant defined
+
 function addTooltipBehavior(cellSelection, dayData) {
   const rect = cellSelection.select("rect.cell-background");
+  const cellSize = +rect.attr("width");
 
   // Check for a coarse pointer (likely a touch device)
   if (window.matchMedia('(pointer: coarse)').matches) {
@@ -1160,19 +1203,38 @@ function addTooltipBehavior(cellSelection, dayData) {
     let touchStartY = 0;
     let touchStartTime = 0;
     let isTouchMoving = false;
-    const MOVE_THRESHOLD = 10; // pixels of movement to consider it a scroll not a tap
-    const TIME_THRESHOLD = 25; // milliseconds to wait before considering it a deliberate tap
+    let longPressTimer = null;
+
+    // Expand the touch target area
+    cellSelection.append("rect")
+      .attr("class", "touch-target")
+      .attr("width", cellSize + (TOUCH_AREA_PADDING * 2))
+      .attr("height", cellSize + (TOUCH_AREA_PADDING * 2))
+      .attr("x", -TOUCH_AREA_PADDING)
+      .attr("y", -TOUCH_AREA_PADDING)
+      .attr("fill", "transparent")
+      .attr("stroke", "none")
+      .style("cursor", "pointer");
 
     // Touch start handler
     cellSelection.on("touchstart", (event) => {
-      // Don't prevent default here to allow scrolling
-      
       // Record starting position and time
       const touch = event.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
       touchStartTime = Date.now();
       isTouchMoving = false;
+
+      // Visual feedback on touch start
+      rect.attr("stroke", "#333").attr("stroke-width", 2);
+      
+      // Set up long press timer
+      longPressTimer = setTimeout(() => {
+        if (!isTouchMoving) {
+          // This is a long press - show tooltip
+          showTooltipForMobileCell(event);
+        }
+      }, TOUCH_LONG_PRESS_DURATION);
     });
     
     // Touch move handler
@@ -1182,172 +1244,160 @@ function addTooltipBehavior(cellSelection, dayData) {
       const deltaY = Math.abs(touch.clientY - touchStartY);
       
       // If movement exceeds threshold, consider it a scroll
-      if (deltaX > MOVE_THRESHOLD || deltaY > MOVE_THRESHOLD) {
+      if (deltaX > TOUCH_MOVE_THRESHOLD || deltaY > TOUCH_MOVE_THRESHOLD) {
         isTouchMoving = true;
+        clearTimeout(longPressTimer);
+        
+        // Restore cell appearance
+        if (dayData.isOverflow) {
+          rect.attr("stroke", "#ddd").attr("stroke-width", 1).attr("stroke-dasharray", "4,2");
+        } else {
+          rect.attr("stroke", "#ddd").attr("stroke-width", 1);
+        }
       }
     });
     
     // Touch end handler
     cellSelection.on("touchend", async (event) => {
+      clearTimeout(longPressTimer);
       const touchDuration = Date.now() - touchStartTime;
       
       // Only show tooltip if:
       // 1. Touch wasn't moving (not scrolling)
-      // 2. Touch was long enough to be deliberate
-      if (!isTouchMoving && touchDuration > TIME_THRESHOLD) {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // Get additional workout details including duration and exercise counts
-        if (dayData.day) {
-          try {
-            const year = currentYear;
-            const month = +cellSelection.attr("data-month") || 0;
-            // Handle overflow days by passing the original month if available
-            const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
-            const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
-            
-            // Update duration if available
-            if (details.duration) {
-              dayData.duration = details.duration;
-            }
-            
-            // Update exercises with counts if available
-            if (details.exercises && details.exercises.length > 0) {
-              // If exercises were in the old format (array of strings), 
-              // or we don't have exercise data yet, use the fetched data
-              const hasExerciseObjects = dayData.exercises && 
-                                         dayData.exercises.length > 0 && 
-                                         typeof dayData.exercises[0] === 'object' &&
-                                         'count' in dayData.exercises[0];
-              
-              if (!hasExerciseObjects) {
-                // Convert the existing exercises array to a set for easy lookup
-                const exerciseNames = new Set(
-                  Array.isArray(dayData.exercises) ? dayData.exercises : []
-                );
-                
-                // If we had existing exercise names, filter to match them
-                // Otherwise use all fetched exercises
-                if (exerciseNames.size > 0) {
-                  dayData.exercises = details.exercises.filter(ex => 
-                    exerciseNames.has(ex.name)
-                  );
-                } else {
-                  dayData.exercises = details.exercises;
-                }
-              }
-            }
-          } catch (err) {
-            console.error("Error fetching workout details:", err);
-          }
-        }
-        
-        // Check if we're clicking on the same cell or a new one
-        const isNewCell = !cellSelection.classed("active-tooltip-cell");
-        
-        // If there's already an active tooltip for another cell, update it for this cell
-        if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
-          // Hide previous cell highlight
-          d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
-          d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
-          
-          // Highlight the new cell
-          rect.attr("stroke", "#333").attr("stroke-width", 2);
-          cellSelection.classed("active-tooltip-cell", true);
-          
-          // Show the tooltip for this cell
-          showTooltip(event, dayData);
-          return;
-        }
-        
-        // If tooltip is not showing yet or this is the same cell again
-        if (isNewCell) {
-          // Hide any existing tooltip first (in case another one is open)
-          hideAllTooltips();
-          
-          // Highlight the selected cell
-          rect.attr("stroke", "#333").attr("stroke-width", 2);
-          
-          // Mark this cell as active
-          cellSelection.classed("active-tooltip-cell", true);
-          
-          // Show the tooltip
-          showTooltip(event, dayData);
-          
-          // Add a semi-transparent overlay to make it clear the tooltip is modal
-          const overlay = document.getElementById("tooltip-overlay");
-          if (!overlay) {
-            const newOverlay = document.createElement("div");
-            newOverlay.id = "tooltip-overlay";
-            newOverlay.style.position = "fixed";
-            newOverlay.style.top = "0";
-            newOverlay.style.left = "0";
-            newOverlay.style.right = "0";
-            newOverlay.style.bottom = "0";
-            newOverlay.style.zIndex = "9000";
-            newOverlay.style.background = "transparent";
-            document.body.appendChild(newOverlay);
-            
-            // Listen for taps on the overlay to dismiss
-            newOverlay.addEventListener("touchstart", handleOverlayTap);
-          }
-        }
+      // 2. Touch was long enough to be deliberate but not a long press
+      if (!isTouchMoving && touchDuration > TOUCH_TIME_THRESHOLD && touchDuration < TOUCH_LONG_PRESS_DURATION) {
+        await showTooltipForMobileCell(event);
       }
       
-      function handleOverlayTap(e) {
-        // Check if the tap is on another workout cell
-        const targetIsCell = e.target.closest(".cell-wrapper") && 
-                           e.target.closest(".cell-wrapper").querySelector("rect.cell-background").getAttribute("fill") !== "#ebedf0";
-        
-        // If tapped on a cell, don't prevent the event - let it bubble to the cell's event handler
-        if (targetIsCell) {
-          return;
-        }
-        
-        // If not on a tooltip or cell, close the tooltip
-        if (!e.target.closest("#tooltip") && !targetIsCell) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Clean up
-          hideAllTooltips();
-          
-          // Remove the overlay
-          const overlay = document.getElementById("tooltip-overlay");
-          if (overlay) {
-            overlay.removeEventListener("touchstart", handleOverlayTap);
-            document.body.removeChild(overlay);
-          }
+      // If this was a moving touch that ended, restore cell appearance
+      if (isTouchMoving) {
+        if (dayData.isOverflow) {
+          rect.attr("stroke", "#ddd").attr("stroke-width", 1).attr("stroke-dasharray", "4,2");
+        } else {
+          rect.attr("stroke", "#ddd").attr("stroke-width", 1);
         }
       }
     });
+    
+    // Helper function to avoid code duplication
+    async function showTooltipForMobileCell(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Get additional workout details
+      if (dayData.day) {
+        try {
+          const year = currentYear;
+          const month = +cellSelection.attr("data-month") || 0;
+          const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
+          const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
+          
+          // Update dayData with fetched details
+          if (details.duration) {
+            dayData.duration = details.duration;
+          }
+          
+          if (details.exercises && details.exercises.length > 0) {
+            const hasExerciseObjects = dayData.exercises && 
+                                     dayData.exercises.length > 0 && 
+                                     typeof dayData.exercises[0] === 'object' &&
+                                     'count' in dayData.exercises[0];
+            
+            if (!hasExerciseObjects) {
+              const exerciseNames = new Set(
+                Array.isArray(dayData.exercises) ? dayData.exercises : []
+              );
+              
+              if (exerciseNames.size > 0) {
+                dayData.exercises = details.exercises.filter(ex => 
+                  exerciseNames.has(ex.name)
+                );
+              } else {
+                dayData.exercises = details.exercises;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching workout details:", err);
+        }
+      }
+      
+      // Check if we're clicking on the same cell or a new one
+      const isNewCell = !cellSelection.classed("active-tooltip-cell");
+      
+      // If there's already an active tooltip for another cell, hide it
+      if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
+        // Hide previous cell highlight
+        d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
+        d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
+        d3.selectAll("rect.cell-background[stroke-dasharray]").attr("stroke-dasharray", "4,2");
+      }
+      
+      // Always apply highlighting to the tapped cell
+      rect.attr("stroke", "#333").attr("stroke-width", 2);
+      cellSelection.classed("active-tooltip-cell", true);
+      
+      // Show the tooltip
+      showTooltip(event, dayData);
+      
+      // Add overlay for dismissal if not already present
+      let overlay = document.getElementById("tooltip-overlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "tooltip-overlay";
+        overlay.style.position = "fixed";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.right = "0";
+        overlay.style.bottom = "0";
+        overlay.style.zIndex = "9000";
+        overlay.style.background = "transparent";
+        document.body.appendChild(overlay);
+        
+        // Listen for taps on the overlay to dismiss
+        overlay.addEventListener("touchstart", handleOverlayTap);
+      }
+    }
+    
+    function handleOverlayTap(e) {
+      // If tapped on the tooltip itself, don't dismiss
+      if (e.target.closest("#tooltip")) {
+        return;
+      }
+      
+      // If tapped elsewhere, dismiss tooltip
+      hideAllTooltips();
+      
+      // Remove the overlay
+      const overlay = document.getElementById("tooltip-overlay");
+      if (overlay) {
+        overlay.removeEventListener("touchstart", handleOverlayTap);
+        document.body.removeChild(overlay);
+      }
+    }
   } else {
-    // Desktop and fine pointer devices
+    // Desktop and fine pointer devices - keep existing behavior
     cellSelection
       .on("pointerenter", async (event) => {
         rect.attr("stroke", "#333").attr("stroke-width", 2);
         
-        // For desktop, we can also update exercise data before showing the tooltip
+        // For desktop, update exercise data before showing the tooltip
         if (dayData.day) {
           try {
             const year = currentYear;
             const month = +cellSelection.attr("data-month") || 0;
-            // Handle overflow days by using the original month if available
             const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
             const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
             
-            // Update duration if available
             if (details.duration) {
               dayData.duration = details.duration;
             }
             
-            // Update exercises with counts if available and if not already in the right format
             if (details.exercises && details.exercises.length > 0) {
               const hasExerciseObjects = dayData.exercises && 
-                                        dayData.exercises.length > 0 && 
-                                        typeof dayData.exercises[0] === 'object' &&
-                                        'count' in dayData.exercises[0];
+                                      dayData.exercises.length > 0 && 
+                                      typeof dayData.exercises[0] === 'object' &&
+                                      'count' in dayData.exercises[0];
               
               if (!hasExerciseObjects) {
                 const exerciseNames = new Set(
@@ -1376,7 +1426,7 @@ function addTooltipBehavior(cellSelection, dayData) {
       .on("pointerleave", () => {
         rect.attr("stroke", dayData.isOverflow ? "#ddd" : "#ddd").attr("stroke-width", 1);
         if (dayData.isOverflow) {
-          rect.attr("stroke-dasharray", "4,2"); // Restore wider dashed border for overflow days
+          rect.attr("stroke-dasharray", "4,2");
         }
         hideTooltip();
       });
