@@ -232,11 +232,11 @@ svg {
 
 /* Two-box layout modifications: when only progress and streak are shown, use a 60–40 split */
 .progress-streak-container.two-boxes #weeklyProgressContainer {
-  flex: 1 1 70%;
+  flex: 1 1 75%;
 }
 
 .progress-streak-container.two-boxes .streak-container {
-  flex: 1 1 30%;
+  flex: 1 1 25%;
 }
 
 /* Make sure the yearly workouts desktop is really hidden by default */
@@ -420,7 +420,7 @@ svg {
 .streak-subtitle {
   display: inline-block;
   font-weight: 500;
-  color: #546bce;
+  color: #5e5e5e;
   white-space: nowrap;
   text-align: center;
 }
@@ -588,11 +588,11 @@ svg {
   
   /* Force the 60/40 split for the two remaining boxes */
   .progress-streak-container.two-boxes #weeklyProgressContainer {
-    flex: 1 1 70% !important;
+    flex: 1 1 75% !important;
   }
   
   .progress-streak-container.two-boxes .streak-container {
-    flex: 1 1 30% !important;
+    flex: 1 1 25% !important;
   }
 }
 
@@ -811,11 +811,11 @@ svg {
   }
   
   .progress-streak-container.two-boxes #weeklyProgressContainer {
-    flex: 1 1 70% !important;
+    flex: 1 1 75% !important;
   }
   
   .progress-streak-container.two-boxes .streak-container {
-    flex: 1 1 30% !important;
+    flex: 1 1 25% !important;
   }
   
   /* Adjust container heights for extra tiny screens */

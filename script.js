@@ -38,6 +38,9 @@ let weeklyData = {
   completedWeeks: [] // Added for tracking consecutive weeks
 };
 
+// ADD THIS NEW GLOBAL VARIABLE
+let yearlyWorkoutHours = {};  // Track hours worked out per year
+
 // Load saved streak data from localStorage
 function loadStreakData() {
   try {
@@ -72,6 +75,31 @@ function saveStreakData() {
   }
 }
 
+
+// Function to parse workout time string into decimal hours
+function parseWorkoutTime(timeString) {
+  if (!timeString) return 0;
+  
+  let hours = 0;
+  let minutes = 0;
+  
+  // Extract hours
+  const hoursMatch = timeString.match(/(\d+)\s+hours?/);
+  if (hoursMatch) {
+    hours = parseInt(hoursMatch[1], 10);
+  }
+  
+  // Extract minutes
+  const minutesMatch = timeString.match(/(\d+)\s+minutes?/);
+  if (minutesMatch) {
+    minutes = parseInt(minutesMatch[1], 10);
+  }
+  
+  // Convert minutes to decimal hours and add to hours
+  return hours + (minutes / 60);
+}
+
+
 // DOM elements
 const yearSelect = document.getElementById("yearSelect");
 const chartContainer = document.getElementById("chartContainer");
@@ -95,6 +123,7 @@ yearSelect.addEventListener("change", () => {
     loadDataForYear(currentYear).then(() => {
       drawYearCalendar(currentYear);
       updateYearlyWorkoutCount(currentYear);
+      updateYearlyActiveHours(currentYear);
       renderLegend();
       adjustMonthDisplay();
       updateWeeklyProgress(); 
@@ -102,6 +131,7 @@ yearSelect.addEventListener("change", () => {
   } else {
     drawYearCalendar(currentYear);
     updateYearlyWorkoutCount(currentYear);
+    updateYearlyActiveHours(currentYear);
     renderLegend();
     adjustMonthDisplay();
     updateWeeklyProgress();
@@ -128,11 +158,29 @@ function updateYearlyWorkoutCount(year) {
   }
 }
 
+// ========== Update Yearly Active Hours ==========
+function updateYearlyActiveHours(year) {
+  const totalHours = yearlyWorkoutHours[year] || 0;
+  const formattedHours = totalHours.toFixed(1);
+  
+  const activeHoursElem = document.querySelector('.yearly-workouts-desktop .streak-number');
+  if (activeHoursElem) {
+    activeHoursElem.textContent = formattedHours;
+  }
+  
+  // Update the subtitle to show the current year
+  // const yearElem = document.querySelector('.yearly-workouts-desktop .streak-subtitle');
+  // if (yearElem) {
+  //   yearElem.textContent = year;
+  // }
+}
+
 
 // ========== Load Data for a Given Year ==========
 async function loadDataForYear(year) {
   yearData[year] = Array.from({ length: 12 }, () => []);
   workoutFiles[year] = [];
+  yearlyWorkoutHours[year] = 0;
   let promises = [];
   let start = new Date(year, 0, 1);
   let end = new Date(year, 11, 31);
@@ -150,6 +198,11 @@ async function loadDataForYear(year) {
         // Check if this file actually has a 'workout' array
         if (json && Array.isArray(json.workout) && json.workout.length > 0) {
           workoutFiles[year].push(fileName);
+
+          // ADD THESE LINES to track workout hours
+          if (json.total_time) {
+            yearlyWorkoutHours[year] += parseWorkoutTime(json.total_time);
+          }
 
           // We'll treat each exercise line as "1 set"
           let totalSets = 0;
@@ -1148,92 +1201,7 @@ function getDateFromWeekKey(weekKey) {
   return new Date(year, month, day);
 }
 
-function updateStreakCounter() {
-  const prevWeekCompleted = checkPreviousWeekCompleted();
-  const currentWeekCount = countCurrentWeekWorkouts();
-  const currentWeekCompleted = currentWeekCount >= 4;
-  
-  // Get week identifiers for current and previous week
-  const { startDate } = getCurrentWeekDateRange();
-  const currentWeekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
-  
-  // Get previous week key
-  const prevWeekEnd = new Date(startDate);
-  prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
-  const prevWeekStart = new Date(prevWeekEnd);
-  prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
-  const prevWeekKey = `${prevWeekStart.getFullYear()}-${prevWeekStart.getMonth()}-${prevWeekStart.getDate()}`;
-  
-  // Initialize completedWeeks array if it doesn't exist
-  if (!Array.isArray(weeklyData.completedWeeks)) {
-    weeklyData.completedWeeks = [];
-  }
-  
-  // Handle current week completion
-  if (currentWeekCompleted && !weeklyData.completedWeeks.includes(currentWeekKey)) {
-    weeklyData.completedWeeks.push(currentWeekKey);
-    weeklyData.lastCompletedWeek = currentWeekKey;
-  }
-  
-  // Handle previous week tracking
-  const hadPrevWeekCompleted = weeklyData.completedWeeks.includes(prevWeekKey);
-  if (prevWeekCompleted && !hadPrevWeekCompleted) {
-    // If we just detected that previous week was completed but wasn't in our records
-    weeklyData.completedWeeks.push(prevWeekKey);
-  }
-  
-  // Sort completed weeks chronologically
-  weeklyData.completedWeeks.sort();
-  
-  // Calculate streak by checking for consecutive weeks
-  let streak = 0;
-  const sortedWeeks = [...weeklyData.completedWeeks].sort();
-  
-  // IMPORTANT CHANGE: Only count a streak if the previous week was completed
-  if (sortedWeeks.length > 0 && prevWeekCompleted) {
-    // Start with 1 for the previous week that was just completed
-    streak = 1;
-    
-    // Find the index of the previous week in our sorted array
-    const prevWeekIndex = sortedWeeks.indexOf(prevWeekKey);
-    
-    // If we found the previous week in our completed weeks
-    if (prevWeekIndex > 0) {
-      // Check consecutive weeks working backwards from the previous week
-      for (let i = prevWeekIndex; i > 0; i--) {
-        const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
-        const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
-        
-        // Check if these weeks are consecutive (7 days apart)
-        const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
-        
-        if (dayDiff === 7) {
-          streak++;
-        } else {
-          // Break on first non-consecutive week
-          break;
-        }
-      }
-    }
-  }
-  
-  // Update the streak count
-  weeklyData.weekStreakCount = streak;
-  
-  // Save updated streak data
-  saveStreakData();
-  
-  // Update the streak display with proper pluralization
-  const streakNumber = document.querySelector('.streak-number');
-  const streakSubtitle = document.querySelector('.streak-subtitle');
-  
-  if (streakNumber) {
-    streakNumber.textContent = weeklyData.weekStreakCount;
-  }
-  if (streakSubtitle) {
-    streakSubtitle.textContent = weeklyData.weekStreakCount === 1 ? 'Week in a row' : 'Weeks in a row';
-  }
-}
+
 
 function updateProgressBar(workoutCount) {
   const segments = document.querySelectorAll('.segment');
@@ -1422,6 +1390,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   drawYearCalendar(currentYear);
   updateYearlyWorkoutCount(currentYear);
+  updateYearlyActiveHours(currentYear);
   renderLegend();
   adjustMonthDisplay();
   updateWeeklyProgress();
