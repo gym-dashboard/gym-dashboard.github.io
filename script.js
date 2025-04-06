@@ -1262,29 +1262,48 @@ function debounce(func, wait) {
 }
 
 // Function to handle fitty resizing
+// Function to handle fitty resizing with improved mobile sizing
 function handleFittyResize() {
   // Clear any existing fitty instances
   if (typeof fitty.destroy === 'function') {
     fitty.destroy();
   }
   
-  // Initialize fitty for all streak and yearly-workouts elements
+  // Get viewport width to determine if we're on mobile
+  const viewportWidth = window.innerWidth;
+  const isMobile = viewportWidth < 480;
+  
+  // Set smaller max sizes for mobile devices
+  const titleMaxSize = isMobile ? 14 : 20;
+  const subtitleMaxSize = isMobile ? 11 : 16;
+  
+  // Initialize fitty for streak and yearly-workouts titles with reduced max sizes
   const streakTitles = document.querySelectorAll('.streak-title');
   const streakSubtitles = document.querySelectorAll('.streak-subtitle');
   
   streakTitles.forEach(el => {
     fitty(el, {
       multiLine: false,
-      minSize: 12,
-      maxSize: 20
+      minSize: 10,
+      maxSize: titleMaxSize
     });
   });
   
   streakSubtitles.forEach(el => {
     fitty(el, {
       multiLine: false,
-      minSize: 10,
-      maxSize: 16
+      minSize: 9,
+      maxSize: subtitleMaxSize
+    });
+  });
+  
+  // Initialize fitty for streak numbers separately with higher max sizes
+  const streakNumbers = document.querySelectorAll('.streak-number');
+  streakNumbers.forEach(el => {
+    fitty(el, {
+      multiLine: false,
+      minSize: 16,
+      maxSize: isMobile ? 28 : 40 // Bigger max size for the numbers
     });
   });
   
@@ -1292,7 +1311,7 @@ function handleFittyResize() {
   setTimeout(syncProgressFontSizes, 50);
 }
 
-// Function to sync font sizes between streak and progress elements
+// Sync progress fonts with streak fonts
 function syncProgressFontSizes() {
   // Get all streak titles and find the computed font size
   const streakTitles = document.querySelectorAll('.streak-title');
@@ -1315,7 +1334,7 @@ function syncProgressFontSizes() {
       el.style.fontSize = titleFontSize;
     });
     
-    // Also apply to the progress title directly to be extra thorough
+    // Also apply to the progress title directly
     document.querySelectorAll('.progress-title').forEach(el => {
       el.style.fontSize = titleFontSize;
     });
@@ -1326,12 +1345,18 @@ function syncProgressFontSizes() {
       el.style.fontSize = subtitleFontSize;
     });
     
-    // Also apply to the weekDateRange directly to be extra thorough
+    // Apply to the weekDateRange directly
     const weekDateRange = document.getElementById('weekDateRange');
     if (weekDateRange) {
       weekDateRange.style.fontSize = subtitleFontSize;
     }
   }
+  
+  // Ensure progress count has appropriate size
+  document.querySelectorAll('.progress-count').forEach(el => {
+    const isMobile = window.innerWidth < 480;
+    el.style.fontSize = isMobile ? '0.75rem' : '0.85rem';
+  });
 }
 
 // Create a debounced version of handleFittyResize

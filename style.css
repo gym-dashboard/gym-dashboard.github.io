@@ -144,7 +144,10 @@ body {
   padding-bottom: 0;
   scroll-padding: 0 20px;
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .month-block {
@@ -179,7 +182,10 @@ svg {
   margin: 0 auto 10px;
   padding: 2px;
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   /* Ensure text doesn't overflow */
   overflow: hidden;
