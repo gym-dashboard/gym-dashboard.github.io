@@ -127,6 +127,8 @@ yearSelect.addEventListener("change", () => {
       renderLegend();
       adjustMonthDisplay();
       updateWeeklyProgress(); 
+      // Add font resize handler call here
+      handleFittyResize();
     });
   } else {
     drawYearCalendar(currentYear);
@@ -135,6 +137,8 @@ yearSelect.addEventListener("change", () => {
     renderLegend();
     adjustMonthDisplay();
     updateWeeklyProgress();
+    // Add font resize handler call here
+    handleFittyResize();
   }
 });
 
@@ -1201,8 +1205,6 @@ function getDateFromWeekKey(weekKey) {
   return new Date(year, month, day);
 }
 
-
-
 function updateProgressBar(workoutCount) {
   const segments = document.querySelectorAll('.segment');
   const progressCount = document.querySelector('.progress-count');
@@ -1244,6 +1246,97 @@ function updateWeeklyProgress() {
   updateStreakCounter();
 }
 
+// ========== Font Resizing Functions ==========
+
+// Create a debounced version of any function
+function debounce(func, wait) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(context, args);
+    }, wait);
+  };
+}
+
+// Function to handle fitty resizing
+function handleFittyResize() {
+  // Clear any existing fitty instances
+  if (typeof fitty.destroy === 'function') {
+    fitty.destroy();
+  }
+  
+  // Initialize fitty for all streak and yearly-workouts elements
+  const streakTitles = document.querySelectorAll('.streak-title');
+  const streakSubtitles = document.querySelectorAll('.streak-subtitle');
+  
+  streakTitles.forEach(el => {
+    fitty(el, {
+      multiLine: false,
+      minSize: 12,
+      maxSize: 20
+    });
+  });
+  
+  streakSubtitles.forEach(el => {
+    fitty(el, {
+      multiLine: false,
+      minSize: 10,
+      maxSize: 16
+    });
+  });
+  
+  // After a short delay, sync progress elements with streak fonts
+  setTimeout(syncProgressFontSizes, 50);
+}
+
+// Function to sync font sizes between streak and progress elements
+function syncProgressFontSizes() {
+  // Get all streak titles and find the computed font size
+  const streakTitles = document.querySelectorAll('.streak-title');
+  const streakSubtitles = document.querySelectorAll('.streak-subtitle');
+  let titleFontSize = null;
+  let subtitleFontSize = null;
+  
+  // Get font sizes from the first streak title and subtitle
+  if (streakTitles.length > 0) {
+    titleFontSize = window.getComputedStyle(streakTitles[0]).fontSize;
+  }
+  
+  if (streakSubtitles.length > 0) {
+    subtitleFontSize = window.getComputedStyle(streakSubtitles[0]).fontSize;
+  }
+  
+  // Apply font sizes to progress elements if available
+  if (titleFontSize) {
+    document.querySelectorAll('.progress-title-wrapper').forEach(el => {
+      el.style.fontSize = titleFontSize;
+    });
+    
+    // Also apply to the progress title directly to be extra thorough
+    document.querySelectorAll('.progress-title').forEach(el => {
+      el.style.fontSize = titleFontSize;
+    });
+  }
+  
+  if (subtitleFontSize) {
+    document.querySelectorAll('.progress-bottom-wrapper').forEach(el => {
+      el.style.fontSize = subtitleFontSize;
+    });
+    
+    // Also apply to the weekDateRange directly to be extra thorough
+    const weekDateRange = document.getElementById('weekDateRange');
+    if (weekDateRange) {
+      weekDateRange.style.fontSize = subtitleFontSize;
+    }
+  }
+}
+
+// Create a debounced version of handleFittyResize
+const debouncedFittyResize = debounce(handleFittyResize, 150);
+
 // ========== Window Resize Handler ==========
 window.addEventListener('resize', function() {
   if (this.resizeTimeout) clearTimeout(this.resizeTimeout);
@@ -1256,8 +1349,8 @@ window.addEventListener('resize', function() {
     updateProgressBar(workoutCount);
     updateStreakCounter(); // Update streak display
     
-    // Re-initialize all fitty elements and sync font sizes
-    initializeAllFitty();
+    // Use the new handler function for font resizing
+    handleFittyResize();
   }, 200);
 });
 
@@ -1313,62 +1406,46 @@ function updateProgressContainerStructure() {
     streakNumber.parentNode.insertBefore(middleWrapper, streakNumber);
     middleWrapper.appendChild(streakNumber);
   }
-}
-
-// Initialize fitty for streak elements only
-function initializeAllFitty() {
-  // Only initialize fitty for streak container elements
-  fitty('.streak-title', {
-    multiLine: false,
-    minSize: 12,
-    maxSize: 20
-  });
   
-  fitty('.streak-subtitle', {
-    multiLine: false,
-    minSize: 10,
-    maxSize: 16
-  });
-  
-  // Sync progress element font sizes with streak elements
-  syncProgressFontSizes();
+  // --- Check Yearly Workout Container Structure ---
+  const yearlyWorkoutsContainer = document.querySelector('.yearly-workouts-desktop');
+  if (yearlyWorkoutsContainer) {
+    const yearlyStreakNumber = yearlyWorkoutsContainer.querySelector('.streak-number');
+    if (yearlyStreakNumber && !yearlyWorkoutsContainer.querySelector('.streak-middle-wrapper')) {
+      const middleWrapper = document.createElement('div');
+      middleWrapper.className = 'streak-middle-wrapper';
+      yearlyStreakNumber.parentNode.insertBefore(middleWrapper, yearlyStreakNumber);
+      middleWrapper.appendChild(yearlyStreakNumber);
+    }
+  }
 }
 
-// Add new function to sync font sizes between streak and progress elements
-function syncProgressFontSizes() {
-  // Add a small delay to ensure Fitty has completed its work
-  setTimeout(() => {
-    // Get computed styles from the streak elements
-    const streakTitle = document.querySelector('.streak-title');
-    const streakSubtitle = document.querySelector('.streak-subtitle');
-    
-    if (!streakTitle || !streakSubtitle) return;
-    
-    // Get computed font sizes
-    const titleFontSize = window.getComputedStyle(streakTitle).fontSize;
-    const subtitleFontSize = window.getComputedStyle(streakSubtitle).fontSize;
-    
-    // Apply to progress elements
-    const progressTitleWrapper = document.querySelector('.progress-title-wrapper');
-    const progressBottomWrapper = document.querySelector('.progress-bottom-wrapper');
-    
-    if (progressTitleWrapper) {
-      progressTitleWrapper.style.fontSize = titleFontSize;
-    }
-    
-    if (progressBottomWrapper) {
-      progressBottomWrapper.style.fontSize = subtitleFontSize;
-    }
-  }, 100); // Small delay to ensure Fitty is done
-}
-
-// Replace the original initializeStreakTitle function 
+// Initialize streak-related UI components
 function initializeStreakTitle() {
   // First update DOM structure
   updateProgressContainerStructure();
   
   // Then initialize fitty for proper text scaling
-  initializeAllFitty();
+  handleFittyResize();
+}
+
+// ========== ResizeObserver Setup ==========
+function setupResizeObservers() {
+  if ('ResizeObserver' in window) {
+    const resizeObserver = new ResizeObserver(debouncedFittyResize);
+    
+    // Observe the container and all three individual boxes
+    const container = document.querySelector('.progress-streak-container');
+    if (container) {
+      resizeObserver.observe(container);
+    }
+    
+    // Observe individual containers
+    const containers = document.querySelectorAll('#weeklyProgressContainer, .streak-container, .yearly-workouts-desktop');
+    containers.forEach(el => {
+      if (el) resizeObserver.observe(el);
+    });
+  }
 }
 
 // ========== Init on Page Load ==========
@@ -1377,7 +1454,10 @@ document.addEventListener('DOMContentLoaded', function() {
   updateProgressContainerStructure();
   
   // Initialize fitty for all text elements
-  initializeAllFitty();
+  handleFittyResize();
+  
+  // Set up resize observers for dynamic font resizing
+  setupResizeObservers();
 });
 
 // ========== Init on Page Load ==========
