@@ -513,10 +513,11 @@ function showTooltip(event, dayData) {
     // ===== MOBILE APPROACH =====
     // Position tooltip
     tooltipDiv
-      .style("max-width", TOOLTIP_MOBILE_MAX_WIDTH)
-      .style("font-size", TOOLTIP_MOBILE_FONT_SIZE + "rem")
-      .style("padding", TOOLTIP_MOBILE_PADDING)
-      .style("pointer-events", "auto"); // Allow scrolling on mobile
+      .style("width", "auto")    // let it size to the content
+      .style("max-width", "90%") // optional - just in case text is extremely long
+      .style("pointer-events", "auto")
+      .style("z-index", "9999");
+  
     
     // Calculate target height (60% of chart container)
     const targetHeight = Math.floor(chartContainerRect.height * TOOLTIP_MAX_HEIGHT_PERCENT);
