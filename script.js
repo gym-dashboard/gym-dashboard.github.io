@@ -1035,7 +1035,7 @@ function addTooltipBehavior(cellSelection, dayData) {
       event.preventDefault();
       event.stopPropagation();
       
-      // Get additional workout details if needed (fetch logic remains the same)
+      // Fetch workout details (code remains the same)
       if (dayData.day) {
         try {
           const year = currentYear;
@@ -1050,9 +1050,9 @@ function addTooltipBehavior(cellSelection, dayData) {
           
           if (details.exercises && details.exercises.length > 0) {
             const hasExerciseObjects = dayData.exercises && 
-                                  dayData.exercises.length > 0 && 
-                                  typeof dayData.exercises[0] === 'object' &&
-                                  'count' in dayData.exercises[0];
+                                   dayData.exercises.length > 0 && 
+                                   typeof dayData.exercises[0] === 'object' &&
+                                   'count' in dayData.exercises[0];
             
             if (!hasExerciseObjects) {
               const exerciseNames = new Set(
@@ -1102,7 +1102,7 @@ function addTooltipBehavior(cellSelection, dayData) {
         bgColor = darkenColor(baseColor, 0.2);
       }
       
-      // Apply initial styles for mobile tooltip - remove fixed sizes
+      // Apply initial styles - COMPLETELY remove any width constraints
       tooltipDiv
         .style("background-color", bgColor)
         .style("color", isColorDark(bgColor) ? "#ffffff" : "#333333")
@@ -1110,33 +1110,62 @@ function addTooltipBehavior(cellSelection, dayData) {
         .style("pointer-events", "auto")
         .style("width", "auto")
         .style("min-width", "auto")
+        .style("max-width", "none")
         .style("height", "auto")
         .style("min-height", "auto")
         .style("max-height", "80vh")
-        .classed("mobile-tooltip", true)
-        .style("max-width", "none"); // Remove max-width constraint initially
-    
-      // Add the tooltip to the DOM so we can measure it
-      const tooltipNode = tooltipDiv.node();
+        .classed("mobile-tooltip", true);
+      
+      // First, ensure all exercise lines have nowrap applied directly
+      tooltipDiv.selectAll(".exercise-line").style("white-space", "nowrap");
+      tooltipDiv.selectAll(".exercise-name").style("white-space", "nowrap");
+      
+      // Get the viewport dimensions
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // Measure the tooltip with unrestricted width
-      const tooltipRect = tooltipNode.getBoundingClientRect();
+      // Render off-screen first to get full natural width
+      tooltipDiv
+        .style("position", "absolute")
+        .style("left", "-9999px")
+        .style("top", "-9999px");
       
-      // Determine optimal width - avoid line breaks when possible
-      let optimalWidth = tooltipRect.width;
+      // Force browser to render before measuring
+      void tooltipDiv.node().offsetWidth;
       
-      // Add small padding to prevent unnecessary wrapping
-      optimalWidth += 10;
+      // Now measure the tooltip
+      const tooltipNode = tooltipDiv.node();
       
-      // Cap width at 95% of viewport width for safety
+      // Find the widest exercise line
+      let maxLineWidth = 0;
+      tooltipDiv.selectAll(".exercise-line").each(function() {
+        const lineWidth = this.scrollWidth;
+        maxLineWidth = Math.max(maxLineWidth, lineWidth);
+      });
+      
+      // Also measure header and footer
+      const headerWidth = tooltipDiv.select(".tooltip-header").node().scrollWidth;
+      const footerWidth = tooltipDiv.select(".tooltip-footer").node() ? 
+                        tooltipDiv.select(".tooltip-footer").node().scrollWidth : 0;
+      
+      // Use the widest element plus padding
+      const contentWidth = Math.max(maxLineWidth, headerWidth, footerWidth);
+      const paddingTotal = 15 * 2; // Left and right padding (15px each side)
+      
+      // INCREASED safety margin (from 30px to 50px) to accommodate the close button
+      let optimalWidth = contentWidth + paddingTotal + 50; 
+      
+      // Cap width at 95% of viewport width
       const maxAllowedWidth = viewportWidth * 0.95;
       const finalWidth = Math.min(optimalWidth, maxAllowedWidth);
       
-      // Now apply the calculated optimal width
-      tooltipDiv.style("width", finalWidth + "px")
-        .style("max-width", finalWidth + "px");
+      // Position back in the viewport
+      tooltipDiv
+        .style("position", "fixed")
+        .style("left", "50%")
+        .style("top", "50%")
+        .style("transform", "translate(-50%, -50%)")
+        .style("width", finalWidth + "px");
       
       // Recalculate height after width is set
       const updatedHeight = tooltipNode.offsetHeight;
@@ -1144,7 +1173,7 @@ function addTooltipBehavior(cellSelection, dayData) {
       // Ensure the tooltip isn't too tall
       const maxAllowedHeight = viewportHeight * 0.8;
       if (updatedHeight > maxAllowedHeight) {
-        // Enable scrolling on exercises container
+        // Enable scrolling on exercises container if needed
         tooltipDiv.select(".tooltip-exercises")
           .style("max-height", (maxAllowedHeight * 0.6) + "px")
           .style("overflow-y", "auto");
@@ -1152,12 +1181,7 @@ function addTooltipBehavior(cellSelection, dayData) {
         tooltipDiv.style("height", maxAllowedHeight + "px");
       }
       
-      // Position in center of screen
-      tooltipDiv
-        .style("left", `${(viewportWidth - finalWidth) / 2}px`)
-        .style("top", `${(viewportHeight - tooltipNode.offsetHeight) / 2}px`);
-      
-      // Add overlay for dismissal with improved touch handling
+      // Add overlay for dismissal
       let overlay = document.getElementById("tooltip-overlay");
       if (!overlay) {
         overlay = document.createElement("div");
@@ -1169,9 +1193,9 @@ function addTooltipBehavior(cellSelection, dayData) {
         overlay.style.bottom = "0";
         overlay.style.zIndex = "9000";
         overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-        overlay.style.touchAction = "manipulation"; // Better touch handling
+        overlay.style.touchAction = "manipulation";
         
-        // Add a hint text that's less obtrusive
+        // Add a hint text
         const hint = document.createElement("div");
         hint.innerText = "Tap outside to close";
         hint.style.position = "fixed";
@@ -1192,14 +1216,14 @@ function addTooltipBehavior(cellSelection, dayData) {
         
         document.body.appendChild(overlay);
         
-        // Improved overlay click handling
+        // Overlay click handling
         overlay.addEventListener("click", function(e) {
           if (e.target === overlay || e.target === hint) {
             hideAllTooltips();
           }
         });
         
-        // Better touch event handling for zooming
+        // Touch event handling
         overlay.addEventListener("touchstart", function(e) {
           if (e.target === overlay || e.target === hint) {
             e.stopPropagation();
@@ -1212,10 +1236,10 @@ function addTooltipBehavior(cellSelection, dayData) {
         }, { passive: true });
       }
       
-      // Add better touch handling directly to the tooltip
+      // Touch handling for tooltip
       tooltipNode.style.touchAction = "manipulation";
       
-      // Support zooming on the tooltip itself
+      // Add touch handlers to tooltip
       tooltipNode.addEventListener("touchstart", function(e) {
         // Don't do anything to allow zoom gestures
       }, { passive: true });
@@ -1224,7 +1248,7 @@ function addTooltipBehavior(cellSelection, dayData) {
         // Don't do anything to allow zoom gestures
       }, { passive: true });
       
-      // Add click handler for close button
+      // Add click handler for close button with a slightly longer delay to ensure DOM update
       setTimeout(() => {
         const closeBtn = document.querySelector('.tooltip-close-btn');
         if (closeBtn) {
@@ -1239,7 +1263,7 @@ function addTooltipBehavior(cellSelection, dayData) {
             hideAllTooltips();
           });
         }
-      }, 50);
+      }, 100); // Increased from 50ms to 100ms
     }
   } else {
     // Desktop and fine pointer devices - keep existing behavior
@@ -1308,16 +1332,22 @@ function buildTooltipHTML(dayData) {
   // Check if exercises are in the new format (objects with name and count)
   const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
   
-  // Format the list of exercises with set counts - improved whitespace handling
+  // Format the list of exercises with set counts - with inline styles to force no-wrap
   let exerciseList;
   
   if (isNewFormat) {
     exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
+      .map(ex => `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
+        <span class="bullet" style="flex-shrink:0;">•</span>
+        <span class="exercise-name" style="white-space:nowrap !important;">${ex.name} (${ex.count})</span>
+      </div>`)
       .join("");
   } else {
     exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex}</span></div>`)
+      .map(ex => `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
+        <span class="bullet" style="flex-shrink:0;">•</span>
+        <span class="exercise-name" style="white-space:nowrap !important;">${ex}</span>
+      </div>`)
       .join("");
   }
   
@@ -1327,26 +1357,33 @@ function buildTooltipHTML(dayData) {
     durationInfo = dayData.duration;
   }
   
-  // Add a proper close button for mobile
+  // Add a proper close button for mobile - ensure it's properly placed outside
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
-  const closeButton = isMobile ? '<div class="tooltip-close-btn" style="position:absolute;top:-8px;right:-8px;width:28px;height:28px;background-color:#ff4d4d;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3);z-index:10;">&times;</div>' : '';
   
-  // Create the header content - simplified
-  let headerContent = `<div class="tooltip-header" style="position:relative;margin-bottom:4px;">
+  // Create the header content with inline nowrap and extra padding on right for button
+  // The close button now has its own container to prevent overlap
+  let headerContent = `<div class="tooltip-header" style="position:relative; margin-bottom:4px; white-space:nowrap !important; padding-right:25px;">
     <strong>Volume:</strong> ${dayData.volume} Sets
-    ${closeButton}
   </div>`;
   
-  // Footer content with duration if available - simplified
+  // Separate close button positioned outside the flow
+  const closeButton = isMobile ? 
+    '<div class="tooltip-close-btn" style="position:absolute;top:-18px;right:-18px;width:36px;height:36px;background-color:#ff4d4d;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
+    '';
+  
+  // Footer content with duration if available - with inline nowrap
   let footerContent = "";
   if (durationInfo) {
-    footerContent = `<div class="tooltip-footer" style="margin-top:4px;">${durationInfo}</div>`;
+    footerContent = `<div class="tooltip-footer" style="margin-top:4px;white-space:nowrap !important;">${durationInfo}</div>`;
   }
   
   return `
-    ${headerContent}
-    <div class="tooltip-exercises" style="white-space:nowrap;">${exerciseList}</div>
-    ${footerContent}
+    <div style="position:relative;">
+      ${closeButton}
+      ${headerContent}
+      <div class="tooltip-exercises">${exerciseList}</div>
+      ${footerContent}
+    </div>
   `;
 }
 

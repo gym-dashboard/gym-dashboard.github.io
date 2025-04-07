@@ -911,6 +911,9 @@ svg {
 /* ========================================================================
    Tooltip Base Styles (Common for All Devices)
    ======================================================================== */
+/* ========================================================================
+   Tooltip Base Styles (Common for All Devices)
+   ======================================================================== */
    .tooltip {
     position: absolute;
     padding: 8px 12px;
@@ -922,7 +925,7 @@ svg {
     display: flex;
     flex-direction: column;
     font-size: 0.75rem;
-    /* Remove max-width constraint to let JS set optimal width */
+    /* Remove width constraints */
     max-width: none;
   }
   
@@ -934,7 +937,7 @@ svg {
     position: relative;
     padding-bottom: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    white-space: nowrap; /* Prevent header from wrapping */
+    white-space: nowrap !important; /* Enforce nowrap */
   }
   
   .tooltip-exercises {
@@ -952,7 +955,7 @@ svg {
     text-align: center;
     flex-shrink: 0;
     font-size: 0.95em;
-    white-space: nowrap; /* Prevent footer from wrapping */
+    white-space: nowrap !important; /* Enforce nowrap */
   }
   
   .duration-value {
@@ -975,13 +978,15 @@ svg {
     border-radius: 10px;
   }
   
-  /* Exercise Line Items */
+  /* Exercise Line Items - STRONGLY enforce nowrap */
   .exercise-line {
     display: flex;
     align-items: flex-start;
     margin-bottom: 4px;
-    white-space: nowrap; /* Try to keep items on one line */
+    white-space: nowrap !important; /* Enforce nowrap with !important */
     line-height: 1.2;
+    width: auto;
+    min-width: fit-content;
   }
   
   .bullet {
@@ -992,9 +997,11 @@ svg {
   
   .exercise-name {
     display: inline-block;
-    word-wrap: normal; /* Only wrap if absolutely necessary */
-    word-break: normal;
-    flex: 1;
+    word-wrap: normal;
+    word-break: keep-all;
+    white-space: nowrap !important; /* Enforce nowrap with !important */
+    overflow: visible;
+    flex: 0 1 auto; /* Don't force it to fill container */
   }
   
   /* Base Close Button */
@@ -1013,8 +1020,8 @@ svg {
     color: #333;
     cursor: pointer;
     z-index: 10;
-    top: -8px;
-    right: -8px;
+    top: -10px; /* Moved further up */
+    right: -10px; /* Moved further right */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
   
@@ -1028,16 +1035,14 @@ svg {
      Mobile-Specific Tooltip Styles (Touch Devices)
      ======================================================================== */
   @media (pointer: coarse) {
-    /* Container - let JS control the width dynamically */
+    /* Container - NO width constraints at all */
     .tooltip {
       position: fixed !important;
       top: 50% !important;
       left: 50% !important;
       transform: translate(-50%, -50%) !important;
-      /* Let width be controlled by JS */
       width: auto !important; 
-      /* Remove max-width constraint */
-      max-width: none !important;
+      max-width: none !important; /* Remove completely */
       min-width: auto !important;
       height: auto !important;
       min-height: auto !important;
@@ -1054,62 +1059,66 @@ svg {
     
     /* Enhanced Mobile Close Button */
     .tooltip-close-btn {
-      position: absolute;
-      top: -18px;
-      right: -18px;
-      width: 36px;
-      height: 36px;
-      background-color: #4b4b4b;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: bold;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-      border: 2px solid white;
-      z-index: 10000;
-    }
+        position: absolute;
+        top: -20px; /* Increased from -18px */
+        right: -20px; /* Increased from -18px */
+        width: 36px;
+        height: 36px;
+        background-color: #ff4d4d;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+        border: 2px solid white;
+        z-index: 10000;
+      }
     
     /* Mobile Header Styling */
-    .tooltip-header {
-      margin-bottom: 8px; /* Reduced from 10px */
-      font-weight: 600;
-      font-size: 1rem;
-      padding-bottom: 6px; /* Reduced from 8px */
-    }
+    /* Make sure the header has extra space */
+      .tooltip-header {
+        position: relative;
+        padding-right: 28px !important; /* Extra padding on right */
+        text-align: left;
+      }
     
     /* Mobile Exercises Container */
     .tooltip-exercises {
-      max-height: 50vh !important; /* Reduced from 60vh */
-      min-height: auto !important; /* Remove min-height */
-      height: auto !important; /* Let height adapt to content */
+      max-height: 50vh !important;
+      min-height: auto !important;
+      height: auto !important;
       overflow-y: auto !important;
       padding-right: 8px;
-      margin-bottom: 8px; /* Reduced from 10px */
+      margin-bottom: 8px;
       -webkit-overflow-scrolling: touch;
     }
     
-    /* Mobile Exercise Lines - improved for preventing unwanted wrapping */
+    /* Force exercise lines to stay on one line */
     .exercise-line {
-      margin-bottom: 6px; /* Reduced from 8px */
-      white-space: nowrap; /* Prefer not to wrap */
+      margin-bottom: 6px;
+      white-space: nowrap !important; 
       line-height: 1.3;
+      display: flex !important;
     }
     
-    /* Exercise Name - Only wrap when absolutely necessary */
+    /* Absolutely prevent any wrapping on exercise names */
     .exercise-name {
-      word-break: normal;
-      overflow-wrap: normal;
-      hyphens: none;
+      white-space: nowrap !important;
+      word-break: keep-all !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      hyphens: none !important;
     }
     
     /* Mobile Footer */
     .tooltip-footer {
-      margin-top: 6px; /* Reduced from 8px */
-      padding-top: 6px; /* Reduced from 8px */
+      margin-top: 6px;
+      padding-top: 6px;
       font-weight: 500;
+      white-space: nowrap !important;
     }
     
     /* Mobile Overlay */
@@ -1121,7 +1130,7 @@ svg {
       bottom: 0;
       z-index: 9500;
       background-color: rgba(0, 0, 0, 0.5);
-      touch-action: manipulation; /* Better touch handling for zooming */
+      touch-action: manipulation;
     }
     
     /* Overlay Close Hint */
