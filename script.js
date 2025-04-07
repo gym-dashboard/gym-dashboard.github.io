@@ -1035,7 +1035,7 @@ function addTooltipBehavior(cellSelection, dayData) {
       event.preventDefault();
       event.stopPropagation();
       
-      // Get additional workout details if needed
+      // Get additional workout details if needed (fetch logic remains the same)
       if (dayData.day) {
         try {
           const year = currentYear;
@@ -1050,9 +1050,9 @@ function addTooltipBehavior(cellSelection, dayData) {
           
           if (details.exercises && details.exercises.length > 0) {
             const hasExerciseObjects = dayData.exercises && 
-                                   dayData.exercises.length > 0 && 
-                                   typeof dayData.exercises[0] === 'object' &&
-                                   'count' in dayData.exercises[0];
+                                  dayData.exercises.length > 0 && 
+                                  typeof dayData.exercises[0] === 'object' &&
+                                  'count' in dayData.exercises[0];
             
             if (!hasExerciseObjects) {
               const exerciseNames = new Set(
@@ -1102,42 +1102,60 @@ function addTooltipBehavior(cellSelection, dayData) {
         bgColor = darkenColor(baseColor, 0.2);
       }
       
-      // Apply styles for mobile tooltip - NO fixed heights or widths
+      // Apply initial styles for mobile tooltip - remove fixed sizes
       tooltipDiv
         .style("background-color", bgColor)
         .style("color", isColorDark(bgColor) ? "#ffffff" : "#333333")
         .style("opacity", 1)
         .style("pointer-events", "auto")
         .style("width", "auto")
+        .style("min-width", "auto")
         .style("height", "auto")
         .style("min-height", "auto")
-        .style("min-width", "auto")
-        .style("max-width", "85%")
         .style("max-height", "80vh")
-        .classed("mobile-tooltip", true);
-      
-      // Exercises container with improved styling
-      const exercisesDiv = tooltipDiv.select(".tooltip-exercises").node();
-      if (exercisesDiv) {
-        // Remove fixed minimum height, only set max-height
-        exercisesDiv.style.minHeight = "0";
-        exercisesDiv.style.height = "auto";
-        exercisesDiv.style.maxHeight = "50vh";
-        exercisesDiv.style.overflowY = "auto";
-      }
-      
-      // Center the tooltip in the viewport
+        .classed("mobile-tooltip", true)
+        .style("max-width", "none"); // Remove max-width constraint initially
+    
+      // Add the tooltip to the DOM so we can measure it
       const tooltipNode = tooltipDiv.node();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       
-      // Get tooltip dimensions after rendering content
+      // Measure the tooltip with unrestricted width
       const tooltipRect = tooltipNode.getBoundingClientRect();
+      
+      // Determine optimal width - avoid line breaks when possible
+      let optimalWidth = tooltipRect.width;
+      
+      // Add small padding to prevent unnecessary wrapping
+      optimalWidth += 10;
+      
+      // Cap width at 95% of viewport width for safety
+      const maxAllowedWidth = viewportWidth * 0.95;
+      const finalWidth = Math.min(optimalWidth, maxAllowedWidth);
+      
+      // Now apply the calculated optimal width
+      tooltipDiv.style("width", finalWidth + "px")
+        .style("max-width", finalWidth + "px");
+      
+      // Recalculate height after width is set
+      const updatedHeight = tooltipNode.offsetHeight;
+      
+      // Ensure the tooltip isn't too tall
+      const maxAllowedHeight = viewportHeight * 0.8;
+      if (updatedHeight > maxAllowedHeight) {
+        // Enable scrolling on exercises container
+        tooltipDiv.select(".tooltip-exercises")
+          .style("max-height", (maxAllowedHeight * 0.6) + "px")
+          .style("overflow-y", "auto");
+        
+        tooltipDiv.style("height", maxAllowedHeight + "px");
+      }
       
       // Position in center of screen
       tooltipDiv
-        .style("left", `${(viewportWidth - tooltipRect.width) / 2}px`)
-        .style("top", `${(viewportHeight - tooltipRect.height) / 2}px`);
+        .style("left", `${(viewportWidth - finalWidth) / 2}px`)
+        .style("top", `${(viewportHeight - tooltipNode.offsetHeight) / 2}px`);
       
       // Add overlay for dismissal with improved touch handling
       let overlay = document.getElementById("tooltip-overlay");
@@ -1290,7 +1308,7 @@ function buildTooltipHTML(dayData) {
   // Check if exercises are in the new format (objects with name and count)
   const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
   
-  // Format the list of exercises with set counts
+  // Format the list of exercises with set counts - improved whitespace handling
   let exerciseList;
   
   if (isNewFormat) {
@@ -1327,7 +1345,7 @@ function buildTooltipHTML(dayData) {
   
   return `
     ${headerContent}
-    <div class="tooltip-exercises">${exerciseList}</div>
+    <div class="tooltip-exercises" style="white-space:nowrap;">${exerciseList}</div>
     ${footerContent}
   `;
 }

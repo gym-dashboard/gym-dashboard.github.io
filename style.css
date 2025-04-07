@@ -922,6 +922,8 @@ svg {
     display: flex;
     flex-direction: column;
     font-size: 0.75rem;
+    /* Remove max-width constraint to let JS set optimal width */
+    max-width: none;
   }
   
   /* Tooltip Main Sections */
@@ -932,6 +934,7 @@ svg {
     position: relative;
     padding-bottom: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    white-space: nowrap; /* Prevent header from wrapping */
   }
   
   .tooltip-exercises {
@@ -949,6 +952,7 @@ svg {
     text-align: center;
     flex-shrink: 0;
     font-size: 0.95em;
+    white-space: nowrap; /* Prevent footer from wrapping */
   }
   
   .duration-value {
@@ -976,7 +980,7 @@ svg {
     display: flex;
     align-items: flex-start;
     margin-bottom: 4px;
-    white-space: normal;
+    white-space: nowrap; /* Try to keep items on one line */
     line-height: 1.2;
   }
   
@@ -988,7 +992,8 @@ svg {
   
   .exercise-name {
     display: inline-block;
-    word-wrap: break-word;
+    word-wrap: normal; /* Only wrap if absolutely necessary */
+    word-break: normal;
     flex: 1;
   }
   
@@ -1022,127 +1027,129 @@ svg {
   /* ========================================================================
      Mobile-Specific Tooltip Styles (Touch Devices)
      ======================================================================== */
-     @media (pointer: coarse) {
-      /* Container */
-      .tooltip {
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: auto !important;
-        max-width: 85% !important;
-        min-width: auto !important; /* Removed fixed min-width */
-        height: auto !important;
-        min-height: auto !important; /* Removed fixed min-height */
-        max-height: 80vh !important;
-        padding: 12px 15px;
-        border-radius: 12px;
-        font-size: 0.9rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-        border: none;
-        overflow: visible;
-        touch-action: manipulation; /* Better touch handling for zooming */
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      /* Enhanced Mobile Close Button */
-      .tooltip-close-btn {
-        position: absolute;
-        top: -18px;
-        right: -18px;
-        width: 36px;
-        height: 36px;
-        background-color: #ff4d4d;
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: bold;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-        border: 2px solid white;
-        z-index: 10000;
-      }
-      
-      /* Mobile Header Styling */
-      .tooltip-header {
-        margin-bottom: 8px; /* Reduced from 10px */
-        font-weight: 600;
-        font-size: 1rem;
-        padding-bottom: 6px; /* Reduced from 8px */
-      }
-      
-      /* Mobile Exercises Container */
-      .tooltip-exercises {
-        max-height: 50vh !important; /* Reduced from 60vh */
-        min-height: auto !important; /* Remove min-height */
-        height: auto !important; /* Let height adapt to content */
-        overflow-y: auto !important;
-        padding-right: 8px;
-        margin-bottom: 8px; /* Reduced from 10px */
-        -webkit-overflow-scrolling: touch;
-      }
-      
-      /* Mobile Exercise Lines */
-      .exercise-line {
-        margin-bottom: 6px; /* Reduced from 8px */
-        white-space: normal;
-        line-height: 1.3;
-      }
-      
-      /* Exercise Name - Ensure Text Wrapping */
-      .exercise-name {
-        word-break: break-word;
-        overflow-wrap: break-word;
-        hyphens: auto;
-      }
-      
-      /* Mobile Footer */
-      .tooltip-footer {
-        margin-top: 6px; /* Reduced from 8px */
-        padding-top: 6px; /* Reduced from 8px */
-        font-weight: 500;
-      }
-      
-      /* Mobile Overlay */
-      #tooltip-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 9500;
-        background-color: rgba(0, 0, 0, 0.5);
-        touch-action: manipulation; /* Better touch handling for zooming */
-      }
-      
-      /* Overlay Close Hint */
-      #tooltip-overlay::after {
-        content: "Tap outside to close";
-        position: fixed;
-        bottom: 20px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        color: white;
-        font-size: 14px;
-        padding: 8px;
-        background-color: rgba(0, 0, 0, 0.6);
-        border-radius: 20px;
-        width: 150px;
-        margin: 0 auto;
-        z-index: 9501;
-      }
-      
-      /* Active cell animation */
-      .active-tooltip-cell rect.cell-background {
-        animation: pulse-border 2s infinite;
-      }
-      
-      @keyframes pulse-border {
-        0% { stroke-width: 2px; }
-        50% { stroke-width: 3px; }
-        100% { stroke-width: 2px; }
-      }
+  @media (pointer: coarse) {
+    /* Container - let JS control the width dynamically */
+    .tooltip {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      /* Let width be controlled by JS */
+      width: auto !important; 
+      /* Remove max-width constraint */
+      max-width: none !important;
+      min-width: auto !important;
+      height: auto !important;
+      min-height: auto !important;
+      max-height: 80vh !important;
+      padding: 12px 15px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+      border: none;
+      overflow: visible;
+      touch-action: manipulation;
+      -webkit-overflow-scrolling: touch;
     }
+    
+    /* Enhanced Mobile Close Button */
+    .tooltip-close-btn {
+      position: absolute;
+      top: -18px;
+      right: -18px;
+      width: 36px;
+      height: 36px;
+      background-color: #4b4b4b;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+      border: 2px solid white;
+      z-index: 10000;
+    }
+    
+    /* Mobile Header Styling */
+    .tooltip-header {
+      margin-bottom: 8px; /* Reduced from 10px */
+      font-weight: 600;
+      font-size: 1rem;
+      padding-bottom: 6px; /* Reduced from 8px */
+    }
+    
+    /* Mobile Exercises Container */
+    .tooltip-exercises {
+      max-height: 50vh !important; /* Reduced from 60vh */
+      min-height: auto !important; /* Remove min-height */
+      height: auto !important; /* Let height adapt to content */
+      overflow-y: auto !important;
+      padding-right: 8px;
+      margin-bottom: 8px; /* Reduced from 10px */
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Mobile Exercise Lines - improved for preventing unwanted wrapping */
+    .exercise-line {
+      margin-bottom: 6px; /* Reduced from 8px */
+      white-space: nowrap; /* Prefer not to wrap */
+      line-height: 1.3;
+    }
+    
+    /* Exercise Name - Only wrap when absolutely necessary */
+    .exercise-name {
+      word-break: normal;
+      overflow-wrap: normal;
+      hyphens: none;
+    }
+    
+    /* Mobile Footer */
+    .tooltip-footer {
+      margin-top: 6px; /* Reduced from 8px */
+      padding-top: 6px; /* Reduced from 8px */
+      font-weight: 500;
+    }
+    
+    /* Mobile Overlay */
+    #tooltip-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9500;
+      background-color: rgba(0, 0, 0, 0.5);
+      touch-action: manipulation; /* Better touch handling for zooming */
+    }
+    
+    /* Overlay Close Hint */
+    #tooltip-overlay::after {
+      content: "Tap outside to close";
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: white;
+      font-size: 14px;
+      padding: 8px;
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      width: 150px;
+      margin: 0 auto;
+      z-index: 9501;
+    }
+    
+    /* Active cell animation */
+    .active-tooltip-cell rect.cell-background {
+      animation: pulse-border 2s infinite;
+    }
+    
+    @keyframes pulse-border {
+      0% { stroke-width: 2px; }
+      50% { stroke-width: 3px; }
+      100% { stroke-width: 2px; }
+    }
+  }
