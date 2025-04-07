@@ -118,6 +118,7 @@ function populateYearSelect() {
 populateYearSelect();
 
 yearSelect.addEventListener("change", () => {
+  yearSelect.blur();
   currentYear = +yearSelect.value;
   if (!yearData[currentYear]) {
     loadDataForYear(currentYear).then(() => {
@@ -1774,6 +1775,31 @@ function setupResizeObservers() {
     });
   }
 }
+
+
+// Add dropdown arrow animation
+document.addEventListener('DOMContentLoaded', function() {
+  const selectWrapper = document.querySelector('.select-wrapper');
+  const yearSelect = document.getElementById('yearSelect');
+  
+  if (selectWrapper && yearSelect) {
+    yearSelect.addEventListener('click', function() {
+      selectWrapper.classList.add('active');
+    });
+    
+    yearSelect.addEventListener('blur', function() {
+      selectWrapper.classList.remove('active');
+    });
+    
+    // Also handle change events
+    yearSelect.addEventListener('change', function() {
+      setTimeout(() => {
+        selectWrapper.classList.remove('active');
+      }, 300);
+    });
+  }
+});
+
 
 // ========== Init on Page Load ==========
 document.addEventListener('DOMContentLoaded', function() {

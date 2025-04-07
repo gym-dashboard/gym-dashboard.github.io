@@ -8,6 +8,12 @@ body {
   background: #f9f9f9;
 }
 
+.container-fluid.my-4 {
+  background-color: #f9f9f9 !important;
+  margin-top: 0 !important; /* Remove the top margin */
+  padding-top: 1.5rem; /* Add padding instead if you want spacing */
+}
+
 /* ==========================================================================
    Header & Layout Components
    ========================================================================== */
@@ -65,14 +71,64 @@ body {
   color: #333;
 }
 
+/* Enhanced select styling */
 #yearSelect {
-  min-width: 90px;
-  width: 90px;
-  flex-shrink: 0;
-  background-color: #f8f9fa;
-  border-color: #dee2e6;
-  font-size: 0.8rem;
+  appearance: none; /* Remove default appearance */
+  max-width: fit-content;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 46px 8px 12px;
+  font-weight: 500;
+  color: #4a4a4a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
+
+#yearSelect:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+}
+
+#yearSelect:focus {
+  outline: none;
+  border-color: #546bce;
+  box-shadow: 0 0 0 3px rgba(84, 107, 206, 0.15);
+}
+
+/* Add custom wrapper and animated arrow */
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.select-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-65%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #666;
+  border-bottom: 2px solid #666;
+  pointer-events: none;
+  transform-origin: 75% 75%;
+  transition: transform 0.3s ease;
+}
+
+/* Hide default background arrow when using custom arrow */
+.select-wrapper select {
+  background-image: none !important;
+}
+
+
+
+
 
 .header-spacer {
   width: 90px;
@@ -722,6 +778,15 @@ svg {
   #yearSelect {
     min-width: 80px;
     width: 80px;
+    padding: 6px 28px 6px 10px; /* Reduced padding */
+    font-size: 0.85rem; /* Smaller font */
+  }
+
+  .select-wrapper::after {
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-width: 1.5px;
   }
   
   .header-spacer {
@@ -1145,7 +1210,6 @@ svg {
       font-size: 14px;
       padding: 8px;
       background-color: rgba(0, 0, 0, 0.6);
-      border-radius: 20px;
       width: 150px;
       margin: 0 auto;
       z-index: 9501;
