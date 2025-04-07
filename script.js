@@ -1357,18 +1357,17 @@ function buildTooltipHTML(dayData) {
     durationInfo = dayData.duration;
   }
   
-  // Add a proper close button for mobile - ensure it's properly placed outside
+  // Add a proper close button for mobile - adjusted position and size
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
   
   // Create the header content with inline nowrap and extra padding on right for button
-  // The close button now has its own container to prevent overlap
   let headerContent = `<div class="tooltip-header" style="position:relative; margin-bottom:4px; white-space:nowrap !important; padding-right:25px;">
     <strong>Volume:</strong> ${dayData.volume} Sets
   </div>`;
   
-  // Separate close button positioned outside the flow
+  // Separate close button positioned further outside and smaller
   const closeButton = isMobile ? 
-    '<div class="tooltip-close-btn" style="position:absolute;top:-18px;right:-18px;width:36px;height:36px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
+    '<div class="tooltip-close-btn" style="position:absolute;top:-24px;right:-24px;width:32px;height:32px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
     '';
   
   // Footer content with duration if available - with inline nowrap

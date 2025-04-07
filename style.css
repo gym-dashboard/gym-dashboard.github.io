@@ -1060,17 +1060,17 @@ svg {
     /* Enhanced Mobile Close Button */
     .tooltip-close-btn {
         position: absolute;
-        top: -20px; /* Increased from -18px */
-        right: -20px; /* Increased from -18px */
-        width: 36px;
-        height: 36px;
-        background-color: #4e4e4e;
+        top: -24px; /* Moved further up (from -20px) */
+        right: -24px; /* Moved further right (from -20px) */
+        width: 32px; /* Smaller (from 36px) */
+        height: 32px; /* Smaller (from 36px) */
+        background-color: #4f4f4f;
         color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 24px;
+        font-size: 20px; /* Smaller text (from 24px) */
         font-weight: bold;
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
         border: 2px solid white;
