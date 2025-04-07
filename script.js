@@ -1088,11 +1088,10 @@ function addTooltipBehavior(cellSelection, dayData) {
       rect.attr("stroke", "#333").attr("stroke-width", 2);
       cellSelection.classed("active-tooltip-cell", true);
       
-      // Show the tooltip - modified for better mobile display
+      // Show the tooltip with adaptive sizing
       const tooltipDiv = d3.select("#tooltip");
       tooltipDiv.html(buildTooltipHTML(dayData));
       
-      // Get the muscle group color for background
       // Get the muscle group color for background
       let bgColor = "#6a6a6a"; // Default fallback color
       
@@ -1103,25 +1102,44 @@ function addTooltipBehavior(cellSelection, dayData) {
         bgColor = darkenColor(baseColor, 0.2);
       }
       
-      // Apply styles for mobile tooltip but keep muscle-specific background color
+      // Apply styles for mobile tooltip - NO fixed heights or widths
       tooltipDiv
         .style("background-color", bgColor)
         .style("color", isColorDark(bgColor) ? "#ffffff" : "#333333")
         .style("opacity", 1)
         .style("pointer-events", "auto")
+        .style("width", "auto")
+        .style("height", "auto")
+        .style("min-height", "auto")
+        .style("min-width", "auto")
+        .style("max-width", "85%")
+        .style("max-height", "80vh")
         .classed("mobile-tooltip", true);
       
-      // Ensure the exercises container has a good height
-      setTimeout(() => {
-        const exercisesDiv = tooltipDiv.select(".tooltip-exercises").node();
-        if (exercisesDiv) {
-          exercisesDiv.style.minHeight = "100px";
-          exercisesDiv.style.maxHeight = "calc(100% - 80px)";
-          exercisesDiv.style.overflowY = "auto";
-        }
-      }, 10);
+      // Exercises container with improved styling
+      const exercisesDiv = tooltipDiv.select(".tooltip-exercises").node();
+      if (exercisesDiv) {
+        // Remove fixed minimum height, only set max-height
+        exercisesDiv.style.minHeight = "0";
+        exercisesDiv.style.height = "auto";
+        exercisesDiv.style.maxHeight = "50vh";
+        exercisesDiv.style.overflowY = "auto";
+      }
       
-      // Add overlay for dismissal if not already present
+      // Center the tooltip in the viewport
+      const tooltipNode = tooltipDiv.node();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // Get tooltip dimensions after rendering content
+      const tooltipRect = tooltipNode.getBoundingClientRect();
+      
+      // Position in center of screen
+      tooltipDiv
+        .style("left", `${(viewportWidth - tooltipRect.width) / 2}px`)
+        .style("top", `${(viewportHeight - tooltipRect.height) / 2}px`);
+      
+      // Add overlay for dismissal with improved touch handling
       let overlay = document.getElementById("tooltip-overlay");
       if (!overlay) {
         overlay = document.createElement("div");
@@ -1133,8 +1151,9 @@ function addTooltipBehavior(cellSelection, dayData) {
         overlay.style.bottom = "0";
         overlay.style.zIndex = "9000";
         overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+        overlay.style.touchAction = "manipulation"; // Better touch handling
         
-        // Add a hint text
+        // Add a hint text that's less obtrusive
         const hint = document.createElement("div");
         hint.innerText = "Tap outside to close";
         hint.style.position = "fixed";
@@ -1150,27 +1169,42 @@ function addTooltipBehavior(cellSelection, dayData) {
         hint.style.backgroundColor = "rgba(0,0,0,0.5)";
         hint.style.borderRadius = "8px";
         hint.style.zIndex = "9001";
+        hint.style.opacity = "0.8";
         overlay.appendChild(hint);
         
         document.body.appendChild(overlay);
         
-        // Allow tapping outside to dismiss
+        // Improved overlay click handling
         overlay.addEventListener("click", function(e) {
           if (e.target === overlay || e.target === hint) {
             hideAllTooltips();
           }
         });
         
-        // Allow zoom gestures to work
+        // Better touch event handling for zooming
         overlay.addEventListener("touchstart", function(e) {
-          // Only stop propagation, don't prevent default
-          e.stopPropagation();
-        });
+          if (e.target === overlay || e.target === hint) {
+            e.stopPropagation();
+          }
+        }, { passive: true });
         
         overlay.addEventListener("touchmove", function(e) {
           // Don't prevent default to allow zooming
-        });
+          e.stopPropagation();
+        }, { passive: true });
       }
+      
+      // Add better touch handling directly to the tooltip
+      tooltipNode.style.touchAction = "manipulation";
+      
+      // Support zooming on the tooltip itself
+      tooltipNode.addEventListener("touchstart", function(e) {
+        // Don't do anything to allow zoom gestures
+      }, { passive: true });
+      
+      tooltipNode.addEventListener("touchmove", function(e) {
+        // Don't do anything to allow zoom gestures
+      }, { passive: true });
       
       // Add click handler for close button
       setTimeout(() => {
@@ -1279,21 +1313,21 @@ function buildTooltipHTML(dayData) {
   const isMobile = window.matchMedia('(pointer: coarse)').matches;
   const closeButton = isMobile ? '<div class="tooltip-close-btn" style="position:absolute;top:-8px;right:-8px;width:28px;height:28px;background-color:#ff4d4d;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,0.3);z-index:10;">&times;</div>' : '';
   
-  // Create the header content
-  let headerContent = `<div class="tooltip-header" style="position:relative;">
+  // Create the header content - simplified
+  let headerContent = `<div class="tooltip-header" style="position:relative;margin-bottom:4px;">
     <strong>Volume:</strong> ${dayData.volume} Sets
     ${closeButton}
   </div>`;
   
-  // Footer content with duration if available
+  // Footer content with duration if available - simplified
   let footerContent = "";
   if (durationInfo) {
-    footerContent = `<div class="tooltip-footer"><div class="duration-value">${durationInfo}</div></div>`;
+    footerContent = `<div class="tooltip-footer" style="margin-top:4px;">${durationInfo}</div>`;
   }
   
   return `
     ${headerContent}
-    <div class="tooltip-exercises" style="${isMobile ? 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' : ''}">${exerciseList}</div>
+    <div class="tooltip-exercises">${exerciseList}</div>
     ${footerContent}
   `;
 }
