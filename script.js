@@ -344,9 +344,8 @@ function buildTooltipHTML(dayData) {
     durationInfo = dayData.duration;
   }
   
-  // Add a proper close button for mobile
-  const isMobile = window.matchMedia('(pointer: coarse)').matches;
-  const closeButton = isMobile ? '<div class="tooltip-close-btn">&times;</div>' : '';
+  // Always add close button
+  const closeButton = '<div class="tooltip-close-btn">&times;</div>';
   
   // Create the header content
   let headerContent = `<div class="tooltip-header">
@@ -368,6 +367,7 @@ function buildTooltipHTML(dayData) {
 }
 
 // Function to handle mobile tooltip display and add close button handler
+// Replace the showTooltipForMobileCell function
 async function showTooltipForMobileCell(event) {
   event.preventDefault();
   event.stopPropagation();
@@ -425,8 +425,20 @@ async function showTooltipForMobileCell(event) {
   rect.attr("stroke", "#333").attr("stroke-width", 2);
   cellSelection.classed("active-tooltip-cell", true);
   
-  // Show the tooltip
-  showTooltip(event, dayData);
+  // Create HTML for the tooltip
+  const tooltipDiv = d3.select("#tooltip");
+  tooltipDiv.html(buildTooltipHTML(dayData));
+  
+  // Get the muscle group color to use for the background
+  let bgColor = "#ffffff"; // White background for better readability
+  
+  // Apply styles for mobile tooltip
+  tooltipDiv
+    .style("background-color", bgColor)
+    .style("color", "#333")
+    .style("opacity", 1)
+    .style("pointer-events", "auto")
+    .classed("mobile-tooltip", true);
   
   // Add overlay for dismissal if not already present
   let overlay = document.getElementById("tooltip-overlay");
@@ -438,31 +450,58 @@ async function showTooltipForMobileCell(event) {
     overlay.style.left = "0";
     overlay.style.right = "0";
     overlay.style.bottom = "0";
-    overlay.style.zIndex = "9000";
-    overlay.style.background = "transparent";
+    overlay.style.zIndex = "9998";
+    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
     document.body.appendChild(overlay);
     
-    // Listen for taps on the overlay to dismiss
-    overlay.addEventListener("touchstart", handleOverlayTap);
+    // Prevent taps on the overlay from dismissing the tooltip
+    overlay.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    
+    overlay.addEventListener("touchstart", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
   }
   
-  // Add click handler for close button
+  // Clean up and add new event listener for close button
   setTimeout(() => {
     const closeBtn = document.querySelector('.tooltip-close-btn');
     if (closeBtn) {
-      closeBtn.addEventListener('click', function(e) {
+      // Remove any existing listeners
+      const newBtn = closeBtn.cloneNode(true);
+      if (closeBtn.parentNode) {
+        closeBtn.parentNode.replaceChild(newBtn, closeBtn);
+      }
+      
+      // Add new event listener
+      newBtn.addEventListener('click', function(e) {
+        e.preventDefault();
         e.stopPropagation();
+        
+        // Hide tooltip
         hideAllTooltips();
         
         // Remove the overlay
         const overlay = document.getElementById("tooltip-overlay");
-        if (overlay) {
-          overlay.removeEventListener("touchstart", handleOverlayTap);
-          document.body.removeChild(overlay);
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
         }
       });
     }
   }, 50);
+}
+
+// Add this function if it doesn't exist, or replace it if it does
+function handleOverlayTap(e) {
+  // Prevent default behavior
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // DON'T close the tooltip - only the X button should close it
+  // This just prevents interaction with elements behind the overlay
 }
 
 // ========== Tooltip Show/Hide ==========
@@ -1447,26 +1486,23 @@ function addTooltipBehavior(cellSelection, dayData) {
       tooltipDiv.html(buildTooltipHTML(dayData));
       
       // Get the muscle group color for background
+      // Get the muscle group color for background
       let bgColor = "#6a6a6a"; // Default fallback color
+      
+      // If there are muscles, use the first one's color
       if (dayData.muscles && dayData.muscles.length > 0) {
         const firstMuscle = dayData.muscles[0];
         const baseColor = muscleColors[firstMuscle];
         bgColor = darkenColor(baseColor, 0.2);
       }
       
-      // Apply styling with fixed positioning for mobile
+      // Apply styles for mobile tooltip but keep muscle-specific background color
       tooltipDiv
         .style("background-color", bgColor)
         .style("color", isColorDark(bgColor) ? "#ffffff" : "#333333")
         .style("opacity", 1)
-        .classed("mobile-tooltip", true)
-        .style("position", "fixed")
-        .style("top", "50%")
-        .style("left", "50%")
-        .style("transform", "translate(-50%, -50%)")
-        .style("width", "65%")
-        .style("min-height", "200px")
-        .style("max-height", "70%");
+        .style("pointer-events", "auto")
+        .classed("mobile-tooltip", true);
       
       // Ensure the exercises container has a good height
       setTimeout(() => {
