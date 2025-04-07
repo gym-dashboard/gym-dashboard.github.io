@@ -1368,7 +1368,7 @@ function buildTooltipHTML(dayData) {
   
   // Separate close button positioned outside the flow
   const closeButton = isMobile ? 
-    '<div class="tooltip-close-btn" style="position:absolute;top:-18px;right:-18px;width:36px;height:36px;background-color:#ff4d4d;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
+    '<div class="tooltip-close-btn" style="position:absolute;top:-18px;right:-18px;width:36px;height:36px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
     '';
   
   // Footer content with duration if available - with inline nowrap
