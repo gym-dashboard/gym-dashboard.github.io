@@ -363,21 +363,22 @@ function showTooltip(event, dayData) {
     .style("padding", null)
     .style("opacity", 1);
   
-  // Detect device type
-  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  // Add tablet detection - consider devices with width >= 768px as tablets
+  const isTablet = window.innerWidth >= 768;
+  
+  // Detect device type - but treat tablets as desktop
+  const isMobile = window.matchMedia('(pointer: coarse)').matches && !isTablet;
   tooltipDiv.classed("mobile-tooltip", isMobile);
   
-  // DIFFERENT APPROACHES FOR DESKTOP VS MOBILE
+  // DIFFERENT APPROACHES FOR DESKTOP/TABLET VS PHONE
   if (isMobile) {
-    // ===== MOBILE APPROACH =====
+    // ===== PHONE APPROACH =====
     tooltipDiv
       .style("width", "auto")    
       .style("max-width", "85%") 
       .style("pointer-events", "auto")
       .style("z-index", "9999")
       .style("touch-action", "pan-x pan-y"); // Allow zooming and panning
-      
-  
     
     // Calculate target height (60% of chart container)
     const targetHeight = Math.floor(chartContainerRect.height * TOOLTIP_MAX_HEIGHT_PERCENT);
@@ -433,8 +434,8 @@ function showTooltip(event, dayData) {
       .style("left", posX + "px")
       .style("top", posY + "px");
   } else {
-    // ===== DESKTOP APPROACH =====
-    // For desktop: no scrolling, shrink content to fit if possible
+    // ===== DESKTOP AND TABLET APPROACH =====
+    // For desktop/tablet: no scrolling, shrink content to fit if possible
     tooltipDiv
       .style("pointer-events", "none") // No scrolling on desktop
       .style("max-width", TOOLTIP_DESKTOP_MAX_WIDTH)
@@ -948,8 +949,12 @@ function addTooltipBehavior(cellSelection, dayData) {
   const rect = cellSelection.select("rect.cell-background");
   const cellSize = +rect.attr("width");
 
-  // Check for a coarse pointer (likely a touch device)
-  if (window.matchMedia('(pointer: coarse)').matches) {
+  // Add tablet detection - consider devices with width >= 768px as tablets
+  const isTablet = window.innerWidth >= 768;
+  
+  // Check for a coarse pointer (touch device)
+  if (window.matchMedia('(pointer: coarse)').matches && !isTablet) {
+    // PHONE BEHAVIOR - Keep existing mobile behavior
     // Variables to track touch behavior
     let touchStartX = 0;
     let touchStartY = 0;
@@ -1267,7 +1272,84 @@ function addTooltipBehavior(cellSelection, dayData) {
       }, 100); // Increased from 50ms to 100ms
     }
   } else {
-    // Desktop and fine pointer devices - keep existing behavior
+    // DESKTOP AND TABLET BEHAVIOR - use desktop behavior for both
+    
+    // Add special tablet touch handling if this is a tablet
+    if (isTablet && window.matchMedia('(pointer: coarse)').matches) {
+      // Make taps work like clicks for tablets
+      cellSelection
+        .on("touchstart", (event) => {
+          rect.attr("stroke", "#333").attr("stroke-width", 2);
+        })
+        .on("touchend", async (event) => {
+          // Convert touch event to a pointer-style event that works with showTooltip
+          const touch = event.changedTouches[0];
+          const newEvent = {
+            pageX: touch.pageX,
+            pageY: touch.pageY,
+            clientX: touch.clientX,
+            clientY: touch.clientY
+          };
+          
+          // For tablets, update exercise data before showing the tooltip
+          if (dayData.day) {
+            try {
+              const year = currentYear;
+              const month = +cellSelection.attr("data-month") || 0;
+              const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
+              const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
+              
+              if (details.duration) {
+                dayData.duration = details.duration;
+              }
+              
+              if (details.exercises && details.exercises.length > 0) {
+                const hasExerciseObjects = dayData.exercises && 
+                                        dayData.exercises.length > 0 && 
+                                        typeof dayData.exercises[0] === 'object' &&
+                                        'count' in dayData.exercises[0];
+                
+                if (!hasExerciseObjects) {
+                  const exerciseNames = new Set(
+                    Array.isArray(dayData.exercises) ? dayData.exercises : []
+                  );
+                  
+                  if (exerciseNames.size > 0) {
+                    dayData.exercises = details.exercises.filter(ex => 
+                      exerciseNames.has(ex.name)
+                    );
+                  } else {
+                    dayData.exercises = details.exercises;
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching workout details:", err);
+            }
+          }
+          
+          showTooltip(newEvent, dayData);
+          
+          // Don't hide the tooltip immediately on touchend for tablets
+          // We'll rely on tapping elsewhere or explicitly hiding
+          
+          // Allow tapping elsewhere to dismiss
+          document.addEventListener("touchstart", function onDocTouch(e) {
+            const tooltipNode = d3.select("#tooltip").node();
+            const cellNode = cellSelection.node();
+            
+            // If tap is outside the tooltip and current cell
+            if (tooltipNode && cellNode && 
+                !tooltipNode.contains(e.target) && 
+                !cellNode.contains(e.target)) {
+              hideTooltip();
+              document.removeEventListener("touchstart", onDocTouch);
+            }
+          }, { once: false });
+        });
+    }
+    
+    // Standard desktop mouse behavior (works for desktop and as a fallback for tablet)
     cellSelection
       .on("pointerenter", async (event) => {
         rect.attr("stroke", "#333").attr("stroke-width", 2);
@@ -1359,14 +1441,16 @@ function buildTooltipHTML(dayData) {
   }
   
   // Add a proper close button for mobile - adjusted position and size
-  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  // Now with tablet detection
+  const isTablet = window.innerWidth >= 768;
+  const isMobile = window.matchMedia('(pointer: coarse)').matches && !isTablet;
   
   // Create the header content with inline nowrap and extra padding on right for button
   let headerContent = `<div class="tooltip-header" style="position:relative; margin-bottom:4px; white-space:nowrap !important; padding-right:25px;">
     <strong>Volume:</strong> ${dayData.volume} Sets
   </div>`;
   
-  // Separate close button positioned further outside and smaller
+  // Separate close button positioned further outside and smaller - only for phones
   const closeButton = isMobile ? 
     '<div class="tooltip-close-btn" style="position:absolute;top:-24px;right:-24px;width:32px;height:32px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
     '';

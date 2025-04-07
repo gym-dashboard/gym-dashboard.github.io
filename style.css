@@ -1097,9 +1097,10 @@ svg {
   }
   
   /* ========================================================================
-     Mobile-Specific Tooltip Styles (Touch Devices)
+     Phone-Specific Tooltip Styles (Small Touch Devices)
      ======================================================================== */
-  @media (pointer: coarse) {
+  /* MODIFIED: Now specifically for phones, not all touch devices */
+  @media (pointer: coarse) and (max-width: 767px) {
     /* Container - NO width constraints at all */
     .tooltip {
       position: fixed !important;
@@ -1224,5 +1225,42 @@ svg {
       0% { stroke-width: 2px; }
       50% { stroke-width: 3px; }
       100% { stroke-width: 2px; }
+    }
+  }
+  
+  /* ========================================================================
+     Tablet-Specific Adjustments
+     ======================================================================== */
+  @media (pointer: coarse) and (min-width: 768px) {
+    /* Tablets get desktop styling with slight adjustments */
+    .tooltip {
+      /* Desktop-like positioning */
+      position: absolute !important;
+      transform: none !important;
+      pointer-events: none;
+      
+      /* Tablet-specific size adjustments */
+      padding: 8px 12px;
+      max-width: 300px !important;
+      font-size: 0.8rem;
+      
+      /* Better shadow for tablets */
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Ensure no close button is shown */
+    .tooltip-close-btn {
+      display: none !important;
+    }
+    
+    /* Make sure tooltip is non-interactive for tablets */
+    .tooltip-exercises {
+      overflow-y: visible;
+      pointer-events: none;
+    }
+    
+    /* Make sure no overlay is used */
+    #tooltip-overlay {
+      display: none !important;
     }
   }
