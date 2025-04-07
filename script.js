@@ -316,192 +316,11 @@ const TOOLTIP_DESKTOP_PADDING = "6px 8px";
 
 
 // ========== Tooltip Content Builder ==========
-// Function to build tooltip HTML content with close button
-function buildTooltipHTML(dayData) {
-  if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
-    return "No workout data";
-  }
-  
-  // Check if exercises are in the new format (objects with name and count)
-  const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
-  
-  // Format the list of exercises with set counts
-  let exerciseList;
-  
-  if (isNewFormat) {
-    exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex.name} (${ex.count})</span></div>`)
-      .join("");
-  } else {
-    exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line"><span class="bullet">•</span><span class="exercise-name">${ex}</span></div>`)
-      .join("");
-  }
-  
-  // Add duration information if available
-  let durationInfo = "";
-  if (dayData.duration && dayData.duration !== "NaN") {
-    durationInfo = dayData.duration;
-  }
-  
-  // Always add close button
-  const closeButton = '<div class="tooltip-close-btn">&times;</div>';
-  
-  // Create the header content
-  let headerContent = `<div class="tooltip-header">
-    <strong>Volume:</strong> ${dayData.volume} Sets
-    ${closeButton}
-  </div>`;
-  
-  // Footer content with duration if available
-  let footerContent = "";
-  if (durationInfo) {
-    footerContent = `<div class="tooltip-footer"><div class="duration-value">${durationInfo}</div></div>`;
-  }
-  
-  return `
-    ${headerContent}
-    <div class="tooltip-exercises">${exerciseList}</div>
-    ${footerContent}
-  `;
-}
-
-// Function to handle mobile tooltip display and add close button handler
-// Replace the showTooltipForMobileCell function
-async function showTooltipForMobileCell(event) {
-  event.preventDefault();
-  event.stopPropagation();
-  
-  // Get additional workout details
-  if (dayData.day) {
-    try {
-      const year = currentYear;
-      const month = +cellSelection.attr("data-month") || 0;
-      const originalMonth = dayData.originalMonth !== undefined ? dayData.originalMonth : month;
-      const details = await fetchWorkoutDetails(year, month, dayData.day, originalMonth);
-      
-      // Update dayData with fetched details
-      if (details.duration) {
-        dayData.duration = details.duration;
-      }
-      
-      if (details.exercises && details.exercises.length > 0) {
-        const hasExerciseObjects = dayData.exercises && 
-                               dayData.exercises.length > 0 && 
-                               typeof dayData.exercises[0] === 'object' &&
-                               'count' in dayData.exercises[0];
-        
-        if (!hasExerciseObjects) {
-          const exerciseNames = new Set(
-            Array.isArray(dayData.exercises) ? dayData.exercises : []
-          );
-          
-          if (exerciseNames.size > 0) {
-            dayData.exercises = details.exercises.filter(ex => 
-              exerciseNames.has(ex.name)
-            );
-          } else {
-            dayData.exercises = details.exercises;
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching workout details:", err);
-    }
-  }
-  
-  // Check if we're clicking on the same cell or a new one
-  const isNewCell = !cellSelection.classed("active-tooltip-cell");
-  
-  // If there's already an active tooltip for another cell, hide it
-  if (d3.select("#tooltip").style("opacity") == 1 && isNewCell) {
-    // Hide previous cell highlight
-    d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
-    d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
-    d3.selectAll("rect.cell-background[stroke-dasharray]").attr("stroke-dasharray", "4,2");
-  }
-  
-  // Always apply highlighting to the tapped cell
-  rect.attr("stroke", "#333").attr("stroke-width", 2);
-  cellSelection.classed("active-tooltip-cell", true);
-  
-  // Create HTML for the tooltip
-  const tooltipDiv = d3.select("#tooltip");
-  tooltipDiv.html(buildTooltipHTML(dayData));
-  
-  // Get the muscle group color to use for the background
-  let bgColor = "#ffffff"; // White background for better readability
-  
-  // Apply styles for mobile tooltip
-  tooltipDiv
-    .style("background-color", bgColor)
-    .style("color", "#333")
-    .style("opacity", 1)
-    .style("pointer-events", "auto")
-    .classed("mobile-tooltip", true);
-  
-  // Add overlay for dismissal if not already present
-  let overlay = document.getElementById("tooltip-overlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "tooltip-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.right = "0";
-    overlay.style.bottom = "0";
-    overlay.style.zIndex = "9998";
-    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    document.body.appendChild(overlay);
-    
-    // Prevent taps on the overlay from dismissing the tooltip
-    overlay.addEventListener("click", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    
-    overlay.addEventListener("touchstart", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-  }
-  
-  // Clean up and add new event listener for close button
-  setTimeout(() => {
-    const closeBtn = document.querySelector('.tooltip-close-btn');
-    if (closeBtn) {
-      // Remove any existing listeners
-      const newBtn = closeBtn.cloneNode(true);
-      if (closeBtn.parentNode) {
-        closeBtn.parentNode.replaceChild(newBtn, closeBtn);
-      }
-      
-      // Add new event listener
-      newBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Hide tooltip
-        hideAllTooltips();
-        
-        // Remove the overlay
-        const overlay = document.getElementById("tooltip-overlay");
-        if (overlay && overlay.parentNode) {
-          overlay.parentNode.removeChild(overlay);
-        }
-      });
-    }
-  }, 50);
-}
-
-// Add this function if it doesn't exist, or replace it if it does
 function handleOverlayTap(e) {
   // Prevent default behavior
   e.preventDefault();
   e.stopPropagation();
   
-  // DON'T close the tooltip - only the X button should close it
-  // This just prevents interaction with elements behind the overlay
 }
 
 // ========== Tooltip Show/Hide ==========
@@ -550,12 +369,13 @@ function showTooltip(event, dayData) {
   // DIFFERENT APPROACHES FOR DESKTOP VS MOBILE
   if (isMobile) {
     // ===== MOBILE APPROACH =====
-    // Position tooltip
     tooltipDiv
-      .style("width", "auto")    // let it size to the content
-      .style("max-width", "90%") // optional - just in case text is extremely long
+      .style("width", "auto")    
+      .style("max-width", "85%") 
       .style("pointer-events", "auto")
-      .style("z-index", "9999");
+      .style("z-index", "9999")
+      .style("touch-action", "pan-x pan-y"); // Allow zooming and panning
+      
   
     
     // Calculate target height (60% of chart container)
@@ -767,6 +587,13 @@ function hideAllTooltips() {
   d3.select("#tooltip").style("opacity", 0).style("pointer-events", "none");
   d3.selectAll(".active-tooltip-cell").classed("active-tooltip-cell", false);
   d3.selectAll("rect.cell-background").attr("stroke", "#ddd").attr("stroke-width", 1);
+  d3.selectAll("rect.cell-background[stroke-dasharray]").attr("stroke-dasharray", "4,2");
+  
+  // Remove the overlay to allow normal interaction again
+  const overlay = document.getElementById("tooltip-overlay");
+  if (overlay && overlay.parentNode) {
+    overlay.parentNode.removeChild(overlay);
+  }
 }
 
 // Update the existing hideTooltip function
@@ -1113,227 +940,7 @@ function adjustMonthDisplay() {
   }
 }
 
-// ========== Draw Year Calendar ==========
-function drawYearCalendar(year) {
-  chartContainer.innerHTML = "";
-  
-  const cellSize = calculateResponsiveCellSize(),
-        cellGap = 4,
-        cols = 7,
-        rows = 5;
-  const gridWidth = cols * (cellSize + cellGap) - cellGap;
-  const gridHeight = rows * (cellSize + cellGap) - cellGap;
-  const margin = { top: 50, right: 20, bottom: 10, left: 20 };
-  const monthChartWidth = gridWidth + margin.left + margin.right;
-  const monthChartHeight = gridHeight + margin.top + margin.bottom;
-  
-  const getGradientId = (muscles) => `gradient-${muscles.join('-')}`;
-  
-  // Array to store overflow days from previous month
-  let overflowDays = [];
 
-  for (let m = 0; m < 12; m++) {
-    const monthDiv = document.createElement("div");
-    monthDiv.className = "month-block";
-    
-    const svg = d3.create("svg")
-      .attr("width", monthChartWidth)
-      .attr("height", monthChartHeight)
-      .attr("viewBox", `0 0 ${monthChartWidth} ${monthChartHeight}`)
-      .attr("preserveAspectRatio", "xMinYMin meet");
-
-    const defs = svg.append("defs");
-
-    // Month label
-    svg.append("text")
-      .attr("x", margin.left + gridWidth/2)
-      .attr("y", margin.top - 25)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "14px")
-      .attr("font-weight", "bold")
-      .text(monthNames[m]);
-
-    // Weekday labels
-    svg.selectAll("text.weekDay")
-      .data(weekDays)
-      .join("text")
-        .attr("class", "weekDay")
-        .attr("x", (d, i) => margin.left + i * (cellSize + cellGap) + cellSize/2)
-        .attr("y", margin.top - 10)
-        .attr("text-anchor", "middle")
-        .attr("font-size", "10px")
-        .attr("fill", "#333")
-        .text(d => d);
-
-    const numDays = new Date(year, m + 1, 0).getDate();
-    const firstDay = new Date(year, m, 1).getDay();
-    
-    // Calculate if we have overflow days
-    const totalCellsNeeded = firstDay + numDays;
-    const hasOverflow = totalCellsNeeded > 35; // 5 rows × 7 columns
-    
-    // Calculate how many days overflow
-    const overflowCount = hasOverflow ? totalCellsNeeded - 35 : 0;
-    
-    // Create cells array for this month
-    let cells = [];
-    let nextMonthOverflowDays = []; // Store overflow days for next month
-    
-    // Fill with overflow days from previous month if available
-    const emptyStartCells = firstDay;
-    let overflowIndex = 0;
-    
-    for (let i = 0; i < emptyStartCells; i++) {
-      if (overflowDays.length > 0 && overflowIndex < overflowDays.length) {
-        // Display overflow day from previous month
-        cells.push({
-          ...overflowDays[overflowIndex],
-          isOverflow: true,
-          fromPreviousMonth: true
-        });
-        overflowIndex++;
-      } else {
-        // No overflow days (or ran out), use empty cell
-        cells.push(null);
-      }
-    }
-    
-    // Fill with current month days
-    for (let dayNumber = 1; dayNumber <= numDays; dayNumber++) {
-      // Check if this day would overflow
-      const cellPosition = firstDay + dayNumber - 1;
-      
-      if (cellPosition < 35) {
-        // Regular day within the 5×7 grid
-        let dayData = (yearData[year] && yearData[year][m])
-          ? yearData[year][m][dayNumber - 1]
-          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
-        
-        cells.push({ ...dayData, day: dayNumber, month: m });
-      } else {
-        // This day overflows - save it for next month
-        let dayData = (yearData[year] && yearData[year][m])
-          ? yearData[year][m][dayNumber - 1]
-          : { day: dayNumber, muscles: [], volume: 0, exercises: [], duration: null };
-        
-        nextMonthOverflowDays.push({ ...dayData, day: dayNumber, originalMonth: m });
-      }
-    }
-    
-    // Fill remaining cells with null (if needed)
-    while (cells.length < 35) {
-      cells.push(null);
-    }
-    
-    // Save overflow days for next month
-    overflowDays = nextMonthOverflowDays;
-    
-    // Create color gradients for multi-muscle squares
-    const colorScale = d3.scaleOrdinal()
-      .domain(muscleGroups)
-      .range(muscleGroups.map(mg => muscleColors[mg]));
-    
-    const uniqueCombinations = new Set();
-    cells.forEach(cell => {
-      if (cell && cell.muscles && cell.muscles.length > 1) {
-        uniqueCombinations.add(cell.muscles.join('-'));
-      }
-    });
-    uniqueCombinations.forEach(combo => {
-      const muscles = combo.split('-');
-      const gradientId = getGradientId(muscles);
-      const gradient = defs.append("linearGradient")
-        .attr("id", gradientId)
-        .attr("x1", "0%")
-        .attr("y1", "0%")
-        .attr("x2", "0%")
-        .attr("y2", "100%");
-      
-      // We only handle up to 3 distinct muscles for the gradient
-      if (muscles.length === 2) {
-        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "45%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "55%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[1]));
-      } else if (muscles.length === 3) {
-        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
-        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
-      } else if (muscles.length > 3) {
-        // just use the first 3
-        gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
-        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
-      }
-    });
-    
-    const cellsGroup = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-    
-    // Draw each day cell
-    cellsGroup.selectAll("g.cell-wrapper")
-      .data(cells)
-      .join("g")
-        .attr("class", "cell-wrapper")
-        .attr("data-month", d => d && d.isOverflow ? d.originalMonth : m)
-        .attr("transform", (d, i) => {
-          const x = (i % cols) * (cellSize + cellGap);
-          const y = Math.floor(i / cols) * (cellSize + cellGap);
-          return `translate(${x}, ${y})`;
-        })
-        .each(function(d) {
-          if (!d) return;
-          
-          const cell = d3.select(this);
-          
-          // Determine if this is an overflow day from previous month
-          const isOverflow = d.isOverflow && d.fromPreviousMonth;
-          
-          cell.append("rect")
-            .attr("class", "cell-background")
-            .attr("width", cellSize)
-            .attr("height", cellSize)
-            .attr("rx", 3)
-            .attr("ry", 3)
-            .attr("stroke", "#ddd")
-            .attr("stroke-width", 1)
-            .attr("stroke-dasharray", isOverflow ? "4,2" : null) // Wider dashed border for overflow days
-            .attr("fill", () => {
-              const cellDate = new Date(year, d.originalMonth || m, d.day);
-              const now = new Date();
-              if (cellDate > now) return "none"; // future date
-              if (!d.muscles || d.muscles.length === 0) return "#ebedf0"; // no workout
-              if (d.muscles.length === 1) {
-                return colorScale(d.muscles[0]);
-              }
-              return `url(#${getGradientId(d.muscles)})`;
-            });
-          
-          // Day label
-          cell.append("text")
-            .attr("class", "dayLabel")
-            .attr("x", 2)
-            .attr("y", 12)
-            .attr("font-size", "10px")
-            .attr("fill", isOverflow ? "#888" : "#333") // Lighter color for overflow days
-            .text(d.day);
-
-          // Add pointer events for all devices (pointerenter/move/leave)
-          if (d.muscles && d.muscles.length > 0) {
-            addTooltipBehavior(cell, d);
-          }
-        });
-    
-    monthDiv.appendChild(svg.node());
-    chartContainer.appendChild(monthDiv);
-  }
-}
 
 // This is inside the touchstart event handler
 function addTooltipBehavior(cellSelection, dayData) {
@@ -1525,13 +1132,43 @@ function addTooltipBehavior(cellSelection, dayData) {
         overlay.style.right = "0";
         overlay.style.bottom = "0";
         overlay.style.zIndex = "9000";
-        overlay.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
+        overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+        
+        // Add a hint text
+        const hint = document.createElement("div");
+        hint.innerText = "Tap outside to close";
+        hint.style.position = "fixed";
+        hint.style.bottom = "20px";
+        hint.style.left = "0";
+        hint.style.right = "0";
+        hint.style.textAlign = "center";
+        hint.style.color = "white";
+        hint.style.fontSize = "14px";
+        hint.style.padding = "8px";
+        hint.style.width = "150px";
+        hint.style.margin = "0 auto";
+        hint.style.backgroundColor = "rgba(0,0,0,0.5)";
+        hint.style.borderRadius = "8px";
+        hint.style.zIndex = "9001";
+        overlay.appendChild(hint);
+        
         document.body.appendChild(overlay);
         
-        // Add non-dismissing event handler (just prevents interaction)
-        overlay.addEventListener("touchstart", (e) => {
-          e.preventDefault();
+        // Allow tapping outside to dismiss
+        overlay.addEventListener("click", function(e) {
+          if (e.target === overlay || e.target === hint) {
+            hideAllTooltips();
+          }
+        });
+        
+        // Allow zoom gestures to work
+        overlay.addEventListener("touchstart", function(e) {
+          // Only stop propagation, don't prevent default
           e.stopPropagation();
+        });
+        
+        overlay.addEventListener("touchmove", function(e) {
+          // Don't prevent default to allow zooming
         });
       }
       
@@ -1539,21 +1176,15 @@ function addTooltipBehavior(cellSelection, dayData) {
       setTimeout(() => {
         const closeBtn = document.querySelector('.tooltip-close-btn');
         if (closeBtn) {
-          // Remove any existing event listeners
+          // Remove any existing listeners by cloning
           const newBtn = closeBtn.cloneNode(true);
           closeBtn.parentNode.replaceChild(newBtn, closeBtn);
           
-          // Add the new event listener
+          // Add new event listener
           newBtn.addEventListener('click', function(e) {
-            e.preventDefault();
             e.stopPropagation();
+            e.preventDefault();
             hideAllTooltips();
-            
-            // Remove the overlay
-            const overlay = document.getElementById("tooltip-overlay");
-            if (overlay) {
-              document.body.removeChild(overlay);
-            }
           });
         }
       }, 50);
