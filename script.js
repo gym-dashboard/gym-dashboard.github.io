@@ -1586,10 +1586,99 @@ function checkPreviousWeekCompleted() {
   return count >= 4;
 }
 
+
+
 // Helper function to convert week key back to date
 function getDateFromWeekKey(weekKey) {
   const [year, month, day] = weekKey.split('-').map(Number);
   return new Date(year, month, day);
+}
+
+function updateStreakCounter() {
+  const prevWeekCompleted = checkPreviousWeekCompleted();
+  const currentWeekCount = countCurrentWeekWorkouts();
+  const currentWeekCompleted = currentWeekCount >= 4;
+  
+  // Get week identifiers for current and previous week
+  const { startDate } = getCurrentWeekDateRange();
+  const currentWeekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
+  
+  // Get previous week key
+  const prevWeekEnd = new Date(startDate);
+  prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
+  const prevWeekStart = new Date(prevWeekEnd);
+  prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
+  const prevWeekKey = `${prevWeekStart.getFullYear()}-${prevWeekStart.getMonth()}-${prevWeekStart.getDate()}`;
+  
+  // Initialize completedWeeks array if it doesn't exist
+  if (!Array.isArray(weeklyData.completedWeeks)) {
+    weeklyData.completedWeeks = [];
+  }
+  
+  // Handle current week completion
+  if (currentWeekCompleted && !weeklyData.completedWeeks.includes(currentWeekKey)) {
+    weeklyData.completedWeeks.push(currentWeekKey);
+    weeklyData.lastCompletedWeek = currentWeekKey;
+  }
+  
+  // Handle previous week tracking
+  const hadPrevWeekCompleted = weeklyData.completedWeeks.includes(prevWeekKey);
+  if (prevWeekCompleted && !hadPrevWeekCompleted) {
+    // If we just detected that previous week was completed but wasn't in our records
+    weeklyData.completedWeeks.push(prevWeekKey);
+  }
+  
+  // Sort completed weeks chronologically
+  weeklyData.completedWeeks.sort();
+  
+  // Calculate streak by checking for consecutive weeks
+  let streak = 0;
+  const sortedWeeks = [...weeklyData.completedWeeks].sort();
+  
+  // IMPORTANT CHANGE: Only count a streak if the previous week was completed
+  if (sortedWeeks.length > 0 && prevWeekCompleted) {
+    // Start with 1 for the previous week that was just completed
+    streak = 1;
+    
+    // Find the index of the previous week in our sorted array
+    const prevWeekIndex = sortedWeeks.indexOf(prevWeekKey);
+    
+    // If we found the previous week in our completed weeks
+    if (prevWeekIndex > 0) {
+      // Check consecutive weeks working backwards from the previous week
+      for (let i = prevWeekIndex; i > 0; i--) {
+        const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
+        const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
+        
+        // Check if these weeks are consecutive (7 days apart)
+        const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
+        
+        if (dayDiff === 7) {
+          streak++;
+        } else {
+          // Break on first non-consecutive week
+          break;
+        }
+      }
+    }
+  }
+  
+  // Update the streak count
+  weeklyData.weekStreakCount = streak;
+  
+  // Save updated streak data
+  saveStreakData();
+  
+  // Update the streak display with proper pluralization
+  const streakNumber = document.querySelector('.streak-number');
+  const streakSubtitle = document.querySelector('.streak-subtitle');
+  
+  if (streakNumber) {
+    streakNumber.textContent = weeklyData.weekStreakCount;
+  }
+  if (streakSubtitle) {
+    streakSubtitle.textContent = weeklyData.weekStreakCount === 1 ? 'Week in a row' : 'Weeks in a row';
+  }
 }
 
 function updateProgressBar(workoutCount) {
@@ -1919,5 +2008,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const prevYear = currentYear - 1;
   if (!yearData[prevYear]) {
     await loadDataForYear(prevYear);
+  }
+
+  if (window.weightAnalysis && typeof window.weightAnalysis.init === 'function') {
+    window.weightAnalysis.init();
   }
 })();
