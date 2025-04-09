@@ -110,34 +110,36 @@
 
 
     // Add resize observer to redraw chart when container size changes
-    const resizeChart = () => {
-      // Only redraw if we have data and a selected exercise
+    const handleResize = () => {
       if (allExerciseData.length > 0 && selectedExercise) {
+        // Re-render with current data when window resizes
         const dataToRender = getFilteredData();
+        
+        // Update chart
         renderExerciseChart(dataToRender, selectedExercise);
+        
+        // Update controls and legend
+        createRangeControls(rangeControlContainer);
       }
     };
 
-    // Set up resize observer
-    const chartContainerRef = document.querySelector('.exercise-chart-container');
-    if (chartContainerRef) {
-      // Create new ResizeObserver
-      const resizeObserver = new ResizeObserver(entries => {
-        // We wrap the resize in requestAnimationFrame to throttle it
-        window.requestAnimationFrame(() => {
-          resizeChart();
-        });
-      });
-      
-      // Start observing the chart container
-      resizeObserver.observe(chartContainerRef);
-      
-      // Also listen for window resize events
-      window.addEventListener('resize', () => {
-        window.requestAnimationFrame(() => {
-          resizeChart();
-        });
-      });
+    // Add resize listener if not already added
+    if (!window.exerciseTrackerResizeListenerAdded) {
+      window.addEventListener('resize', debounce(handleResize, 250));
+      window.exerciseTrackerResizeListenerAdded = true;
+    }
+
+    // Simple debounce function to limit resize handling
+    function debounce(func, wait) {
+      let timeout;
+      return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(context, args);
+        }, wait);
+      };
     }
   }
   
@@ -298,211 +300,291 @@
   /**
    * Create range control buttons and slider
    */
-  function createRangeControls(container) {
-    // Clear container
-    container.innerHTML = '';
+/**
+ * Create range control buttons and slider with improved layout
+ * This reworks the createRangeControls function to prevent overflow issues
+ */
+function createRangeControls(container) {
+  // Clear container
+  container.innerHTML = '';
+  
+  // Get dimensions
+  const containerWidth = container.clientWidth || 300;
+  const isMobile = window.innerWidth < 500;
+  
+  // Create main wrapper
+  const mainWrapper = document.createElement('div');
+  mainWrapper.className = 'range-controls-and-legend';
+  mainWrapper.style.display = 'flex';
+  mainWrapper.style.flexDirection = isMobile ? 'column' : 'row';
+  mainWrapper.style.justifyContent = 'space-between';
+  mainWrapper.style.alignItems = 'center';
+  mainWrapper.style.width = '100%';
+  mainWrapper.style.gap = isMobile ? '8px' : '15px';
+  mainWrapper.style.marginBottom = '5px';
+  
+  // Create controls wrapper
+  const controlsWrapper = document.createElement('div');
+  controlsWrapper.className = 'range-controls-wrapper';
+  controlsWrapper.style.display = 'flex';
+  controlsWrapper.style.alignItems = 'center';
+  controlsWrapper.style.gap = '8px';
+  controlsWrapper.style.marginBottom = isMobile ? '2px' : '0';
+  controlsWrapper.style.flexShrink = '0';
+  
+  // Create label
+  const label = document.createElement('div');
+  label.textContent = 'Show:';
+  label.style.fontWeight = '500';
+  label.style.fontSize = isMobile ? '0.9rem' : '1rem';
+  label.style.whiteSpace = 'nowrap';
+  controlsWrapper.appendChild(label);
+  
+  // Create button group with more compact styling
+  const buttonGroup = document.createElement('div');
+  buttonGroup.className = 'button-group';
+  buttonGroup.style.display = 'flex';
+  
+  // Calculate available presets
+  const totalWorkouts = allExerciseData.length;
+  const presets = [];
+  
+  if (totalWorkouts >= 5) presets.push(5);
+  if (totalWorkouts >= 10) presets.push(10);
+  // Only add 15 preset on wider screens
+  if (totalWorkouts >= 15 && containerWidth > 400) presets.push(15);
+  
+  // Create preset buttons with more compact styling
+  presets.forEach((count, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-sm ' + (displayCount === count ? 'btn-primary' : 'btn-outline-secondary');
+    button.textContent = `${count}`;  // Just the number to save space
+    button.style.fontSize = isMobile ? '0.75rem' : '0.8rem';
+    button.style.padding = isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem';
+    button.style.marginRight = '2px';
+    button.style.minWidth = isMobile ? '30px' : '35px';
     
-    // Create container for controls
-    const controlsWrapper = document.createElement('div');
-    controlsWrapper.className = 'range-controls-wrapper';
-    controlsWrapper.style.display = 'flex';
-    controlsWrapper.style.flexWrap = 'wrap';
-    controlsWrapper.style.alignItems = 'center';
-    controlsWrapper.style.gap = '10px';
-    controlsWrapper.style.marginBottom = '5px';
-    
-    // Create label
-    const label = document.createElement('div');
-    label.textContent = 'Show:';
-    label.style.fontWeight = '500';
-    label.style.marginRight = '5px';
-    controlsWrapper.appendChild(label);
-    
-    // Create button group
-    const buttonGroup = document.createElement('div');
-    buttonGroup.className = 'button-group';
-    buttonGroup.style.display = 'flex';
-    
-    // Calculate available presets
-    const totalWorkouts = allExerciseData.length;
-    const presets = [];
-    
-    if (totalWorkouts >= 5) presets.push(5);
-    if (totalWorkouts >= 10) presets.push(10);
-    if (totalWorkouts >= 15) presets.push(15);
-    
-    // Create preset buttons
-    presets.forEach((count, index) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn btn-sm ' + (displayCount === count ? 'btn-primary' : 'btn-outline-secondary');
-      button.textContent = `Last ${count}`;
-      button.style.fontSize = '0.8rem';
-      button.style.padding = '0.25rem 0.5rem';
-      button.style.marginRight = '3px';
-      
-      // Adjust border radius based on position
-      if (index === 0) {
-        button.style.borderRadius = '0.25rem 0 0 0.25rem';
-      } else if (index === presets.length - 1) {
-        button.style.borderRadius = '0 0.25rem 0.25rem 0';
-      } else {
-        button.style.borderRadius = '0';
-      }
-      
-      button.addEventListener('click', () => {
-        // Update display count
-        displayCount = count;
-        
-        // Update button styles
-        document.querySelectorAll('.button-group .btn').forEach(btn => {
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-outline-secondary');
-        });
-        button.classList.remove('btn-outline-secondary');
-        button.classList.add('btn-primary');
-        
-        // Update range slider if it exists
-        const slider = document.getElementById('range-slider');
-        if (slider) {
-          slider.value = count;
-          slider.title = `Show last ${count} workouts`;
-        }
-        
-        // Re-render chart with filtered data
-        const dataToRender = getFilteredData();
-        renderExerciseChart(dataToRender, selectedExercise);
-      });
-      
-      buttonGroup.appendChild(button);
-    });
-    
-    // Create "All" button
-    const allButton = document.createElement('button');
-    allButton.type = 'button';
-    allButton.className = 'btn btn-sm ' + (displayCount === null ? 'btn-primary' : 'btn-outline-secondary');
-    allButton.textContent = 'All';
-    allButton.style.fontSize = '0.8rem';
-    allButton.style.padding = '0.25rem 0.5rem';
-    
-    // Adjust border radius for the "All" button
-    if (presets.length === 0) {
-      allButton.style.borderRadius = '0.25rem';
+    // Adjust border radius
+    if (index === 0) {
+      button.style.borderRadius = '0.25rem 0 0 0.25rem';
+    } else if (index === presets.length - 1) {
+      button.style.borderRadius = '0 0.25rem 0.25rem 0';
     } else {
-      allButton.style.borderRadius = '0 0.25rem 0.25rem 0';
+      button.style.borderRadius = '0';
     }
     
-    allButton.addEventListener('click', () => {
-      // Update display count
-      displayCount = null;
+    button.addEventListener('click', () => {
+      displayCount = count;
       
       // Update button styles
       document.querySelectorAll('.button-group .btn').forEach(btn => {
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-outline-secondary');
       });
-      allButton.classList.remove('btn-outline-secondary');
-      allButton.classList.add('btn-primary');
+      button.classList.remove('btn-outline-secondary');
+      button.classList.add('btn-primary');
       
-      // Update range slider
+      // Update range slider if it exists
       const slider = document.getElementById('range-slider');
       if (slider) {
-        slider.value = slider.max;
-        slider.title = 'Show all workouts';
+        slider.value = count;
       }
       
-      // Re-render chart with all data
-      renderExerciseChart(allExerciseData, selectedExercise);
+      // Re-render chart with filtered data
+      const dataToRender = getFilteredData();
+      renderExerciseChart(dataToRender, selectedExercise);
+      
+      // Update legend separately
+      addExerciseLegend(document.querySelector('.legend-container'), containerWidth);
     });
     
-    buttonGroup.appendChild(allButton);
-    controlsWrapper.appendChild(buttonGroup);
+    buttonGroup.appendChild(button);
+  });
+  
+  // Create "All" button
+  const allButton = document.createElement('button');
+  allButton.type = 'button';
+  allButton.className = 'btn btn-sm ' + (displayCount === null ? 'btn-primary' : 'btn-outline-secondary');
+  allButton.textContent = 'All';
+  allButton.style.fontSize = isMobile ? '0.75rem' : '0.8rem';
+  allButton.style.padding = isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem';
+  allButton.style.minWidth = isMobile ? '30px' : '35px';
+  
+  // Adjust border radius
+  if (presets.length === 0) {
+    allButton.style.borderRadius = '0.25rem';
+  } else {
+    allButton.style.borderRadius = '0 0.25rem 0.25rem 0';
+  }
+  
+  allButton.addEventListener('click', () => {
+    displayCount = null;
     
-    // Add slider if there are enough workouts
-    if (totalWorkouts > 5) {
-      const sliderContainer = document.createElement('div');
-      sliderContainer.className = 'slider-container';
-      sliderContainer.style.flex = '1';
-      sliderContainer.style.minWidth = '120px';
-      sliderContainer.style.display = 'flex';
-      sliderContainer.style.alignItems = 'center';
-      sliderContainer.style.marginLeft = '10px';
-      
-      const sliderLabel = document.createElement('span');
-      sliderLabel.textContent = 'Custom:';
-      sliderLabel.style.marginRight = '10px';
-      sliderLabel.style.fontSize = '0.8rem';
-      sliderLabel.style.whiteSpace = 'nowrap';
-      sliderContainer.appendChild(sliderLabel);
-      
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.id = 'range-slider';
-      slider.className = 'form-range';
-      slider.min = Math.min(3, totalWorkouts);
-      slider.max = totalWorkouts;
-      slider.value = displayCount || totalWorkouts;
-      slider.style.flex = '1';
-      
-      // Event listener for slider
-      slider.addEventListener('input', (event) => {
-        const count = parseInt(event.target.value);
-        displayCount = count < totalWorkouts ? count : null;
-        
-        // Update button styles - deselect all buttons
-        document.querySelectorAll('.button-group .btn').forEach(btn => {
-          btn.classList.remove('btn-primary');
-          btn.classList.add('btn-outline-secondary');
-        });
-        
-        // Highlight the corresponding preset button if value matches
-        if (displayCount === 5 || displayCount === 10 || displayCount === 15) {
-          const matchingButton = Array.from(document.querySelectorAll('.button-group .btn'))
-            .find(btn => btn.textContent === `Last ${displayCount}`);
-          if (matchingButton) {
-            matchingButton.classList.remove('btn-outline-secondary');
-            matchingButton.classList.add('btn-primary');
-          }
-        } else if (displayCount === null) {
-          // Highlight the "All" button
-          const allButton = Array.from(document.querySelectorAll('.button-group .btn'))
-            .find(btn => btn.textContent === 'All');
-          if (allButton) {
-            allButton.classList.remove('btn-outline-secondary');
-            allButton.classList.add('btn-primary');
-          }
-        }
-        
-        // Update value display
-        const valueDisplay = document.getElementById('slider-value');
-        if (valueDisplay) {
-          valueDisplay.textContent = displayCount ? displayCount : 'All';
-        }
-        
-        // Re-render chart with filtered data
-        const dataToRender = getFilteredData();
-        renderExerciseChart(dataToRender, selectedExercise);
-      });
-      
-      sliderContainer.appendChild(slider);
-      
-      // Add value display
-      const valueDisplay = document.createElement('span');
-      valueDisplay.id = 'slider-value';
-      valueDisplay.textContent = displayCount ? displayCount : 'All';
-      valueDisplay.style.marginLeft = '10px';
-      valueDisplay.style.fontSize = '0.8rem';
-      valueDisplay.style.fontWeight = 'bold';
-      valueDisplay.style.minWidth = '25px';
-      valueDisplay.style.textAlign = 'center';
-      sliderContainer.appendChild(valueDisplay);
-      
-      controlsWrapper.appendChild(sliderContainer);
+    // Update button styles
+    document.querySelectorAll('.button-group .btn').forEach(btn => {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-outline-secondary');
+    });
+    allButton.classList.remove('btn-outline-secondary');
+    allButton.classList.add('btn-primary');
+    
+    // Update range slider
+    const slider = document.getElementById('range-slider');
+    if (slider) {
+      slider.value = slider.max;
     }
     
-    // Add to container
-    container.appendChild(controlsWrapper);
+    // Re-render chart with all data
+    renderExerciseChart(allExerciseData, selectedExercise);
+    
+    // Update legend separately
+    addExerciseLegend(document.querySelector('.legend-container'), containerWidth);
+  });
+  
+  buttonGroup.appendChild(allButton);
+  controlsWrapper.appendChild(buttonGroup);
+  
+  // Add slider only on wider screens with enough workouts
+  if (containerWidth > 400 && totalWorkouts > 5) {
+    const sliderContainer = document.createElement('div');
+    sliderContainer.className = 'slider-container';
+    sliderContainer.style.flex = '1';
+    sliderContainer.style.display = 'flex';
+    sliderContainer.style.alignItems = 'center';
+    sliderContainer.style.marginLeft = '10px';
+    sliderContainer.style.maxWidth = '120px';
+    
+    // Slider input
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.id = 'range-slider';
+    slider.className = 'form-range';
+    slider.min = Math.min(3, totalWorkouts);
+    slider.max = totalWorkouts;
+    slider.value = displayCount || totalWorkouts;
+    slider.style.flex = '1';
+    
+    slider.addEventListener('input', (event) => {
+      const count = parseInt(event.target.value);
+      displayCount = count < totalWorkouts ? count : null;
+      
+      // Update button styles
+      document.querySelectorAll('.button-group .btn').forEach(btn => {
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-outline-secondary');
+      });
+      
+      // Highlight matching button
+      if (displayCount === 5 || displayCount === 10 || displayCount === 15) {
+        const matchingButton = Array.from(document.querySelectorAll('.button-group .btn'))
+          .find(btn => btn.textContent === `${displayCount}`);
+        if (matchingButton) {
+          matchingButton.classList.remove('btn-outline-secondary');
+          matchingButton.classList.add('btn-primary');
+        }
+      } else if (displayCount === null) {
+        // Highlight "All" button
+        const allButton = Array.from(document.querySelectorAll('.button-group .btn'))
+          .find(btn => btn.textContent === 'All');
+        if (allButton) {
+          allButton.classList.remove('btn-outline-secondary');
+          allButton.classList.add('btn-primary');
+        }
+      }
+      
+      // Re-render chart with filtered data
+      const dataToRender = getFilteredData();
+      renderExerciseChart(dataToRender, selectedExercise);
+      
+      // Update legend separately
+      addExerciseLegend(document.querySelector('.legend-container'), containerWidth);
+    });
+    
+    sliderContainer.appendChild(slider);
+    controlsWrapper.appendChild(sliderContainer);
   }
+  
+  // Add controls to main wrapper
+  mainWrapper.appendChild(controlsWrapper);
+  
+  // Create legend container
+  const legendContainer = document.createElement('div');
+  legendContainer.className = 'legend-container';
+  legendContainer.style.display = 'flex';
+  legendContainer.style.alignItems = 'center';
+  legendContainer.style.justifyContent = 'center';
+  mainWrapper.appendChild(legendContainer);
+  
+  // Add main wrapper to container
+  container.appendChild(mainWrapper);
+  
+  // Add the legend
+  addExerciseLegend(legendContainer, containerWidth);
+}
+
+/**
+ * Add a compact legend that won't overflow
+ */
+function addExerciseLegend(container, containerWidth) {
+  // Clear container first
+  container.innerHTML = '';
+  
+  const isMobile = window.innerWidth < 500;
+  
+  // Create more compact legend
+  const legend = document.createElement('div');
+  legend.style.display = 'flex';
+  legend.style.alignItems = 'center';
+  legend.style.justifyContent = 'center';
+  legend.style.gap = isMobile ? '10px' : '15px';
+  legend.style.flexShrink = '0';
+  
+  // Create line legend item
+  const lineItem = document.createElement('div');
+  lineItem.style.display = 'flex';
+  lineItem.style.alignItems = 'center';
+  lineItem.style.gap = '3px';
+  
+  const lineSwatch = document.createElement('span');
+  lineSwatch.style.display = 'inline-block';
+  lineSwatch.style.width = isMobile ? '12px' : '15px';
+  lineSwatch.style.height = '2px';
+  lineSwatch.style.backgroundColor = colors.primary;
+  
+  const lineLabel = document.createElement('span');
+  lineLabel.textContent = 'Avg';
+  lineLabel.style.fontSize = isMobile ? '0.7rem' : '0.8rem';
+  lineLabel.style.color = '#666';
+  
+  lineItem.appendChild(lineSwatch);
+  lineItem.appendChild(lineLabel);
+  legend.appendChild(lineItem);
+  
+  // Create range legend item
+  const rangeItem = document.createElement('div');
+  rangeItem.style.display = 'flex';
+  rangeItem.style.alignItems = 'center';
+  rangeItem.style.gap = '3px';
+  
+  const rangeSwatch = document.createElement('span');
+  rangeSwatch.style.display = 'inline-block';
+  rangeSwatch.style.width = isMobile ? '12px' : '15px';
+  rangeSwatch.style.height = isMobile ? '6px' : '8px';
+  rangeSwatch.style.backgroundColor = colors.primaryLight;
+  rangeSwatch.style.opacity = '0.3';
+  
+  const rangeLabel = document.createElement('span');
+  rangeLabel.textContent = 'Range';
+  rangeLabel.style.fontSize = isMobile ? '0.7rem' : '0.8rem';
+  rangeLabel.style.color = '#666';
+  
+  rangeItem.appendChild(rangeSwatch);
+  rangeItem.appendChild(rangeLabel);
+  legend.appendChild(rangeItem);
+  
+  container.appendChild(legend);
+}
   
   /**
    * Update range controls when data changes
@@ -639,6 +721,10 @@
  * Render the exercise progression chart with error bands
  * Optimized for better space utilization on mobile screens
  */
+/**
+ * Render the exercise progression chart with error bands
+ * Fully responsive solution with layout detection
+ */
 function renderExerciseChart(exerciseData, exerciseName) {
   // Get the container for the visualization
   let chartContainer = document.querySelector('.exercise-chart-container');
@@ -646,11 +732,9 @@ function renderExerciseChart(exerciseData, exerciseName) {
     chartContainer = document.createElement('div');
     chartContainer.className = 'exercise-chart-container';
     chartContainer.style.width = '100%';
-    chartContainer.style.height = 'auto'; // Let it size based on content
-    chartContainer.style.minHeight = '250px'; // Increased minimum height
     chartContainer.style.position = 'relative';
-    chartContainer.style.margin = '10px 0 5px 0'; // Reduced margins all around
-    chartContainer.style.boxSizing = 'border-box'; // Ensure padding is included in height
+    chartContainer.style.margin = '10px 0 0 0'; // Remove all horizontal margins
+    chartContainer.style.boxSizing = 'border-box';
     secondChartArea.appendChild(chartContainer);
   }
   
@@ -665,44 +749,43 @@ function renderExerciseChart(exerciseData, exerciseName) {
   // Sort data by date
   exerciseData.sort((a, b) => a.date - b.date);
   
-  // Get container width
+  // Get container dimensions
   const containerWidth = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
-  const isMobile = containerWidth < 500;
+  const isMobile = window.innerWidth < 500;
   
-  // Calculate dynamic aspect ratio - MAKE TALLER ON MOBILE
+  // Detect layout mode (side-by-side vs stacked)
+  const isStacked = window.innerWidth < 992; // Bootstrap's lg breakpoint
+  
+  // Calculate dynamic aspect ratio based on layout
   let aspectRatio;
-  if (containerWidth < 400) {
-    // Small screens: much taller (1.8:1 ratio) instead of previous 2.5:1
-    aspectRatio = 1.8;
-  } else if (containerWidth < 768) {
-    // Medium screens: gradually shift from 1.8:1 to 2:1
-    const factor = (containerWidth - 400) / (768 - 400);
-    aspectRatio = 1.8 + (factor * 0.2); // Transition from 1.8 to 2
+  if (isStacked) {
+    // Stacked layout - can be taller
+    aspectRatio = containerWidth < 400 ? 1.5 : 1.8;
   } else {
-    // Large screens: 2:1 ratio
-    aspectRatio = 2;
+    // Side-by-side layout - must be shorter
+    aspectRatio = containerWidth < 400 ? 2.2 : 2.5;
   }
   
-  // Calculate dimensions - USE MORE WIDTH
-  const width = containerWidth * 0.99; // Use 99% of container width (nearly full width)
+  // Calculate dimensions
+  const width = containerWidth; // Use 100% of container width
   
-  // Calculate height with updated aspect ratio
+  // Calculate height with layout-aware constraints
   let baseHeight = width / aspectRatio;
   
-  // Increased minimum height for mobile
-  const minHeight = isMobile ? 200 : 170;
-  const maxHeight = isMobile ? 350 : 280;
+  // Adjust min/max height based on layout
+  const minHeight = isStacked ? 220 : 170;
+  const maxHeight = isStacked ? 320 : 240;
   const height = Math.max(minHeight, Math.min(maxHeight, baseHeight));
   
   // Apply the height to the container
-  chartContainer.style.height = `${height + 5}px`; // Reduced padding from 10px to 5px
+  chartContainer.style.height = `${height + 5}px`;
   
-  // Reduced margins for mobile
+  // Optimized margins for maximum chart space
   const dynamicMargin = {
-    top: isMobile ? 20 : 30,
-    right: isMobile ? 10 : 20,  // Reduced right margin on mobile
-    bottom: isMobile ? 35 : 50,
-    left: isMobile ? 40 : 50    // Reduced left margin on mobile
+    top: 20,
+    right: isMobile ? 5 : 15,
+    bottom: isMobile ? 30 : 40,
+    left: isMobile ? 35 : 45
   };
   
   const innerWidth = width - dynamicMargin.left - dynamicMargin.right;
@@ -726,7 +809,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .range([0, innerWidth])
     .nice();
   
-  // Process data to calculate stats for each workout date
+  // Process data
   const processedData = exerciseData.map(workout => {
     const weights = workout.sets.map(set => set.weight);
     
@@ -767,12 +850,12 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .range([innerHeight, 0])
     .nice();
   
-  // Add grid lines
+  // Add grid lines - fewer on mobile
   g.append("g")
     .attr("class", "grid-lines-x")
     .attr("transform", `translate(0,${innerHeight})`)
     .call(d3.axisBottom(x)
-      .ticks(Math.min(isMobile ? 5 : 6, exerciseData.length))
+      .ticks(Math.min(isMobile ? 4 : 6, exerciseData.length))
       .tickSize(-innerHeight)
       .tickFormat("")
     )
@@ -784,7 +867,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
   g.append("g")
     .attr("class", "grid-lines-y")
     .call(d3.axisLeft(y)
-      .ticks(5)
+      .ticks(isMobile ? 4 : 5)
       .tickSize(-innerWidth)
       .tickFormat("")
     )
@@ -793,7 +876,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .attr("stroke", colors.gridLines)
       .attr("stroke-opacity", 0.5));
   
-  // Add x-axis with mobile optimizations
+  // Add x-axis with ultra-compact formatting for mobile
   const xAxis = g.append("g")
     .attr("class", "x-axis")
     .attr("transform", `translate(0,${innerHeight})`)
@@ -801,12 +884,12 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .ticks(Math.min(isMobile ? 4 : 6, exerciseData.length))
       .tickSizeOuter(0)
       .tickFormat(d => {
-        const month = d.getMonth();
         const day = d.getDate();
-        // Very compact format for mobile
+        // Super compact for mobile
         if (isMobile) {
-          return `M ${day}`;  // Just "M 23" instead of "Mar 23"
+          return `${day}`;  // Just day number
         }
+        const month = d.getMonth();
         return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]} ${day}`;
       })
@@ -815,27 +898,27 @@ function renderExerciseChart(exerciseData, exerciseName) {
   // Style x-axis
   xAxis.select(".domain").attr("stroke", "#ccc");
   
-  // Mobile-optimized x-axis labels
+  // Optimize x-axis labels
   xAxis.selectAll("text")
-    .attr("transform", isMobile ? "rotate(-35)" : "rotate(-45)")
+    .attr("transform", isMobile ? "rotate(-30)" : "rotate(-40)")
     .attr("text-anchor", "end")
-    .attr("dx", isMobile ? "-0.3em" : "-0.8em")
+    .attr("dx", isMobile ? "-0.2em" : "-0.5em")
     .attr("dy", isMobile ? "0.1em" : "0.15em")
-    .style("font-size", isMobile ? "9px" : "10px");
+    .style("font-size", isMobile ? "8px" : "9px");
   
   // Add y-axis
   const yAxis = g.append("g")
     .attr("class", "y-axis")
     .call(d3.axisLeft(y)
-      .ticks(5)
+      .ticks(isMobile ? 4 : 5)
       .tickSizeOuter(0)
-      .tickFormat(d => isMobile ? `${d}` : `${d}kg`) // Shorter labels on mobile
+      .tickFormat(d => isMobile ? `${d}` : `${d}kg`)
     );
   
   // Style y-axis
   yAxis.select(".domain").attr("stroke", "#ccc");
   yAxis.selectAll("text")
-    .style("font-size", isMobile ? "9px" : "10px");
+    .style("font-size", isMobile ? "8px" : "9px");
   
   // Create tooltip
   let tooltip = d3.select("body").select(".exercise-tooltip");
@@ -846,9 +929,9 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .style("visibility", "hidden")
       .style("background-color", "rgba(50, 50, 50, 0.9)")
       .style("color", "white")
-      .style("padding", "10px")
+      .style("padding", "8px")
       .style("border-radius", "6px")
-      .style("font-size", "12px")
+      .style("font-size", "11px")
       .style("pointer-events", "none")
       .style("z-index", 1000)
       .style("box-shadow", "0 4px 8px rgba(0,0,0,0.2)");
@@ -882,8 +965,8 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("stroke-width", isMobile ? 2 : 2.5)
     .attr("d", lineGenerator);
   
-  // Mobile-optimized point sizes
-  const avgPointRadius = isMobile ? 4 : 5;
+  // Smaller points on mobile
+  const avgPointRadius = isMobile ? 3.5 : 4.5;
   const minMaxPointRadius = isMobile ? 2 : 3;
   
   // Add data points
@@ -900,12 +983,11 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .attr("cursor", "pointer")
       .on("mouseover", function(event) {
         d3.select(this)
-          .attr("r", avgPointRadius + 2)
-          .attr("stroke-width", 2);
+          .attr("r", avgPointRadius + 1.5)
+          .attr("stroke-width", 1.8);
         
         // Format date for display
         const dateStr = dayData.date.toLocaleDateString('en-US', {
-          year: 'numeric',
           month: 'short',
           day: 'numeric'
         });
@@ -913,18 +995,18 @@ function renderExerciseChart(exerciseData, exerciseName) {
         // Get the proper exercise name
         const displayExerciseName = selectedExercise || exerciseName || "Exercise";
         
-        // Build tooltip content - simplified for mobile
+        // Build ultra-compact tooltip content for mobile
         let tooltipContent = `
-          <div style="font-weight:bold; margin-bottom:4px; font-size:13px;">${displayExerciseName}</div>
-          <div style="margin-bottom:2px; font-size:12px;">${dateStr}</div>
-          <div style="font-size:12px; margin-bottom:3px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+          <div style="font-weight:bold; margin-bottom:2px; font-size:12px;">${displayExerciseName}</div>
+          <div style="margin-bottom:1px; font-size:11px;">${dateStr}</div>
+          <div style="font-size:11px; margin-bottom:2px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1px;">
               <span>Avg:</span>
-              <span style="font-weight:bold;">${dayData.weightedAvg.toFixed(1)} kg</span>
+              <span style="font-weight:bold;">${dayData.weightedAvg.toFixed(1)}kg</span>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1px;">
               <span>Range:</span>
-              <span>${dayData.minWeight}kg - ${dayData.maxWeight}kg</span>
+              <span>${dayData.minWeight}-${dayData.maxWeight}kg</span>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span>Sets:</span>
@@ -933,47 +1015,17 @@ function renderExerciseChart(exerciseData, exerciseName) {
           </div>
         `;
         
-        // Only show detailed set info if we have fewer than 8 sets
-        // to prevent the tooltip from becoming too large on mobile
-        if (dayData.sets.length < 8) {
-          tooltipContent += `<hr style="margin:3px 0; border-color:rgba(255,255,255,0.2);">
-            <div style="max-height:120px; overflow-y:auto; margin-bottom:3px;">`;
-          
-          // Add each set
-          dayData.sets.forEach((set, i) => {
-            tooltipContent += `
-              <div style="margin-bottom:2px; font-size:10px;">
-                <span style="color:#aaa;">Set ${i+1}:</span> 
-                <span style="font-weight:bold;">${set.weight}kg</span> × 
-                <span style="font-weight:bold;">${set.reps}</span> 
-                (${set.effort})
-              </div>
-            `;
-          });
-          
-          tooltipContent += `</div>`;
-        }
-        
-        // Add simplified footer
-        const muscleGroup = dayData.sets[0]?.muscleGroup || 'N/A';
-        
-        tooltipContent += `
-          <div style="font-size:9px; color:#aaa; margin-top:2px; text-align:right;">
-            ${muscleGroup}
-          </div>
-        `;
-        
         tooltip
           .style("visibility", "visible")
           .html(tooltipContent);
       })
       .on("mousemove", function(event) {
-        // Position tooltip - adjust for mobile
-        const tooltipWidth = 150; // Approximate tooltip width
+        // Smart tooltip positioning
+        const tooltipWidth = 150;
         const windowWidth = window.innerWidth;
         let xPosition = event.pageX + 10;
         
-        // Check if tooltip would go off the right edge of the screen
+        // Check if tooltip would go off the right edge
         if (xPosition + tooltipWidth > windowWidth) {
           xPosition = event.pageX - tooltipWidth - 10;
         }
@@ -1000,7 +1052,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
         .attr("fill", colors.primary)
         .attr("fill-opacity", 0.5)
         .attr("stroke", "white")
-        .attr("stroke-width", 1);
+        .attr("stroke-width", 0.8);
     }
     
     if (dayData.maxWeight !== dayData.weightedAvg) {
@@ -1012,11 +1064,11 @@ function renderExerciseChart(exerciseData, exerciseName) {
         .attr("fill", colors.primary)
         .attr("fill-opacity", 0.5)
         .attr("stroke", "white")
-        .attr("stroke-width", 1);
+        .attr("stroke-width", 0.8);
     }
   });
   
-  // Add title with count info - smaller and more compact
+  // Compact title
   const titleText = displayCount ? 
     `${exerciseName || selectedExercise} - Last ${displayCount}` : 
     `${exerciseName || selectedExercise} - All (${exerciseData.length})`;
@@ -1026,15 +1078,14 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("x", innerWidth / 2)
     .attr("y", -dynamicMargin.top / 2)
     .attr("text-anchor", "middle")
-    .attr("font-size", isMobile ? "12px" : "14px")
+    .attr("font-size", isMobile ? "11px" : "13px")
     .attr("font-weight", "bold")
     .text(titleText);
   
   // Add to DOM
   chartContainer.appendChild(svg.node());
   
-  // Add a legend with mobile optimizations
-  addExerciseLegend(chartContainer, containerWidth);
+  // Don't add the legend here - will be added separately
 }
 
 
