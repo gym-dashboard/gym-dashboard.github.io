@@ -1264,3 +1264,82 @@ svg {
       display: none !important;
     }
   }
+
+
+
+
+/* Add these styles to style.css */
+
+/* Title dropdown styling */
+.title-dropdown-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+.visible-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #333;
+  user-select: none;
+}
+
+.title-text {
+  margin-right: 8px;
+}
+
+.dropdown-arrow {
+  font-size: 0.8em;
+  color: #666;
+  transition: transform 0.2s ease;
+}
+
+.title-dropdown-container:hover .dropdown-arrow {
+  color: #546bce;
+}
+
+.title-dropdown-container:hover .title-text {
+  color: #546bce;
+}
+
+.hidden-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Optional animation when dropdown is open */
+.hidden-select:focus + .visible-title .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Optional active/open state styling */
+.title-dropdown-container.active .visible-title {
+  color: #546bce;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .visible-title {
+    font-size: 1.2rem;
+  }
+  
+  .dropdown-arrow {
+    font-size: 0.7em;
+  }
+}
+
+@media (max-width: 480px) {
+  .visible-title {
+    font-size: 1.1rem;
+  }
+}

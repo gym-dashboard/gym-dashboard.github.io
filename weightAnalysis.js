@@ -1185,3 +1185,527 @@ function addExerciseLegend(container, containerWidth) {
   // Start the initialization process
   checkAndInitialize();
 })();
+
+
+
+/**
+ * Enhanced exercise dropdown organized in a single column layout
+ * with color-coded muscle groups and clear dividers
+ */
+function createSingleColumnExerciseDropdown() {
+  // Your defined muscle groups
+  const muscleGroups = ["Chest", "Triceps", "Legs", "Shoulders", "Back", "Biceps"];
+  const muscleDisplayNames = {
+    "Chest": "Chest",
+    "Triceps": "Triceps",
+    "Legs": "Legs",
+    "Shoulders": "Shoulders",
+    "Back": "Back",
+    "Biceps": "Biceps",
+  };
+  
+  const muscleColors = {
+    "Chest": "#c8ceee",
+    "Triceps": "#f9c5c7",
+    "Legs": "#f7e5b7",
+    "Shoulders": "#ffc697",
+    "Back": "#cbd3ad",
+    "Biceps": "#c6e2e7",
+  };
+
+  // Find necessary elements
+  const titleElement = document.querySelector('#secondPlot .content-header h3.content-title');
+  const existingDropdown = document.getElementById('exercise-select');
+  
+  // Exit if elements not found
+  if (!titleElement || !existingDropdown) {
+    console.error('Required elements not found for enhanced dropdown');
+    return;
+  }
+  
+  // Get current exercise options from the existing dropdown
+  const exerciseOptions = Array.from(existingDropdown.options).map(option => ({
+    value: option.value,
+    text: option.text,
+    muscleGroup: null // Will be populated later
+  }));
+  
+  // Get currently selected exercise
+  const selectedExercise = existingDropdown.value;
+  const selectedText = existingDropdown.options[existingDropdown.selectedIndex].text;
+  
+  // Function to fetch the muscle group for an exercise from the workout JSON
+  async function fetchExerciseMuscleGroups() {
+    // This will store all fetched exercise data
+    let exerciseData = {};
+    
+    // Get current year - for file path construction
+    const currentYear = new Date().getFullYear();
+    
+    try {
+      // Iterate through all days of the current year
+      const start = new Date(currentYear, 0, 1);
+      const end = new Date(); // Today
+      
+      for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+        const dd = String(dt.getDate()).padStart(2, "0");
+        const mm = String(dt.getMonth() + 1).padStart(2, "0");
+        const yyyy = dt.getFullYear();
+        const fileName = `data/${dd}-${mm}-${yyyy}.json`;
+        
+        try {
+          // Fetch the workout data for this day
+          const response = await fetch(fileName);
+          
+          // Skip days with no data
+          if (!response.ok) continue;
+          
+          const json = await response.json();
+          
+          // Skip if no workout or invalid format
+          if (!json || !json.workout || !Array.isArray(json.workout)) {
+            continue;
+          }
+          
+          // Process each exercise in the workout
+          json.workout.forEach(set => {
+            if (set.Exercise && set['Muscle-Group']) {
+              const exerciseName = set.Exercise;
+              const muscleGroup = set['Muscle-Group'];
+              
+              // Store the relationship
+              exerciseData[exerciseName] = muscleGroup;
+            }
+          });
+          
+        } catch (error) {
+          // Just skip any files that don't exist or can't be parsed
+          continue;
+        }
+      }
+      
+      return exerciseData;
+    } catch (error) {
+      console.error('Error fetching exercise muscle groups:', error);
+      return {};
+    }
+  }
+  
+  // Function to handle dropdown creation after we have the muscle group data
+  function createDropdownWithMuscleGroups(exerciseToMuscleGroup) {
+    // Map muscle groups to exercises
+    const muscleGroupsData = {};
+    muscleGroups.forEach(group => {
+      muscleGroupsData[group] = {
+        name: muscleDisplayNames[group] || group,
+        color: muscleColors[group] || "#f8f9fa",
+        exercises: []
+      };
+    });
+    
+    // Organize exercises by muscle group
+    exerciseOptions.forEach(exercise => {
+      // Get muscle group from our fetched data
+      const muscleGroup = exerciseToMuscleGroup[exercise.text] || null;
+      exercise.muscleGroup = muscleGroup;
+      
+      // Add to the correct muscle group, or "Chest" as default if unknown
+      if (muscleGroup && muscleGroupsData[muscleGroup]) {
+        muscleGroupsData[muscleGroup].exercises.push(exercise);
+      } else {
+        // If no matching muscle group, add to default group
+        muscleGroupsData[muscleGroups[0]].exercises.push(exercise);
+      }
+    });
+    
+    // Create a new select element that will be hidden but functional
+    const select = document.createElement('select');
+    select.id = 'title-exercise-select';
+    select.className = 'hidden-select';
+    
+    // Add exercise options to the new select
+    exerciseOptions.forEach(option => {
+      const optionElement = document.createElement('option');
+      optionElement.value = option.value;
+      optionElement.textContent = option.text;
+      if (option.value === selectedExercise) {
+        optionElement.selected = true;
+      }
+      select.appendChild(optionElement);
+    });
+    
+    // Create the dropdown container
+    const dropdownContainer = document.createElement('div');
+    dropdownContainer.className = 'title-dropdown-container';
+    
+    // Create the visible title with arrow
+    const visibleTitle = document.createElement('div');
+    visibleTitle.className = 'visible-title';
+    visibleTitle.innerHTML = `
+      <span class="title-text">${selectedText}</span>
+      <span class="dropdown-arrow">▾</span>
+    `;
+    
+    // Create the custom dropdown menu (initially hidden)
+    const customDropdown = document.createElement('div');
+    customDropdown.className = 'custom-dropdown-menu';
+    customDropdown.style.display = 'none';
+    
+    // Create the single column layout
+    let dropdownHTML = '<div class="muscle-group-list">';
+    
+    // Add each muscle group section
+    muscleGroups.forEach(groupKey => {
+      const group = muscleGroupsData[groupKey];
+      
+      // Only add groups that have exercises
+      if (group.exercises.length > 0) {
+        dropdownHTML += `
+          <div class="muscle-group-section">
+            <div class="muscle-group-header" style="background-color: ${group.color};">
+              ${group.name}
+            </div>
+            <div class="exercise-list" style="background-color: ${group.color}20;">
+        `;
+        
+        // Add exercises for this muscle group
+        group.exercises.forEach(exercise => {
+          const isSelected = exercise.value === selectedExercise;
+          dropdownHTML += `
+            <div class="exercise-item ${isSelected ? 'selected' : ''}" data-value="${exercise.value}">
+              ${exercise.text}
+            </div>
+          `;
+        });
+        
+        dropdownHTML += `
+            </div>
+          </div>
+        `;
+      }
+    });
+    
+    dropdownHTML += '</div>';
+    customDropdown.innerHTML = dropdownHTML;
+    
+    // Function to toggle dropdown visibility
+    const toggleDropdown = () => {
+      const isVisible = customDropdown.style.display === 'block';
+      customDropdown.style.display = isVisible ? 'none' : 'block';
+      
+      // Toggle active class for styling
+      if (isVisible) {
+        dropdownContainer.classList.remove('active');
+      } else {
+        dropdownContainer.classList.add('active');
+      }
+    };
+    
+    // Handle click on the visible title
+    visibleTitle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+    
+    // Handle click on exercise items in custom dropdown
+    customDropdown.addEventListener('click', (e) => {
+      const exerciseItem = e.target.closest('.exercise-item');
+      if (exerciseItem) {
+        const value = exerciseItem.dataset.value;
+        
+        // Find the text for this value
+        const option = exerciseOptions.find(opt => opt.value === value);
+        if (option) {
+          // Update visible title
+          visibleTitle.querySelector('.title-text').textContent = option.text;
+          
+          // Update hidden select
+          select.value = value;
+          
+          // Sync with the original exercise dropdown and trigger change
+          existingDropdown.value = value;
+          existingDropdown.dispatchEvent(new Event('change'));
+          
+          // Update selected state in dropdown
+          customDropdown.querySelectorAll('.exercise-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.value === value);
+          });
+          
+          // Hide dropdown
+          toggleDropdown();
+        }
+      }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      if (customDropdown.style.display === 'block') {
+        customDropdown.style.display = 'none';
+        dropdownContainer.classList.remove('active');
+      }
+    });
+    
+    // Prevent closing when clicking inside the dropdown
+    customDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    
+    // Add elements to the container
+    dropdownContainer.appendChild(visibleTitle);
+    dropdownContainer.appendChild(select);
+    dropdownContainer.appendChild(customDropdown);
+    
+    // Replace the original title with our dropdown container
+    titleElement.parentNode.replaceChild(dropdownContainer, titleElement);
+    
+    // Hide the original exercise selector since it's now in the title
+    const exerciseSelectorContainer = existingDropdown.closest('.exercise-selector');
+    if (exerciseSelectorContainer) {
+      exerciseSelectorContainer.style.display = 'none';
+    }
+    
+    // Add the necessary CSS
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      /* Base dropdown container */
+      .title-dropdown-container {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+        z-index: 1000;
+      }
+      
+      /* Visible title area */
+      .visible-title {
+        display: flex;
+        align-items: center;
+        font-size: 1.4rem;
+        font-weight: 500;
+        color: #333;
+        user-select: none;
+        transition: color 0.2s ease;
+      }
+      
+      .title-text {
+        margin-right: 8px;
+      }
+      
+      .dropdown-arrow {
+        font-size: 0.8em;
+        color: #666;
+        transition: transform 0.2s ease, color 0.2s ease;
+      }
+      
+      /* Hover effects */
+      .title-dropdown-container:hover .dropdown-arrow,
+      .title-dropdown-container.active .dropdown-arrow {
+        color: #546bce;
+      }
+      
+      .title-dropdown-container:hover .title-text,
+      .title-dropdown-container.active .title-text {
+        color: #546bce;
+      }
+      
+      /* Active state (dropdown open) */
+      .title-dropdown-container.active .dropdown-arrow {
+        transform: rotate(180deg);
+      }
+      
+      /* Hidden select element */
+      .hidden-select {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: -1; /* Hide it behind the visible title */
+      }
+      
+      /* Custom dropdown menu */
+      .custom-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1001;
+        margin-top: 8px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        width: 300px;
+        max-width: 90vw;
+        max-height: 450px;
+        overflow-y: auto;
+        padding: 0;
+        border: 1px solid #e6e6e6;
+      }
+      
+      /* Single column layout container */
+      .muscle-group-list {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      /* Individual muscle group section */
+      .muscle-group-section {
+        width: 100%;
+        margin-bottom: 1px;
+      }
+      
+      /* Muscle group header */
+      .muscle-group-header {
+        font-weight: 600;
+        color: #333;
+        padding: 10px 15px;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+      
+      /* Exercise list container */
+      .exercise-list {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      /* Individual exercise item */
+      .exercise-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.15s ease;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      }
+      
+      .exercise-item:last-child {
+        border-bottom: none;
+      }
+      
+      .exercise-item:hover {
+        background-color: rgba(255, 255, 255, 0.7);
+      }
+      
+      .exercise-item.selected {
+        background-color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+      }
+      
+      /* Small screen adjustments */
+      @media (max-width: 576px) {
+        .custom-dropdown-menu {
+          width: 250px;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+        
+        .muscle-group-header {
+          font-size: 0.9rem;
+          padding: 8px 12px;
+        }
+        
+        .exercise-item {
+          font-size: 0.85rem;
+          padding: 8px 12px;
+        }
+      }
+      
+      /* Animation when dropdown appears */
+      @keyframes dropdownFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .custom-dropdown-menu {
+        animation: dropdownFadeIn 0.2s ease;
+      }
+      
+      /* Scrollbar styling */
+      .custom-dropdown-menu::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .custom-dropdown-menu::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      
+      .custom-dropdown-menu::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+      }
+      
+      .custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+    `;
+    
+    document.head.appendChild(styleElement);
+  }
+  
+  // First, fetch the muscle group data for each exercise
+  fetchExerciseMuscleGroups().then(exerciseToMuscleGroup => {
+    // Now create the dropdown with the correct muscle group mapping
+    createDropdownWithMuscleGroups(exerciseToMuscleGroup);
+  }).catch(error => {
+    console.error('Error creating dropdown:', error);
+    // Fallback: create dropdown with empty mappings
+    createDropdownWithMuscleGroups({});
+  });
+}
+
+// Create a MutationObserver to watch for the creation of the exercise dropdown
+const observer = new MutationObserver(function(mutations) {
+  // Check each mutation
+  for (const mutation of mutations) {
+    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+      // Check if the exercise-select has been created
+      if (document.getElementById('exercise-select')) {
+        // Exercise dropdown exists, convert the title
+        createSingleColumnExerciseDropdown();
+        // Stop observing once we've made the conversion
+        observer.disconnect();
+        break;
+      }
+    }
+  }
+});
+
+// Define a function that starts observing when the DOM is ready
+function startObserving() {
+  const secondChartArea = document.getElementById('secondChartArea');
+  if (secondChartArea) {
+    observer.observe(secondChartArea.parentNode, { childList: true, subtree: true });
+    console.log('Observing for exercise dropdown creation');
+    
+    // Also check immediately in case it already exists
+    if (document.getElementById('exercise-select')) {
+      createSingleColumnExerciseDropdown();
+      observer.disconnect();
+    }
+  } else {
+    // Try again in a moment if secondChartArea isn't available yet
+    setTimeout(startObserving, 100);
+  }
+}
+
+// Run when DOM is loaded
+document.addEventListener('DOMContentLoaded', startObserving);
+
+// Also attempt to run immediately if the page might already be loaded
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(startObserving, 100);
+}
