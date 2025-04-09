@@ -196,54 +196,59 @@ async function loadDataForYear(year) {
     const mm = String(currentDate.getMonth() + 1).padStart(2, "0");
     const yyyy = currentDate.getFullYear();
     const fileName = `data/${dd}-${mm}-${yyyy}.json`;
-
     let monthIndex = currentDate.getMonth();
+
     let promise = d3.json(fileName)
       .then(json => {
-        // Check if this file actually has a 'workout' array
-        if (json && Array.isArray(json.workout) && json.workout.length > 0) {
+        // Consider the file as a valid workout day if:
+        // 1) There is a non-empty workout array, or
+        // 2) There is a total_time and a non-empty overall_muscle_group
+        if (
+          json &&
+          (
+            (Array.isArray(json.workout) && json.workout.length > 0) ||
+            (json.total_time && Array.isArray(json.overall_muscle_group) && json.overall_muscle_group.length > 0)
+          )
+        ) {
           workoutFiles[year].push(fileName);
 
-          // ADD THESE LINES to track workout hours
+          // Track workout hours if total_time is available
           if (json.total_time) {
             yearlyWorkoutHours[year] += parseWorkoutTime(json.total_time);
           }
 
-          // We'll treat each exercise line as "1 set"
+          // Process workout data: treat each exercise line as one set
           let totalSets = 0;
-          
-          // Use an object to count sets per exercise instead of just collecting names
           let exerciseCounts = {};
-
-          // We'll also still track muscle volume if you need it
           let volumeMap = {};
           muscleGroups.forEach(mg => volumeMap[mg] = 0);
 
-          json.workout.forEach(entry => {
-            // 1) Treat each line as one set
-            totalSets += 1;
+          if (Array.isArray(json.workout) && json.workout.length > 0) {
+            json.workout.forEach(entry => {
+              totalSets += 1;
 
-            // 2) Gather muscle volume
-            const mg = entry["Muscle-Group"] || "Unknown";
-            if (muscleGroups.includes(mg)) {
-              const reps = +entry.Reps || 0;
-              const weight = parseFloat(entry.Weight) || 0;
-              volumeMap[mg] += (reps * weight);
-            }
+              // Gather muscle volume if available
+              const mg = entry["Muscle-Group"] || "Unknown";
+              if (muscleGroups.includes(mg)) {
+                const reps = +entry.Reps || 0;
+                const weight = parseFloat(entry.Weight) || 0;
+                volumeMap[mg] += (reps * weight);
+              }
 
-            // 3) Count sets per exercise
-            if (entry["Exercise"]) {
-              const exerciseName = entry["Exercise"];
-              exerciseCounts[exerciseName] = (exerciseCounts[exerciseName] || 0) + 1;
-            }
-          });
+              // Count sets per exercise
+              if (entry["Exercise"]) {
+                const exerciseName = entry["Exercise"];
+                exerciseCounts[exerciseName] = (exerciseCounts[exerciseName] || 0) + 1;
+              }
+            });
+          }
 
-          // Now decide which muscle(s) to color for that day
+          // Decide which muscle(s) to color for that day.
+          // Prefer overall_muscle_group if available, otherwise compute a fallback.
           let musclesList = [];
           if (Array.isArray(json.overall_muscle_group) && json.overall_muscle_group.length) {
             musclesList = json.overall_muscle_group.filter(mg => muscleGroups.includes(mg));
           } else {
-            // fallback: pick single muscle with max volume
             let selectedMuscle = null;
             let maxVol = 0;
             muscleGroups.forEach(mg => {
@@ -255,7 +260,7 @@ async function loadDataForYear(year) {
             if (selectedMuscle) musclesList.push(selectedMuscle);
           }
 
-          // Convert exercise counts to array of objects with name and count
+          // Convert exercise counts to an array of objects with name and count
           const exercisesWithCounts = Object.entries(exerciseCounts).map(([name, count]) => ({
             name,
             count
@@ -264,19 +269,16 @@ async function loadDataForYear(year) {
           return {
             day: currentDate.getDate(),
             muscles: musclesList,
-            // "volume" is the total sets. Just naming it "volume" for the tooltip
-            volume: totalSets,
-            // list of exercises with their set counts
+            volume: totalSets, // total number of sets
             exercises: exercisesWithCounts,
-            // Add duration if available
             duration: json.total_time || null
           };
         }
-        // If no workout or file not found => no data
+        // If the file does not meet the criteria, mark the day as inactive
         return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [], duration: null };
       })
       .catch(err => {
-        // File not found or parse error => no data
+        // File not found or parse error: mark the day as inactive
         return { day: currentDate.getDate(), muscles: [], volume: 0, exercises: [], duration: null };
       })
       .then(result => ({ month: monthIndex, result }));
@@ -289,6 +291,7 @@ async function loadDataForYear(year) {
     yearData[year][month][result.day - 1] = result;
   });
 }
+
 
 
 

@@ -1,0 +1,64 @@
+{
+  "date": "09-04-2025",
+  "participants": [
+    "André D.",
+    "Tomás T.",
+    "Duarte T."
+  ],
+  "start_time": "08:06",
+  "end_time": "08:41",
+  "total_time": "35 minutes",
+  "overall_muscle_group": [
+    "Shoulders"
+  ],
+  "workout": [
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 12,
+      "Weight": "20 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 10,
+      "Weight": "20 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 30,
+      "Weight": "8 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 30,
+      "Weight": "8 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 20,
+      "Weight": "45 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 15,
+      "Weight": "50 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    }
+  ]
+}
