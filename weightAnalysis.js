@@ -76,7 +76,9 @@
       if (!chartContainer) {
         chartContainer = document.createElement('div');
         chartContainer.className = 'exercise-chart-container';
-        chartContainer.style.height = '300px';
+        chartContainer.style.width = '100%';
+        chartContainer.style.minHeight = '200px'; // Reduced from 300px to be more responsive
+        chartContainer.style.position = 'relative'; // For proper sizing
         chartContainer.style.marginTop = '15px';
         secondChartArea.appendChild(chartContainer);
       }
@@ -628,347 +630,419 @@
     return 0;
   }
   
-  /**
-   * Render the exercise progression chart with error bands
-   */
-  function renderExerciseChart(exerciseData, exerciseName) {
-    // Get the container for the visualization
-    let chartContainer = document.querySelector('.exercise-chart-container');
-    if (!chartContainer) {
-      chartContainer = document.createElement('div');
-      chartContainer.className = 'exercise-chart-container';
-      chartContainer.style.height = '300px';
-      secondChartArea.appendChild(chartContainer);
-    }
-    
-    chartContainer.innerHTML = '';
-    
-    if (!exerciseData || exerciseData.length === 0) {
-      showNoExerciseDataMessage(chartContainer, exerciseName);
-      return;
-    }
-    
-    // Sort data by date
-    exerciseData.sort((a, b) => a.date - b.date);
-    
 
-    // Calculate dimensions - UPDATED FOR FULL RESPONSIVENESS
-    const containerWidth = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
-    const containerHeight = chartContainer.clientHeight || 270;
-
-    // Use 100% of container width with padding
-    const width = containerWidth * 0.95; // 95% of available width for some margin
-    const height = Math.min(containerHeight, width * 0.7); // Maintain aspect ratio but don't overflow
-
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-
-    // Create responsive SVG
-    const svg = d3.create("svg")
-      .attr("width", "100%")
-      .attr("height", "100%")
-      .attr("viewBox", [0, 0, width, height])
-      .attr("preserveAspectRatio", "xMidYMid meet")
-      .style("display", "block"); // Ensures no extra space below SVG
+  
+function renderExerciseChart(exerciseData, exerciseName) {
+  // Get the container for the visualization
+  let chartContainer = document.querySelector('.exercise-chart-container');
+  if (!chartContainer) {
+    chartContainer = document.createElement('div');
+    chartContainer.className = 'exercise-chart-container';
+    chartContainer.style.width = '100%';
+    chartContainer.style.minHeight = '200px'; // Reduced minimum height
+    chartContainer.style.position = 'relative';
+    chartContainer.style.marginTop = '15px';
+    secondChartArea.appendChild(chartContainer);
+  }
+  
+  // Clear the container while keeping its references
+  chartContainer.innerHTML = '';
+  
+  if (!exerciseData || exerciseData.length === 0) {
+    showNoExerciseDataMessage(chartContainer, exerciseName);
+    return;
+  }
+  
+  // Sort data by date
+  exerciseData.sort((a, b) => a.date - b.date);
+  
+  // Get container width - ensure we have a valid measurement
+  const containerWidth = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
+  
+  // Calculate dynamic aspect ratio based on screen width
+  let aspectRatio;
+  if (containerWidth < 400) {
+    // Small screens: shorter chart (2.5:1 ratio)
+    aspectRatio = 2.5;
+  } else if (containerWidth < 768) {
+    // Medium screens: gradually shift from 2.5:1 to 2:1
+    const factor = (containerWidth - 400) / (768 - 400);
+    aspectRatio = 2.5 - (factor * 0.5); // Transition from 2.5 to 2
+  } else {
+    // Large screens: taller chart (2:1 ratio)
+    aspectRatio = 2;
+  }
+  
+  // Calculate dimensions based on aspect ratio
+  const width = containerWidth * 0.98; // Use 98% of container width
+  
+  // Calculate height based on aspect ratio with constraints
+  // Base height calculation
+  let baseHeight = width / aspectRatio;
+  
+  // Apply minimum and maximum constraints
+  const minHeight = 170; // Minimum height
+  const maxHeight = 280; // Maximum height
+  const height = Math.max(minHeight, Math.min(maxHeight, baseHeight));
+  
+  // Apply the height to the container itself
+  chartContainer.style.height = `${height + 10}px`; // Add small padding
+  
+  // Adjusted margins for smaller screens
+  const dynamicMargin = {
+    top: containerWidth < 400 ? 25 : 30,
+    right: 20,
+    bottom: containerWidth < 400 ? 40 : 50,
+    left: containerWidth < 400 ? 45 : 50
+  };
+  
+  const innerWidth = width - dynamicMargin.left - dynamicMargin.right;
+  const innerHeight = height - dynamicMargin.top - dynamicMargin.bottom;
+  
+  // Create responsive SVG
+  const svg = d3.create("svg")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("viewBox", [0, 0, width, height])
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("display", "block")
+    .style("overflow", "visible"); // Prevent clipping
+  
+  const g = svg.append("g")
+    .attr("transform", `translate(${dynamicMargin.left},${dynamicMargin.top})`);
+  
+  // Create scales
+  const x = d3.scaleTime()
+    .domain(d3.extent(exerciseData, d => d.date))
+    .range([0, innerWidth])
+    .nice();
+  
+  // Process data to calculate stats for each workout date
+  const processedData = exerciseData.map(workout => {
+    const weights = workout.sets.map(set => set.weight);
     
-    const g = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    // Calculate statistics
+    const maxWeight = Math.max(...weights);
+    const minWeight = Math.min(...weights);
+    const avgWeight = weights.reduce((sum, w) => sum + w, 0) / weights.length;
     
-    // Create scales
-    const x = d3.scaleTime()
-      .domain(d3.extent(exerciseData, d => d.date))
-      .range([0, innerWidth])
-      .nice();
+    // For weighted average, consider reps as a factor
+    const totalWeight = workout.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+    const totalReps = workout.sets.reduce((sum, set) => sum + set.reps, 0);
+    const weightedAvg = totalWeight / totalReps;
     
-    // Process data to calculate stats for each workout date
-    const processedData = exerciseData.map(workout => {
-      const weights = workout.sets.map(set => set.weight);
-      
-      // Calculate statistics
-      const maxWeight = Math.max(...weights);
-      const minWeight = Math.min(...weights);
-      const avgWeight = weights.reduce((sum, w) => sum + w, 0) / weights.length;
-      
-      // For weighted average, consider reps as a factor
-      const totalWeight = workout.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
-      const totalReps = workout.sets.reduce((sum, set) => sum + set.reps, 0);
-      const weightedAvg = totalWeight / totalReps;
-      
-      return {
-        date: workout.date,
-        sets: workout.sets,
-        maxWeight,
-        minWeight,
-        avgWeight,
-        weightedAvg, // Use this as the "middle" line for better representation
-        range: maxWeight - minWeight
-      };
-    });
-    
-    // Find the overall min/max for y-axis
-    const allWeights = [];
-    processedData.forEach(day => {
-      allWeights.push(day.maxWeight);
-      allWeights.push(day.minWeight);
-    });
-    
-    const minWeight = d3.min(allWeights) || 0;
-    const maxWeight = d3.max(allWeights) || 10;
-    const padding = (maxWeight - minWeight) * 0.1 || 5; // 10% padding or 5kg if all weights are the same
-    
-    const y = d3.scaleLinear()
-      .domain([Math.max(0, minWeight - padding), maxWeight + padding])
-      .range([innerHeight, 0])
-      .nice();
-    
-    // Add grid lines
-    g.append("g")
-      .attr("class", "grid-lines-x")
-      .attr("transform", `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(x)
-        .ticks(6)
-        .tickSize(-innerHeight)
-        .tickFormat("")
-      )
-      .call(g => g.select(".domain").remove())
-      .call(g => g.selectAll(".tick line")
-        .attr("stroke", colors.gridLines)
-        .attr("stroke-opacity", 0.5));
-    
-    g.append("g")
-      .attr("class", "grid-lines-y")
-      .call(d3.axisLeft(y)
-        .ticks(5)
-        .tickSize(-innerWidth)
-        .tickFormat("")
-      )
-      .call(g => g.select(".domain").remove())
-      .call(g => g.selectAll(".tick line")
-        .attr("stroke", colors.gridLines)
-        .attr("stroke-opacity", 0.5));
-    
-    // Add axes
-    g.append("g")
-      .attr("class", "x-axis")
-      .attr("transform", `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(x)
-        .ticks(Math.min(exerciseData.length, 6))
-        .tickSizeOuter(0)
-        .tickFormat(d => {
-          const month = d.getMonth();
-          const day = d.getDate();
-          return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]} ${day}`;
-        })
-      )
-      .call(g => g.select(".domain").attr("stroke", "#ccc"))
-      .call(g => g.selectAll("text")
-        .attr("transform", "rotate(-45)")
-        .attr("text-anchor", "end")
-        .attr("dx", "-0.8em")
-        .attr("dy", "0.15em")
-        .style("font-size", "10px"));
-    
-    g.append("g")
-      .attr("class", "y-axis")
-      .call(d3.axisLeft(y)
-        .ticks(5)
-        .tickSizeOuter(0)
-        .tickFormat(d => `${d}kg`)
-      )
-      .call(g => g.select(".domain").attr("stroke", "#ccc"));
-    
-    // Create tooltip
-    let tooltip = d3.select("body").select(".exercise-tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div")
-        .attr("class", "exercise-tooltip")
-        .style("position", "absolute")
-        .style("visibility", "hidden")
-        .style("background-color", "rgba(50, 50, 50, 0.9)")
-        .style("color", "white")
-        .style("padding", "10px")
-        .style("border-radius", "6px")
-        .style("font-size", "12px")
-        .style("pointer-events", "none")
-        .style("z-index", 1000)
-        .style("box-shadow", "0 4px 8px rgba(0,0,0,0.2)");
-    }
-    
-    // Define area generator for the error band
-    const areaGenerator = d3.area()
-      .x(d => x(d.date))
-      .y0(d => y(d.minWeight))
-      .y1(d => y(d.maxWeight))
-      .curve(d3.curveMonotoneX);
-    
-    // Add the error band area
-    g.append("path")
-      .datum(processedData)
-      .attr("fill", colors.primaryLight)
-      .attr("fill-opacity", 0.3)
-      .attr("d", areaGenerator);
-    
-    // Define line generator for the middle line (weighted average)
-    const lineGenerator = d3.line()
-      .x(d => x(d.date))
-      .y(d => y(d.weightedAvg))
-      .curve(d3.curveMonotoneX);
-    
-    // Add the middle line
-    g.append("path")
-      .datum(processedData)
-      .attr("fill", "none")
-      .attr("stroke", colors.primary)
-      .attr("stroke-width", 2.5)
-      .attr("d", lineGenerator);
-    
-    // Add data points for each workout date
-    processedData.forEach(dayData => {
-      // Add weighted average point
-      g.append("circle")
-        .attr("class", "avg-point")
-        .attr("cx", x(dayData.date))
-        .attr("cy", y(dayData.weightedAvg))
-        .attr("r", 5)
-        .attr("fill", colors.primary)
-        .attr("stroke", "white")
-        .attr("stroke-width", 1.5)
-        .attr("cursor", "pointer")
-        .on("mouseover", function(event) {
-          d3.select(this)
-            .attr("r", 7)
-            .attr("stroke-width", 2);
-          
-          // Format date for display
-          const dateStr = dayData.date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          });
-          
-          // Get the proper exercise name (use selected exercise if available)
-          const displayExerciseName = selectedExercise || exerciseName || "Exercise";
-          
-          // Build tooltip content
-          let tooltipContent = `
-            <div style="font-weight:bold; margin-bottom:5px; font-size:14px;">${displayExerciseName}</div>
-            <div style="margin-bottom:3px;">${dateStr}</div>
-            <div style="font-size:13px; margin-bottom:5px;">
-              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                <span>Weighted Avg:</span>
-                <span style="font-weight:bold;">${dayData.weightedAvg.toFixed(1)} kg</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                <span>Range:</span>
-                <span>${dayData.minWeight}kg - ${dayData.maxWeight}kg</span>
-              </div>
-              <div style="display:flex; justify-content:space-between;">
-                <span>Total Sets:</span>
-                <span>${dayData.sets.length}</span>
-              </div>
-            </div>
-            <hr style="margin:5px 0; border-color:rgba(255,255,255,0.2);">
-            <div style="max-height:150px; overflow-y:auto; margin-bottom:5px;">
-          `;
-          
-          // Add each set
-          dayData.sets.forEach((set, i) => {
-            tooltipContent += `
-              <div style="margin-bottom:3px; font-size:11px;">
-                <span style="color:#aaa;">Set ${i+1}:</span> 
-                <span style="font-weight:bold;">${set.weight}kg</span> × 
-                <span style="font-weight:bold;">${set.reps} reps</span> 
-                (${set.effort})
-              </div>
-            `;
-          });
-          
-          // Add footer info
-          const muscleGroup = dayData.sets[0]?.muscleGroup || 'N/A';
-          const location = dayData.sets[0]?.location || 'N/A';
-          
-          tooltipContent += `
-            </div>
-            <div style="font-size:10px; color:#aaa; margin-top:3px; text-align:right;">
-              ${muscleGroup} - ${location}
-            </div>
-          `;
-          
-          tooltip
-            .style("visibility", "visible")
-            .html(tooltipContent);
-        })
-        .on("mousemove", function(event) {
-          tooltip
-            .style("top", (event.pageY - 10) + "px")
-            .style("left", (event.pageX + 10) + "px");
-        })
-        .on("mouseout", function() {
-          d3.select(this)
-            .attr("r", 5)
-            .attr("stroke-width", 1.5);
-          
-          tooltip.style("visibility", "hidden");
+    return {
+      date: workout.date,
+      sets: workout.sets,
+      maxWeight,
+      minWeight,
+      avgWeight,
+      weightedAvg, // Use this as the "middle" line for better representation
+      range: maxWeight - minWeight
+    };
+  });
+  
+  // Find the overall min/max for y-axis
+  const allWeights = [];
+  processedData.forEach(day => {
+    allWeights.push(day.maxWeight);
+    allWeights.push(day.minWeight);
+  });
+  
+  const minWeight = d3.min(allWeights) || 0;
+  const maxWeight = d3.max(allWeights) || 10;
+  const padding = (maxWeight - minWeight) * 0.1 || 5; // 10% padding or 5kg if all weights are the same
+  
+  const y = d3.scaleLinear()
+    .domain([Math.max(0, minWeight - padding), maxWeight + padding])
+    .range([innerHeight, 0])
+    .nice();
+  
+  // Add grid lines
+  g.append("g")
+    .attr("class", "grid-lines-x")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(x)
+      .ticks(Math.min(6, exerciseData.length)) // Limit ticks based on data points
+      .tickSize(-innerHeight)
+      .tickFormat("")
+    )
+    .call(g => g.select(".domain").remove())
+    .call(g => g.selectAll(".tick line")
+      .attr("stroke", colors.gridLines)
+      .attr("stroke-opacity", 0.5));
+  
+  g.append("g")
+    .attr("class", "grid-lines-y")
+    .call(d3.axisLeft(y)
+      .ticks(5)
+      .tickSize(-innerWidth)
+      .tickFormat("")
+    )
+    .call(g => g.select(".domain").remove())
+    .call(g => g.selectAll(".tick line")
+      .attr("stroke", colors.gridLines)
+      .attr("stroke-opacity", 0.5));
+  
+  // Add x-axis with responsive formatting
+  const xAxis = g.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(x)
+      .ticks(Math.min(containerWidth < 500 ? 4 : 6, exerciseData.length)) // Fewer ticks on small screens
+      .tickSizeOuter(0)
+      .tickFormat(d => {
+        const month = d.getMonth();
+        const day = d.getDate();
+        // Shorter date format on small screens
+        if (containerWidth < 400) {
+          return `${['J', 'F', 'M', 'A', 'M', 'J', 
+                   'J', 'A', 'S', 'O', 'N', 'D'][month]} ${day}`;
+        }
+        return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]} ${day}`;
+      })
+    );
+  
+  // Style x-axis
+  xAxis.select(".domain").attr("stroke", "#ccc");
+  
+  // Adjust text for responsiveness
+  xAxis.selectAll("text")
+    .attr("transform", containerWidth < 400 ? "rotate(-30)" : "rotate(-45)")
+    .attr("text-anchor", "end")
+    .attr("dx", containerWidth < 400 ? "-0.5em" : "-0.8em")
+    .attr("dy", containerWidth < 400 ? "0.1em" : "0.15em")
+    .style("font-size", containerWidth < 400 ? "8px" : "10px");
+  
+  // Add y-axis with responsive formatting
+  const yAxis = g.append("g")
+    .attr("class", "y-axis")
+    .call(d3.axisLeft(y)
+      .ticks(5)
+      .tickSizeOuter(0)
+      .tickFormat(d => `${d}kg`)
+    );
+  
+  // Style y-axis
+  yAxis.select(".domain").attr("stroke", "#ccc");
+  yAxis.selectAll("text")
+    .style("font-size", containerWidth < 400 ? "8px" : "10px");
+  
+  // Create tooltip
+  let tooltip = d3.select("body").select(".exercise-tooltip");
+  if (tooltip.empty()) {
+    tooltip = d3.select("body").append("div")
+      .attr("class", "exercise-tooltip")
+      .style("position", "absolute")
+      .style("visibility", "hidden")
+      .style("background-color", "rgba(50, 50, 50, 0.9)")
+      .style("color", "white")
+      .style("padding", "10px")
+      .style("border-radius", "6px")
+      .style("font-size", "12px")
+      .style("pointer-events", "none")
+      .style("z-index", 1000)
+      .style("box-shadow", "0 4px 8px rgba(0,0,0,0.2)");
+  }
+  
+  // Define area generator for the error band
+  const areaGenerator = d3.area()
+    .x(d => x(d.date))
+    .y0(d => y(d.minWeight))
+    .y1(d => y(d.maxWeight))
+    .curve(d3.curveMonotoneX);
+  
+  // Add the error band area
+  g.append("path")
+    .datum(processedData)
+    .attr("fill", colors.primaryLight)
+    .attr("fill-opacity", 0.3)
+    .attr("d", areaGenerator);
+  
+  // Define line generator for the middle line (weighted average)
+  const lineGenerator = d3.line()
+    .x(d => x(d.date))
+    .y(d => y(d.weightedAvg))
+    .curve(d3.curveMonotoneX);
+  
+  // Add the middle line
+  g.append("path")
+    .datum(processedData)
+    .attr("fill", "none")
+    .attr("stroke", colors.primary)
+    .attr("stroke-width", containerWidth < 400 ? 2 : 2.5)
+    .attr("d", lineGenerator);
+  
+  // Responsive point sizes
+  const avgPointRadius = containerWidth < 400 ? 4 : 5;
+  const minMaxPointRadius = containerWidth < 400 ? 2 : 3;
+  
+  // Add data points for each workout date
+  processedData.forEach(dayData => {
+    // Add weighted average point
+    g.append("circle")
+      .attr("class", "avg-point")
+      .attr("cx", x(dayData.date))
+      .attr("cy", y(dayData.weightedAvg))
+      .attr("r", avgPointRadius)
+      .attr("fill", colors.primary)
+      .attr("stroke", "white")
+      .attr("stroke-width", 1.5)
+      .attr("cursor", "pointer")
+      .on("mouseover", function(event) {
+        d3.select(this)
+          .attr("r", avgPointRadius + 2)
+          .attr("stroke-width", 2);
+        
+        // Format date for display
+        const dateStr = dayData.date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
         });
         
-      // Add min and max points (smaller and semi-transparent)
-      if (dayData.minWeight !== dayData.weightedAvg) {
-        g.append("circle")
-          .attr("class", "min-point")
-          .attr("cx", x(dayData.date))
-          .attr("cy", y(dayData.minWeight))
-          .attr("r", 3)
-          .attr("fill", colors.primary)
-          .attr("fill-opacity", 0.5)
-          .attr("stroke", "white")
-          .attr("stroke-width", 1);
-      }
+        // Get the proper exercise name (use selected exercise if available)
+        const displayExerciseName = selectedExercise || exerciseName || "Exercise";
+        
+        // Build tooltip content
+        let tooltipContent = `
+          <div style="font-weight:bold; margin-bottom:5px; font-size:14px;">${displayExerciseName}</div>
+          <div style="margin-bottom:3px;">${dateStr}</div>
+          <div style="font-size:13px; margin-bottom:5px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span>Weighted Avg:</span>
+              <span style="font-weight:bold;">${dayData.weightedAvg.toFixed(1)} kg</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span>Range:</span>
+              <span>${dayData.minWeight}kg - ${dayData.maxWeight}kg</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span>Total Sets:</span>
+              <span>${dayData.sets.length}</span>
+            </div>
+          </div>
+          <hr style="margin:5px 0; border-color:rgba(255,255,255,0.2);">
+          <div style="max-height:150px; overflow-y:auto; margin-bottom:5px;">
+        `;
+        
+        // Add each set
+        dayData.sets.forEach((set, i) => {
+          tooltipContent += `
+            <div style="margin-bottom:3px; font-size:11px;">
+              <span style="color:#aaa;">Set ${i+1}:</span> 
+              <span style="font-weight:bold;">${set.weight}kg</span> × 
+              <span style="font-weight:bold;">${set.reps} reps</span> 
+              (${set.effort})
+            </div>
+          `;
+        });
+        
+        // Add footer info
+        const muscleGroup = dayData.sets[0]?.muscleGroup || 'N/A';
+        const location = dayData.sets[0]?.location || 'N/A';
+        
+        tooltipContent += `
+          </div>
+          <div style="font-size:10px; color:#aaa; margin-top:3px; text-align:right;">
+            ${muscleGroup} - ${location}
+          </div>
+        `;
+        
+        tooltip
+          .style("visibility", "visible")
+          .html(tooltipContent);
+      })
+      .on("mousemove", function(event) {
+        tooltip
+          .style("top", (event.pageY - 10) + "px")
+          .style("left", (event.pageX + 10) + "px");
+      })
+      .on("mouseout", function() {
+        d3.select(this)
+          .attr("r", avgPointRadius)
+          .attr("stroke-width", 1.5);
+        
+        tooltip.style("visibility", "hidden");
+      });
       
-      if (dayData.maxWeight !== dayData.weightedAvg) {
-        g.append("circle")
-          .attr("class", "max-point")
-          .attr("cx", x(dayData.date))
-          .attr("cy", y(dayData.maxWeight))
-          .attr("r", 3)
-          .attr("fill", colors.primary)
-          .attr("fill-opacity", 0.5)
-          .attr("stroke", "white")
-          .attr("stroke-width", 1);
-      }
-    });
+    // Add min and max points (smaller and semi-transparent)
+    if (dayData.minWeight !== dayData.weightedAvg) {
+      g.append("circle")
+        .attr("class", "min-point")
+        .attr("cx", x(dayData.date))
+        .attr("cy", y(dayData.minWeight))
+        .attr("r", minMaxPointRadius)
+        .attr("fill", colors.primary)
+        .attr("fill-opacity", 0.5)
+        .attr("stroke", "white")
+        .attr("stroke-width", 1);
+    }
     
-    // Add title with count info
-    const titleText = displayCount ? 
-      `${exerciseName || selectedExercise} - Last ${displayCount} Workouts` : 
-      `${exerciseName || selectedExercise} - All Workouts (${exerciseData.length})`;
-    
-    g.append("text")
-      .attr("class", "chart-title")
-      .attr("x", innerWidth / 2)
-      .attr("y", -margin.top / 2)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "14px")
-      .attr("font-weight", "bold")
-      .text(titleText);
-    
-    // Add to DOM
-    chartContainer.appendChild(svg.node());
-    
-    // Add a legend for the visualization
-    addExerciseLegend(chartContainer);
-  }
+    if (dayData.maxWeight !== dayData.weightedAvg) {
+      g.append("circle")
+        .attr("class", "max-point")
+        .attr("cx", x(dayData.date))
+        .attr("cy", y(dayData.maxWeight))
+        .attr("r", minMaxPointRadius)
+        .attr("fill", colors.primary)
+        .attr("fill-opacity", 0.5)
+        .attr("stroke", "white")
+        .attr("stroke-width", 1);
+    }
+  });
+  
+  // Add title with count info and responsive font size
+  const titleText = displayCount ? 
+    `${exerciseName || selectedExercise} - Last ${displayCount} Workouts` : 
+    `${exerciseName || selectedExercise} - All Workouts (${exerciseData.length})`;
+  
+  g.append("text")
+    .attr("class", "chart-title")
+    .attr("x", innerWidth / 2)
+    .attr("y", -dynamicMargin.top / 2)
+    .attr("text-anchor", "middle")
+    .attr("font-size", containerWidth < 400 ? "12px" : "14px")
+    .attr("font-weight", "bold")
+    .text(titleText);
+  
+  // Add to DOM
+  chartContainer.appendChild(svg.node());
+  
+  // Add a legend for the visualization with responsive styling
+  addExerciseLegend(chartContainer, containerWidth);
+}
   
   /**
    * Add a legend for the exercise chart with error bands
    */
-  function addExerciseLegend(container) {
-    const legend = document.createElement('div');
-    legend.style.marginTop = '5px';
-    legend.style.fontSize = '11px';
-    legend.style.color = '#666';
-    legend.style.textAlign = 'center';
-    
+/**
+ * Add a legend for the exercise chart with error bands
+ * Now with responsive design based on container width
+ */
+function addExerciseLegend(container, containerWidth) {
+  const legend = document.createElement('div');
+  legend.style.marginTop = '5px';
+  legend.style.fontSize = containerWidth < 400 ? '10px' : '11px';
+  legend.style.color = '#666';
+  legend.style.textAlign = 'center';
+  
+  // Create a more responsive legend layout for small screens
+  if (containerWidth < 400) {
+    legend.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 4px;">
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <span style="display: inline-block; width: 18px; height: 2px; background-color: ${colors.primary}; margin-right: 5px;"></span>
+          <span>Weighted Average</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <span style="display: inline-block; width: 18px; height: 10px; background-color: ${colors.primaryLight}; opacity: 0.3; margin-right: 5px;"></span>
+          <span>Weight Range</span>
+        </div>
+      </div>
+    `;
+  } else {
     legend.innerHTML = `
       <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 5px;">
         <div style="display: flex; align-items: center;">
@@ -982,9 +1056,10 @@
       </div>
       <div>• Hover over points for detailed information</div>
     `;
-    
-    container.appendChild(legend);
   }
+  
+  container.appendChild(legend);
+}
   
   /**
    * Show a message when no data is available
