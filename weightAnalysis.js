@@ -77,18 +77,21 @@
         chartContainer = document.createElement('div');
         chartContainer.className = 'exercise-chart-container';
         chartContainer.style.width = '100%';
-        chartContainer.style.minHeight = '200px'; // Reduced from 300px to be more responsive
-        chartContainer.style.position = 'relative'; // For proper sizing
-        chartContainer.style.marginTop = '15px';
+        chartContainer.style.height = 'auto'; // Let it size based on content
+        chartContainer.style.minHeight = '250px'; // Increased minimum height
+        chartContainer.style.position = 'relative';
+        chartContainer.style.margin = '10px 0 5px 0'; // Reduced margins all around
+        chartContainer.style.boxSizing = 'border-box'; // Ensure padding is included in height
         secondChartArea.appendChild(chartContainer);
       }
-      
-      // Create range control container
+
+      // Also optimize the range control container
       let rangeControlContainer = document.querySelector('.range-control-container');
       if (!rangeControlContainer) {
         rangeControlContainer = document.createElement('div');
         rangeControlContainer.className = 'range-control-container';
-        rangeControlContainer.style.marginTop = '15px';
+        rangeControlContainer.style.marginTop = '5px'; // Reduced from 15px
+        rangeControlContainer.style.marginBottom = '5px';
         secondChartArea.appendChild(rangeControlContainer);
       }
       
@@ -632,6 +635,10 @@
   
 
   
+/**
+ * Render the exercise progression chart with error bands
+ * Optimized for better space utilization on mobile screens
+ */
 function renderExerciseChart(exerciseData, exerciseName) {
   // Get the container for the visualization
   let chartContainer = document.querySelector('.exercise-chart-container');
@@ -639,13 +646,15 @@ function renderExerciseChart(exerciseData, exerciseName) {
     chartContainer = document.createElement('div');
     chartContainer.className = 'exercise-chart-container';
     chartContainer.style.width = '100%';
-    chartContainer.style.minHeight = '200px'; // Reduced minimum height
+    chartContainer.style.height = 'auto'; // Let it size based on content
+    chartContainer.style.minHeight = '250px'; // Increased minimum height
     chartContainer.style.position = 'relative';
-    chartContainer.style.marginTop = '15px';
+    chartContainer.style.margin = '10px 0 5px 0'; // Reduced margins all around
+    chartContainer.style.boxSizing = 'border-box'; // Ensure padding is included in height
     secondChartArea.appendChild(chartContainer);
   }
   
-  // Clear the container while keeping its references
+  // Clear the container
   chartContainer.innerHTML = '';
   
   if (!exerciseData || exerciseData.length === 0) {
@@ -656,44 +665,44 @@ function renderExerciseChart(exerciseData, exerciseName) {
   // Sort data by date
   exerciseData.sort((a, b) => a.date - b.date);
   
-  // Get container width - ensure we have a valid measurement
+  // Get container width
   const containerWidth = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
+  const isMobile = containerWidth < 500;
   
-  // Calculate dynamic aspect ratio based on screen width
+  // Calculate dynamic aspect ratio - MAKE TALLER ON MOBILE
   let aspectRatio;
   if (containerWidth < 400) {
-    // Small screens: shorter chart (2.5:1 ratio)
-    aspectRatio = 2.5;
+    // Small screens: much taller (1.8:1 ratio) instead of previous 2.5:1
+    aspectRatio = 1.8;
   } else if (containerWidth < 768) {
-    // Medium screens: gradually shift from 2.5:1 to 2:1
+    // Medium screens: gradually shift from 1.8:1 to 2:1
     const factor = (containerWidth - 400) / (768 - 400);
-    aspectRatio = 2.5 - (factor * 0.5); // Transition from 2.5 to 2
+    aspectRatio = 1.8 + (factor * 0.2); // Transition from 1.8 to 2
   } else {
-    // Large screens: taller chart (2:1 ratio)
+    // Large screens: 2:1 ratio
     aspectRatio = 2;
   }
   
-  // Calculate dimensions based on aspect ratio
-  const width = containerWidth * 0.98; // Use 98% of container width
+  // Calculate dimensions - USE MORE WIDTH
+  const width = containerWidth * 0.99; // Use 99% of container width (nearly full width)
   
-  // Calculate height based on aspect ratio with constraints
-  // Base height calculation
+  // Calculate height with updated aspect ratio
   let baseHeight = width / aspectRatio;
   
-  // Apply minimum and maximum constraints
-  const minHeight = 170; // Minimum height
-  const maxHeight = 280; // Maximum height
+  // Increased minimum height for mobile
+  const minHeight = isMobile ? 200 : 170;
+  const maxHeight = isMobile ? 350 : 280;
   const height = Math.max(minHeight, Math.min(maxHeight, baseHeight));
   
-  // Apply the height to the container itself
-  chartContainer.style.height = `${height + 10}px`; // Add small padding
+  // Apply the height to the container
+  chartContainer.style.height = `${height + 5}px`; // Reduced padding from 10px to 5px
   
-  // Adjusted margins for smaller screens
+  // Reduced margins for mobile
   const dynamicMargin = {
-    top: containerWidth < 400 ? 25 : 30,
-    right: 20,
-    bottom: containerWidth < 400 ? 40 : 50,
-    left: containerWidth < 400 ? 45 : 50
+    top: isMobile ? 20 : 30,
+    right: isMobile ? 10 : 20,  // Reduced right margin on mobile
+    bottom: isMobile ? 35 : 50,
+    left: isMobile ? 40 : 50    // Reduced left margin on mobile
   };
   
   const innerWidth = width - dynamicMargin.left - dynamicMargin.right;
@@ -706,7 +715,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("viewBox", [0, 0, width, height])
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("display", "block")
-    .style("overflow", "visible"); // Prevent clipping
+    .style("overflow", "visible");
   
   const g = svg.append("g")
     .attr("transform", `translate(${dynamicMargin.left},${dynamicMargin.top})`);
@@ -737,7 +746,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
       maxWeight,
       minWeight,
       avgWeight,
-      weightedAvg, // Use this as the "middle" line for better representation
+      weightedAvg,
       range: maxWeight - minWeight
     };
   });
@@ -751,7 +760,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
   
   const minWeight = d3.min(allWeights) || 0;
   const maxWeight = d3.max(allWeights) || 10;
-  const padding = (maxWeight - minWeight) * 0.1 || 5; // 10% padding or 5kg if all weights are the same
+  const padding = (maxWeight - minWeight) * 0.1 || 5;
   
   const y = d3.scaleLinear()
     .domain([Math.max(0, minWeight - padding), maxWeight + padding])
@@ -763,7 +772,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("class", "grid-lines-x")
     .attr("transform", `translate(0,${innerHeight})`)
     .call(d3.axisBottom(x)
-      .ticks(Math.min(6, exerciseData.length)) // Limit ticks based on data points
+      .ticks(Math.min(isMobile ? 5 : 6, exerciseData.length))
       .tickSize(-innerHeight)
       .tickFormat("")
     )
@@ -784,20 +793,19 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .attr("stroke", colors.gridLines)
       .attr("stroke-opacity", 0.5));
   
-  // Add x-axis with responsive formatting
+  // Add x-axis with mobile optimizations
   const xAxis = g.append("g")
     .attr("class", "x-axis")
     .attr("transform", `translate(0,${innerHeight})`)
     .call(d3.axisBottom(x)
-      .ticks(Math.min(containerWidth < 500 ? 4 : 6, exerciseData.length)) // Fewer ticks on small screens
+      .ticks(Math.min(isMobile ? 4 : 6, exerciseData.length))
       .tickSizeOuter(0)
       .tickFormat(d => {
         const month = d.getMonth();
         const day = d.getDate();
-        // Shorter date format on small screens
-        if (containerWidth < 400) {
-          return `${['J', 'F', 'M', 'A', 'M', 'J', 
-                   'J', 'A', 'S', 'O', 'N', 'D'][month]} ${day}`;
+        // Very compact format for mobile
+        if (isMobile) {
+          return `M ${day}`;  // Just "M 23" instead of "Mar 23"
         }
         return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]} ${day}`;
@@ -807,27 +815,27 @@ function renderExerciseChart(exerciseData, exerciseName) {
   // Style x-axis
   xAxis.select(".domain").attr("stroke", "#ccc");
   
-  // Adjust text for responsiveness
+  // Mobile-optimized x-axis labels
   xAxis.selectAll("text")
-    .attr("transform", containerWidth < 400 ? "rotate(-30)" : "rotate(-45)")
+    .attr("transform", isMobile ? "rotate(-35)" : "rotate(-45)")
     .attr("text-anchor", "end")
-    .attr("dx", containerWidth < 400 ? "-0.5em" : "-0.8em")
-    .attr("dy", containerWidth < 400 ? "0.1em" : "0.15em")
-    .style("font-size", containerWidth < 400 ? "8px" : "10px");
+    .attr("dx", isMobile ? "-0.3em" : "-0.8em")
+    .attr("dy", isMobile ? "0.1em" : "0.15em")
+    .style("font-size", isMobile ? "9px" : "10px");
   
-  // Add y-axis with responsive formatting
+  // Add y-axis
   const yAxis = g.append("g")
     .attr("class", "y-axis")
     .call(d3.axisLeft(y)
       .ticks(5)
       .tickSizeOuter(0)
-      .tickFormat(d => `${d}kg`)
+      .tickFormat(d => isMobile ? `${d}` : `${d}kg`) // Shorter labels on mobile
     );
   
   // Style y-axis
   yAxis.select(".domain").attr("stroke", "#ccc");
   yAxis.selectAll("text")
-    .style("font-size", containerWidth < 400 ? "8px" : "10px");
+    .style("font-size", isMobile ? "9px" : "10px");
   
   // Create tooltip
   let tooltip = d3.select("body").select(".exercise-tooltip");
@@ -860,7 +868,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("fill-opacity", 0.3)
     .attr("d", areaGenerator);
   
-  // Define line generator for the middle line (weighted average)
+  // Define line generator for the middle line
   const lineGenerator = d3.line()
     .x(d => x(d.date))
     .y(d => y(d.weightedAvg))
@@ -871,14 +879,14 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .datum(processedData)
     .attr("fill", "none")
     .attr("stroke", colors.primary)
-    .attr("stroke-width", containerWidth < 400 ? 2 : 2.5)
+    .attr("stroke-width", isMobile ? 2 : 2.5)
     .attr("d", lineGenerator);
   
-  // Responsive point sizes
-  const avgPointRadius = containerWidth < 400 ? 4 : 5;
-  const minMaxPointRadius = containerWidth < 400 ? 2 : 3;
+  // Mobile-optimized point sizes
+  const avgPointRadius = isMobile ? 4 : 5;
+  const minMaxPointRadius = isMobile ? 2 : 3;
   
-  // Add data points for each workout date
+  // Add data points
   processedData.forEach(dayData => {
     // Add weighted average point
     g.append("circle")
@@ -902,51 +910,56 @@ function renderExerciseChart(exerciseData, exerciseName) {
           day: 'numeric'
         });
         
-        // Get the proper exercise name (use selected exercise if available)
+        // Get the proper exercise name
         const displayExerciseName = selectedExercise || exerciseName || "Exercise";
         
-        // Build tooltip content
+        // Build tooltip content - simplified for mobile
         let tooltipContent = `
-          <div style="font-weight:bold; margin-bottom:5px; font-size:14px;">${displayExerciseName}</div>
-          <div style="margin-bottom:3px;">${dateStr}</div>
-          <div style="font-size:13px; margin-bottom:5px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span>Weighted Avg:</span>
+          <div style="font-weight:bold; margin-bottom:4px; font-size:13px;">${displayExerciseName}</div>
+          <div style="margin-bottom:2px; font-size:12px;">${dateStr}</div>
+          <div style="font-size:12px; margin-bottom:3px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+              <span>Avg:</span>
               <span style="font-weight:bold;">${dayData.weightedAvg.toFixed(1)} kg</span>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
               <span>Range:</span>
               <span>${dayData.minWeight}kg - ${dayData.maxWeight}kg</span>
             </div>
             <div style="display:flex; justify-content:space-between;">
-              <span>Total Sets:</span>
+              <span>Sets:</span>
               <span>${dayData.sets.length}</span>
             </div>
           </div>
-          <hr style="margin:5px 0; border-color:rgba(255,255,255,0.2);">
-          <div style="max-height:150px; overflow-y:auto; margin-bottom:5px;">
         `;
         
-        // Add each set
-        dayData.sets.forEach((set, i) => {
-          tooltipContent += `
-            <div style="margin-bottom:3px; font-size:11px;">
-              <span style="color:#aaa;">Set ${i+1}:</span> 
-              <span style="font-weight:bold;">${set.weight}kg</span> × 
-              <span style="font-weight:bold;">${set.reps} reps</span> 
-              (${set.effort})
-            </div>
-          `;
-        });
+        // Only show detailed set info if we have fewer than 8 sets
+        // to prevent the tooltip from becoming too large on mobile
+        if (dayData.sets.length < 8) {
+          tooltipContent += `<hr style="margin:3px 0; border-color:rgba(255,255,255,0.2);">
+            <div style="max-height:120px; overflow-y:auto; margin-bottom:3px;">`;
+          
+          // Add each set
+          dayData.sets.forEach((set, i) => {
+            tooltipContent += `
+              <div style="margin-bottom:2px; font-size:10px;">
+                <span style="color:#aaa;">Set ${i+1}:</span> 
+                <span style="font-weight:bold;">${set.weight}kg</span> × 
+                <span style="font-weight:bold;">${set.reps}</span> 
+                (${set.effort})
+              </div>
+            `;
+          });
+          
+          tooltipContent += `</div>`;
+        }
         
-        // Add footer info
+        // Add simplified footer
         const muscleGroup = dayData.sets[0]?.muscleGroup || 'N/A';
-        const location = dayData.sets[0]?.location || 'N/A';
         
         tooltipContent += `
-          </div>
-          <div style="font-size:10px; color:#aaa; margin-top:3px; text-align:right;">
-            ${muscleGroup} - ${location}
+          <div style="font-size:9px; color:#aaa; margin-top:2px; text-align:right;">
+            ${muscleGroup}
           </div>
         `;
         
@@ -955,9 +968,19 @@ function renderExerciseChart(exerciseData, exerciseName) {
           .html(tooltipContent);
       })
       .on("mousemove", function(event) {
+        // Position tooltip - adjust for mobile
+        const tooltipWidth = 150; // Approximate tooltip width
+        const windowWidth = window.innerWidth;
+        let xPosition = event.pageX + 10;
+        
+        // Check if tooltip would go off the right edge of the screen
+        if (xPosition + tooltipWidth > windowWidth) {
+          xPosition = event.pageX - tooltipWidth - 10;
+        }
+        
         tooltip
           .style("top", (event.pageY - 10) + "px")
-          .style("left", (event.pageX + 10) + "px");
+          .style("left", xPosition + "px");
       })
       .on("mouseout", function() {
         d3.select(this)
@@ -993,70 +1016,53 @@ function renderExerciseChart(exerciseData, exerciseName) {
     }
   });
   
-  // Add title with count info and responsive font size
+  // Add title with count info - smaller and more compact
   const titleText = displayCount ? 
-    `${exerciseName || selectedExercise} - Last ${displayCount} Workouts` : 
-    `${exerciseName || selectedExercise} - All Workouts (${exerciseData.length})`;
+    `${exerciseName || selectedExercise} - Last ${displayCount}` : 
+    `${exerciseName || selectedExercise} - All (${exerciseData.length})`;
   
   g.append("text")
     .attr("class", "chart-title")
     .attr("x", innerWidth / 2)
     .attr("y", -dynamicMargin.top / 2)
     .attr("text-anchor", "middle")
-    .attr("font-size", containerWidth < 400 ? "12px" : "14px")
+    .attr("font-size", isMobile ? "12px" : "14px")
     .attr("font-weight", "bold")
     .text(titleText);
   
   // Add to DOM
   chartContainer.appendChild(svg.node());
   
-  // Add a legend for the visualization with responsive styling
+  // Add a legend with mobile optimizations
   addExerciseLegend(chartContainer, containerWidth);
 }
-  
-  /**
-   * Add a legend for the exercise chart with error bands
-   */
+
+
 /**
- * Add a legend for the exercise chart with error bands
- * Now with responsive design based on container width
+ * Add a compact legend optimized for mobile devices
  */
 function addExerciseLegend(container, containerWidth) {
+  const isMobile = containerWidth < 500;
+  
   const legend = document.createElement('div');
-  legend.style.marginTop = '5px';
-  legend.style.fontSize = containerWidth < 400 ? '10px' : '11px';
+  legend.style.marginTop = isMobile ? '2px' : '5px';
+  legend.style.fontSize = isMobile ? '9px' : '11px';
   legend.style.color = '#666';
   legend.style.textAlign = 'center';
   
-  // Create a more responsive legend layout for small screens
-  if (containerWidth < 400) {
-    legend.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 4px;">
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <span style="display: inline-block; width: 18px; height: 2px; background-color: ${colors.primary}; margin-right: 5px;"></span>
-          <span>Weighted Average</span>
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center;">
-          <span style="display: inline-block; width: 18px; height: 10px; background-color: ${colors.primaryLight}; opacity: 0.3; margin-right: 5px;"></span>
-          <span>Weight Range</span>
-        </div>
+  // On mobile, use a more compact horizontal layout
+  legend.innerHTML = `
+    <div style="display: flex; justify-content: center; align-items: center; gap: ${isMobile ? '8px' : '15px'};">
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: ${isMobile ? '15px' : '20px'}; height: 2px; background-color: ${colors.primary}; margin-right: 3px;"></span>
+        <span>Weighted Avg</span>
       </div>
-    `;
-  } else {
-    legend.innerHTML = `
-      <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 5px;">
-        <div style="display: flex; align-items: center;">
-          <span style="display: inline-block; width: 20px; height: 2px; background-color: ${colors.primary}; margin-right: 5px;"></span>
-          <span>Weighted Average</span>
-        </div>
-        <div style="display: flex; align-items: center;">
-          <span style="display: inline-block; width: 20px; height: 12px; background-color: ${colors.primaryLight}; opacity: 0.3; margin-right: 5px;"></span>
-          <span>Weight Range</span>
-        </div>
+      <div style="display: flex; align-items: center;">
+        <span style="display: inline-block; width: ${isMobile ? '15px' : '20px'}; height: ${isMobile ? '8px' : '12px'}; background-color: ${colors.primaryLight}; opacity: 0.3; margin-right: 3px;"></span>
+        <span>Range</span>
       </div>
-      <div>• Hover over points for detailed information</div>
-    `;
-  }
+    </div>
+  `;
   
   container.appendChild(legend);
 }
