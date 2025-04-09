@@ -64,11 +64,11 @@
         // Make sure the option exists
         if ([...selectElement.options].some(opt => opt.value === defaultExercise)) {
           selectElement.value = defaultExercise;
+          selectedExercise = defaultExercise;  // Make sure selectedExercise is set
         } else {
-          // If the previous exercise doesn't exist in the new year, select the first one
           selectElement.selectedIndex = 0;
           selectedExercise = selectElement.value;
-        }
+        }        
       }
       
       // Create chart container if it doesn't exist
@@ -101,6 +101,38 @@
     } catch (error) {
       console.error('Error initializing exercise tracker:', error);
       showNoDataMessage('Error loading exercise data');
+    }
+
+
+    // Add resize observer to redraw chart when container size changes
+    const resizeChart = () => {
+      // Only redraw if we have data and a selected exercise
+      if (allExerciseData.length > 0 && selectedExercise) {
+        const dataToRender = getFilteredData();
+        renderExerciseChart(dataToRender, selectedExercise);
+      }
+    };
+
+    // Set up resize observer
+    const chartContainerRef = document.querySelector('.exercise-chart-container');
+    if (chartContainerRef) {
+      // Create new ResizeObserver
+      const resizeObserver = new ResizeObserver(entries => {
+        // We wrap the resize in requestAnimationFrame to throttle it
+        window.requestAnimationFrame(() => {
+          resizeChart();
+        });
+      });
+      
+      // Start observing the chart container
+      resizeObserver.observe(chartContainerRef);
+      
+      // Also listen for window resize events
+      window.addEventListener('resize', () => {
+        window.requestAnimationFrame(() => {
+          resizeChart();
+        });
+      });
     }
   }
   
@@ -619,18 +651,25 @@
     // Sort data by date
     exerciseData.sort((a, b) => a.date - b.date);
     
-    // Calculate dimensions
-    const width = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
-    const height = 270;
+
+    // Calculate dimensions - UPDATED FOR FULL RESPONSIVENESS
+    const containerWidth = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
+    const containerHeight = chartContainer.clientHeight || 270;
+
+    // Use 100% of container width with padding
+    const width = containerWidth * 0.95; // 95% of available width for some margin
+    const height = Math.min(containerHeight, width * 0.7); // Maintain aspect ratio but don't overflow
+
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
-    
-    // Create SVG
+
+    // Create responsive SVG
     const svg = d3.create("svg")
-      .attr("width", width)
-      .attr("height", height)
+      .attr("width", "100%")
+      .attr("height", "100%")
       .attr("viewBox", [0, 0, width, height])
-      .attr("style", "max-width: 100%; height: auto;");
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("display", "block"); // Ensures no extra space below SVG
     
     const g = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
