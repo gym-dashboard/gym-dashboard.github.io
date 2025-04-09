@@ -1411,59 +1411,75 @@ function addTooltipBehavior(cellSelection, dayData) {
 
 // Function for building tooltip HTML with more prominent close button
 function buildTooltipHTML(dayData) {
-  if (!dayData || !dayData.exercises || dayData.exercises.length === 0) {
-    return "No workout data";
-  }
-  
-  // Check if exercises are in the new format (objects with name and count)
-  const isNewFormat = dayData.exercises[0] && typeof dayData.exercises[0] === 'object' && 'name' in dayData.exercises[0];
-  
-  // Format the list of exercises with set counts - with inline styles to force no-wrap
-  let exerciseList;
-  
-  if (isNewFormat) {
-    exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
-        <span class="bullet" style="flex-shrink:0;">•</span>
-        <span class="exercise-name" style="white-space:nowrap !important;">${ex.name} (${ex.count})</span>
-      </div>`)
-      .join("");
+  // Use the provided date if available; otherwise, default to the day number.
+  const dateString = dayData.date ? dayData.date : ("Day " + dayData.day);
+
+  // Build the exercise list area.
+  // Instead of returning immediately when there are no exercises,
+  // we set the exercise list content to display "No Workout Data".
+  let exerciseList = "";
+  if (!dayData.exercises || dayData.exercises.length === 0) {
+    exerciseList = `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
+                      <span>No Workout Data</span>
+                    </div>`;
   } else {
-    exerciseList = dayData.exercises
-      .map(ex => `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
-        <span class="bullet" style="flex-shrink:0;">•</span>
-        <span class="exercise-name" style="white-space:nowrap !important;">${ex}</span>
-      </div>`)
-      .join("");
+    // Check if exercises are in the new format (objects with name and count)
+    const isNewFormat =
+      typeof dayData.exercises[0] === "object" &&
+      dayData.exercises[0] !== null &&
+      "name" in dayData.exercises[0];
+    if (isNewFormat) {
+      exerciseList = dayData.exercises
+        .map(
+          ex => `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
+                  <span class="bullet" style="flex-shrink:0;">•</span>
+                  <span class="exercise-name" style="white-space:nowrap !important;">${ex.name} (${ex.count})</span>
+                </div>`
+        )
+        .join("");
+    } else {
+      exerciseList = dayData.exercises
+        .map(
+          ex => `<div class="exercise-line" style="white-space:nowrap !important; display:flex;">
+                  <span class="bullet" style="flex-shrink:0;">•</span>
+                  <span class="exercise-name" style="white-space:nowrap !important;">${ex}</span>
+                </div>`
+        )
+        .join("");
+    }
   }
-  
-  // Add duration information if available
+
+  // Check for duration information; if valid, prepare footer text.
   let durationInfo = "";
   if (dayData.duration && dayData.duration !== "NaN") {
     durationInfo = dayData.duration;
   }
-  
-  // Add a proper close button for mobile - adjusted position and size
-  // Now with tablet detection
+
+  // Detect device type: tablet vs. mobile
   const isTablet = window.innerWidth >= 768;
-  const isMobile = window.matchMedia('(pointer: coarse)').matches && !isTablet;
-  
-  // Create the header content with inline nowrap and extra padding on right for button
+  const isMobile = window.matchMedia("(pointer: coarse)").matches && !isTablet;
+
+  // Header: include date information and volume (sets) with inline styling.
   let headerContent = `<div class="tooltip-header" style="position:relative; margin-bottom:4px; white-space:nowrap !important; padding-right:25px;">
-    <strong>Volume:</strong> ${dayData.volume} Sets
-  </div>`;
-  
-  // Separate close button positioned further outside and smaller - only for phones
-  const closeButton = isMobile ? 
-    '<div class="tooltip-close-btn" style="position:absolute;top:-24px;right:-24px;width:32px;height:32px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>' : 
-    '';
-  
-  // Footer content with duration if available - with inline nowrap
+                          <div class="tooltip-volume" style="display:inline-block;">
+                            <strong>Volume:</strong> ${dayData.volume} Sets
+                          </div>
+                        </div>`;
+
+  // Create a close button for mobile devices.
+  const closeButton = isMobile
+    ? '<div class="tooltip-close-btn" style="position:absolute;top:-24px;right:-24px;width:32px;height:32px;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.4);border:2px solid white;z-index:10000;">&times;</div>'
+    : "";
+
+  // Footer: include duration information if available.
   let footerContent = "";
   if (durationInfo) {
-    footerContent = `<div class="tooltip-footer" style="margin-top:4px;white-space:nowrap !important;">${durationInfo}</div>`;
+    footerContent = `<div class="tooltip-footer" style="margin-top:4px; white-space:nowrap !important;">
+                        Duration: ${durationInfo}
+                      </div>`;
   }
-  
+
+  // Combine header, close button, exercise list, and footer.
   return `
     <div style="position:relative;">
       ${closeButton}
@@ -1473,6 +1489,7 @@ function buildTooltipHTML(dayData) {
     </div>
   `;
 }
+
 
 // ========== Render Legend ==========
 function renderLegend() {
