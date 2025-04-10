@@ -1,0 +1,567 @@
+/* Exercise Tracker Chart Container */
+.exercise-chart-container {
+  width: 100%;
+  height: auto;
+  min-height: 250px;
+  position: relative;
+  margin: 10px 0 5px 0;
+  box-sizing: border-box;
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #888;
+  font-style: italic;
+}
+
+/* Range Control Container */
+.range-control-container {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+/* Range Controls and Legend */
+.range-controls-and-legend {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 15px;
+  margin-bottom: 5px;
+}
+
+/* Range Controls Wrapper */
+.range-controls-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+/* Range Label */
+.range-label {
+  font-weight: 500;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* Button Group */
+.button-group {
+  display: flex;
+}
+
+/* Button Styling */
+.button-group .btn {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  margin-right: 2px;
+  min-width: 35px;
+}
+
+.button-group .btn:first-child {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+
+.button-group .btn:last-child {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.button-group .btn:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+/* Slider Container */
+.slider-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+  max-width: 120px;
+}
+
+.slider-container .form-range {
+  flex: 1;
+}
+
+/* Legend Container */
+.legend-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Legend Styles */
+.exercise-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 15px;
+  height: 2px;
+}
+
+.legend-swatch.line {
+  background-color: #546bce;
+}
+
+.legend-swatch.range {
+  height: 8px;
+  background-color: #8c9fe0;
+  opacity: 0.3;
+}
+
+.legend-label {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Exercise Selector */
+.exercise-selector {
+  margin-bottom: 0;
+}
+
+.exercise-selector label {
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+.exercise-selector select {
+  display: inline-block;
+  width: auto;
+  max-width: 200px;
+}
+
+/* Chart Title */
+.chart-title {
+  font-size: 13px;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+/* Loading Spinner */
+.loading-spinner-container {
+  text-align: center;
+  padding: 20px;
+}
+
+.loading-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #546bce;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  margin-top: 10px;
+}
+
+/* Error Message */
+.error-message {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #666;
+}
+
+.error-message-primary {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.error-message-secondary {
+  font-size: 14px;
+}
+
+/* Tooltip */
+.exercise-tooltip {
+  position: absolute;
+  visibility: hidden;
+  background-color: rgba(50, 50, 50, 0.9);
+  color: white;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.tooltip-title {
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-size: 12px;
+}
+
+.tooltip-date {
+  margin-bottom: 1px;
+  font-size: 11px;
+}
+
+.tooltip-stats {
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.tooltip-stat-line {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1px;
+}
+
+.tooltip-stat-value {
+  font-weight: bold;
+}
+
+/* Enhanced Exercise Dropdown */
+.title-dropdown-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  z-index: 1000;
+}
+
+.visible-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #333;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.title-text {
+  margin-right: 8px;
+}
+
+.dropdown-arrow {
+  font-size: 0.8em;
+  color: #666;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.title-dropdown-container:hover .dropdown-arrow,
+.title-dropdown-container.active .dropdown-arrow {
+  color: #546bce;
+}
+
+.title-dropdown-container:hover .title-text,
+.title-dropdown-container.active .title-text {
+  color: #546bce;
+}
+
+.title-dropdown-container.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.hidden-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: -1;
+}
+
+.custom-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1001;
+  margin-top: 8px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 300px;
+  max-width: 90vw;
+  max-height: 450px;
+  overflow-y: auto;
+  padding: 0;
+  border: 1px solid #e6e6e6;
+  animation: dropdownFadeIn 0.2s ease;
+  display: none;
+}
+
+.muscle-group-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.muscle-group-section {
+  width: 100%;
+  margin-bottom: 1px;
+}
+
+.muscle-group-header {
+  font-weight: 600;
+  color: #333;
+  padding: 10px 15px;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.exercise-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.exercise-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.exercise-item:last-child {
+  border-bottom: none;
+}
+
+.exercise-item:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.exercise-item.selected {
+  background-color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Scrollbar */
+.custom-dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* SVG Elements Styling */
+.grid-lines-x line,
+.grid-lines-y line {
+  stroke: #e5e7eb;
+  stroke-opacity: 0.5;
+}
+
+.x-axis path,
+.y-axis path {
+  stroke: #ccc;
+}
+
+.x-axis text,
+.y-axis text {
+  font-size: 9px;
+}
+
+.avg-point {
+  fill: #546bce;
+  stroke: white;
+  stroke-width: 1.5;
+  cursor: pointer;
+}
+
+.min-point,
+.max-point {
+  fill: #546bce;
+  fill-opacity: 0.5;
+  stroke: white;
+  stroke-width: 0.8;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 576px) {
+  .custom-dropdown-menu {
+    width: 250px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .muscle-group-header {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+  
+  .exercise-item {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 500px) {
+  .range-controls-and-legend {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .range-controls-wrapper {
+    margin-bottom: 2px;
+  }
+  
+  .range-label {
+    font-size: 0.9rem;
+  }
+  
+  .button-group .btn {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    min-width: 30px;
+  }
+  
+  .exercise-legend {
+    gap: 10px;
+  }
+  
+  .legend-swatch {
+    width: 12px;
+  }
+  
+  .legend-swatch.range {
+    height: 6px;
+  }
+  
+  .legend-label {
+    font-size: 0.7rem;
+  }
+  
+  .chart-title {
+    font-size: 11px;
+  }
+  
+  .x-axis text,
+  .y-axis text {
+    font-size: 8px;
+  }
+}
+
+
+
+
+/* Add this to your style.css file */
+
+/* Apply the same styling to waYearSelect as yearSelect */
+#waYearSelect {
+  appearance: none; /* Remove default appearance */
+  max-width: fit-content;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 46px 8px 12px;
+  font-weight: 500;
+  color: #4a4a4a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#waYearSelect:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+}
+
+#waYearSelect:focus {
+  outline: none;
+  border-color: #546bce;
+  box-shadow: 0 0 0 3px rgba(84, 107, 206, 0.15);
+}
+
+/* Make sure the select wrapper in the weight analysis section has the same styling too */
+#secondPlot .select-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+#secondPlot .select-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-65%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #666;
+  border-bottom: 2px solid #666;
+  pointer-events: none;
+  transform-origin: 75% 75%;
+  transition: transform 0.3s ease;
+}
+
+/* Hide default background arrow when using custom arrow */
+#secondPlot .select-wrapper select {
+  background-image: none !important;
+}
+
+/* Add responsive media queries for waYearSelect, just like yearSelect */
+@media (max-width: 480px) {
+  #waYearSelect {
+    min-width: 80px;
+    width: 80px;
+    padding: 6px 28px 6px 10px; /* Reduced padding */
+    font-size: 0.85rem; /* Smaller font */
+  }
+
+  #secondPlot .select-wrapper::after {
+    right: 10px;
+    width: 8px;
+    height: 8px;
+    border-width: 1.5px;
+  }
+}

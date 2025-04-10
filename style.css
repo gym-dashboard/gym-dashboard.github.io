@@ -178,13 +178,15 @@ body {
 }
 
 #secondPlot {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 300px;
   max-width: calc(50% - 10px);
   background: #fff;
   box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  display: block;
+  box-sizing: border-box;
 }
 
 /* ==========================================================================
@@ -1343,3 +1345,8 @@ svg {
     font-size: 1.1rem;
   }
 }
+
+
+
+
+

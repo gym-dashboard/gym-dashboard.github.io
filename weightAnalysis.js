@@ -18,6 +18,27 @@
     secondary: '#ec512f',     // Accent color
     gridLines: '#e5e7eb'
   };
+
+
+  function populateWAYearSelect() {
+    const waYearSelect = document.getElementById("waYearSelect");
+    const years = [2023, 2024, 2025, 2026];
+    years.forEach(yr => {
+      const option = document.createElement("option");
+      option.value = yr;
+      option.textContent = yr;
+      waYearSelect.appendChild(option);
+    });
+    // Set the default value to currentYear
+    waYearSelect.value = currentYear;
+  
+    // Attach an event listener so that when the year changes, the chart updates
+    waYearSelect.addEventListener("change", () => {
+      currentYear = +waYearSelect.value;
+      updateYear(currentYear);
+    });
+  }
+
   
   // State tracking
   let currentYear = new Date().getFullYear(); // Year for syncing with calendar
@@ -76,12 +97,6 @@
       if (!chartContainer) {
         chartContainer = document.createElement('div');
         chartContainer.className = 'exercise-chart-container';
-        chartContainer.style.width = '100%';
-        chartContainer.style.height = 'auto'; // Let it size based on content
-        chartContainer.style.minHeight = '250px'; // Increased minimum height
-        chartContainer.style.position = 'relative';
-        chartContainer.style.margin = '10px 0 5px 0'; // Reduced margins all around
-        chartContainer.style.boxSizing = 'border-box'; // Ensure padding is included in height
         secondChartArea.appendChild(chartContainer);
       }
 
@@ -90,8 +105,6 @@
       if (!rangeControlContainer) {
         rangeControlContainer = document.createElement('div');
         rangeControlContainer.className = 'range-control-container';
-        rangeControlContainer.style.marginTop = '5px'; // Reduced from 15px
-        rangeControlContainer.style.marginBottom = '5px';
         secondChartArea.appendChild(rangeControlContainer);
       }
       
@@ -195,20 +208,14 @@
   function createExerciseDropdown(exercises) {
     const dropdownContainer = document.createElement('div');
     dropdownContainer.className = 'exercise-selector';
-    dropdownContainer.style.marginBottom = '0';
     
     const label = document.createElement('label');
     label.textContent = 'Track exercise: ';
     label.htmlFor = 'exercise-select';
-    label.style.marginRight = '8px';
-    label.style.fontWeight = '500';
     
     const select = document.createElement('select');
     select.id = 'exercise-select';
     select.className = 'form-select form-select-sm';
-    select.style.display = 'inline-block';
-    select.style.width = 'auto';
-    select.style.maxWidth = '200px';
     
     // Add options for each exercise
     exercises.forEach(exercise => {
@@ -227,19 +234,10 @@
         const chartContainer = document.querySelector('.exercise-chart-container');
         if (chartContainer) {
           chartContainer.innerHTML = `
-            <div style="text-align: center; padding: 20px;">
-              <div style="width: 1.5rem; height: 1.5rem; border: 3px solid #f3f3f3; 
-                  border-top: 3px solid #546bce; border-radius: 50%; display: inline-block; 
-                  animation: spin 1s linear infinite;">
-              </div>
-              <div style="margin-top: 10px;">Loading data...</div>
+            <div class="loading-spinner-container">
+              <div class="loading-spinner"></div>
+              <div class="loading-text">Loading data...</div>
             </div>
-            <style>
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            </style>
           `;
         }
         
@@ -300,10 +298,6 @@
   /**
    * Create range control buttons and slider
    */
-/**
- * Create range control buttons and slider with improved layout
- * This reworks the createRangeControls function to prevent overflow issues
- */
 function createRangeControls(container) {
   // Clear container
   container.innerHTML = '';
@@ -315,35 +309,26 @@ function createRangeControls(container) {
   // Create main wrapper
   const mainWrapper = document.createElement('div');
   mainWrapper.className = 'range-controls-and-legend';
-  mainWrapper.style.display = 'flex';
-  mainWrapper.style.flexDirection = isMobile ? 'column' : 'row';
-  mainWrapper.style.justifyContent = 'space-between';
-  mainWrapper.style.alignItems = 'center';
-  mainWrapper.style.width = '100%';
-  mainWrapper.style.gap = isMobile ? '8px' : '15px';
-  mainWrapper.style.marginBottom = '5px';
+  if (isMobile) {
+    mainWrapper.classList.add('mobile');
+  }
   
   // Create controls wrapper
   const controlsWrapper = document.createElement('div');
   controlsWrapper.className = 'range-controls-wrapper';
-  controlsWrapper.style.display = 'flex';
-  controlsWrapper.style.alignItems = 'center';
-  controlsWrapper.style.gap = '8px';
-  controlsWrapper.style.marginBottom = isMobile ? '2px' : '0';
-  controlsWrapper.style.flexShrink = '0';
   
   // Create label
   const label = document.createElement('div');
   label.textContent = 'Show:';
-  label.style.fontWeight = '500';
-  label.style.fontSize = isMobile ? '0.9rem' : '1rem';
-  label.style.whiteSpace = 'nowrap';
+  label.className = 'range-label';
+  if (isMobile) {
+    label.classList.add('mobile');
+  }
   controlsWrapper.appendChild(label);
   
-  // Create button group with more compact styling
+  // Create button group
   const buttonGroup = document.createElement('div');
   buttonGroup.className = 'button-group';
-  buttonGroup.style.display = 'flex';
   
   // Calculate available presets
   const totalWorkouts = allExerciseData.length;
@@ -354,24 +339,15 @@ function createRangeControls(container) {
   // Only add 15 preset on wider screens
   if (totalWorkouts >= 15 && containerWidth > 400) presets.push(15);
   
-  // Create preset buttons with more compact styling
+  // Create preset buttons
   presets.forEach((count, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-sm ' + (displayCount === count ? 'btn-primary' : 'btn-outline-secondary');
     button.textContent = `${count}`;  // Just the number to save space
-    button.style.fontSize = isMobile ? '0.75rem' : '0.8rem';
-    button.style.padding = isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem';
-    button.style.marginRight = '2px';
-    button.style.minWidth = isMobile ? '30px' : '35px';
     
-    // Adjust border radius
-    if (index === 0) {
-      button.style.borderRadius = '0.25rem 0 0 0.25rem';
-    } else if (index === presets.length - 1) {
-      button.style.borderRadius = '0 0.25rem 0.25rem 0';
-    } else {
-      button.style.borderRadius = '0';
+    if (isMobile) {
+      button.classList.add('mobile');
     }
     
     button.addEventListener('click', () => {
@@ -407,15 +383,9 @@ function createRangeControls(container) {
   allButton.type = 'button';
   allButton.className = 'btn btn-sm ' + (displayCount === null ? 'btn-primary' : 'btn-outline-secondary');
   allButton.textContent = 'All';
-  allButton.style.fontSize = isMobile ? '0.75rem' : '0.8rem';
-  allButton.style.padding = isMobile ? '0.2rem 0.4rem' : '0.25rem 0.5rem';
-  allButton.style.minWidth = isMobile ? '30px' : '35px';
   
-  // Adjust border radius
-  if (presets.length === 0) {
-    allButton.style.borderRadius = '0.25rem';
-  } else {
-    allButton.style.borderRadius = '0 0.25rem 0.25rem 0';
+  if (isMobile) {
+    allButton.classList.add('mobile');
   }
   
   allButton.addEventListener('click', () => {
@@ -449,11 +419,6 @@ function createRangeControls(container) {
   if (containerWidth > 400 && totalWorkouts > 5) {
     const sliderContainer = document.createElement('div');
     sliderContainer.className = 'slider-container';
-    sliderContainer.style.flex = '1';
-    sliderContainer.style.display = 'flex';
-    sliderContainer.style.alignItems = 'center';
-    sliderContainer.style.marginLeft = '10px';
-    sliderContainer.style.maxWidth = '120px';
     
     // Slider input
     const slider = document.createElement('input');
@@ -463,7 +428,6 @@ function createRangeControls(container) {
     slider.min = Math.min(3, totalWorkouts);
     slider.max = totalWorkouts;
     slider.value = displayCount || totalWorkouts;
-    slider.style.flex = '1';
     
     slider.addEventListener('input', (event) => {
       const count = parseInt(event.target.value);
@@ -511,9 +475,6 @@ function createRangeControls(container) {
   // Create legend container
   const legendContainer = document.createElement('div');
   legendContainer.className = 'legend-container';
-  legendContainer.style.display = 'flex';
-  legendContainer.style.alignItems = 'center';
-  legendContainer.style.justifyContent = 'center';
   mainWrapper.appendChild(legendContainer);
   
   // Add main wrapper to container
@@ -532,30 +493,29 @@ function addExerciseLegend(container, containerWidth) {
   
   const isMobile = window.innerWidth < 500;
   
-  // Create more compact legend
+  // Create legend
   const legend = document.createElement('div');
-  legend.style.display = 'flex';
-  legend.style.alignItems = 'center';
-  legend.style.justifyContent = 'center';
-  legend.style.gap = isMobile ? '10px' : '15px';
-  legend.style.flexShrink = '0';
+  legend.className = 'exercise-legend';
+  if (isMobile) {
+    legend.classList.add('mobile');
+  }
   
   // Create line legend item
   const lineItem = document.createElement('div');
-  lineItem.style.display = 'flex';
-  lineItem.style.alignItems = 'center';
-  lineItem.style.gap = '3px';
+  lineItem.className = 'legend-item';
   
   const lineSwatch = document.createElement('span');
-  lineSwatch.style.display = 'inline-block';
-  lineSwatch.style.width = isMobile ? '12px' : '15px';
-  lineSwatch.style.height = '2px';
-  lineSwatch.style.backgroundColor = colors.primary;
+  lineSwatch.className = 'legend-swatch line';
+  if (isMobile) {
+    lineSwatch.classList.add('mobile');
+  }
   
   const lineLabel = document.createElement('span');
+  lineLabel.className = 'legend-label';
   lineLabel.textContent = 'Avg';
-  lineLabel.style.fontSize = isMobile ? '0.7rem' : '0.8rem';
-  lineLabel.style.color = '#666';
+  if (isMobile) {
+    lineLabel.classList.add('mobile');
+  }
   
   lineItem.appendChild(lineSwatch);
   lineItem.appendChild(lineLabel);
@@ -563,21 +523,20 @@ function addExerciseLegend(container, containerWidth) {
   
   // Create range legend item
   const rangeItem = document.createElement('div');
-  rangeItem.style.display = 'flex';
-  rangeItem.style.alignItems = 'center';
-  rangeItem.style.gap = '3px';
+  rangeItem.className = 'legend-item';
   
   const rangeSwatch = document.createElement('span');
-  rangeSwatch.style.display = 'inline-block';
-  rangeSwatch.style.width = isMobile ? '12px' : '15px';
-  rangeSwatch.style.height = isMobile ? '6px' : '8px';
-  rangeSwatch.style.backgroundColor = colors.primaryLight;
-  rangeSwatch.style.opacity = '0.3';
+  rangeSwatch.className = 'legend-swatch range';
+  if (isMobile) {
+    rangeSwatch.classList.add('mobile');
+  }
   
   const rangeLabel = document.createElement('span');
+  rangeLabel.className = 'legend-label';
   rangeLabel.textContent = 'Range';
-  rangeLabel.style.fontSize = isMobile ? '0.7rem' : '0.8rem';
-  rangeLabel.style.color = '#666';
+  if (isMobile) {
+    rangeLabel.classList.add('mobile');
+  }
   
   rangeItem.appendChild(rangeSwatch);
   rangeItem.appendChild(rangeLabel);
@@ -590,7 +549,6 @@ function addExerciseLegend(container, containerWidth) {
    * Update range controls when data changes
    */
   function updateRangeControls() {
-    const totalWorkouts = allExerciseData.length;
     const container = document.querySelector('.range-control-container');
     
     if (container) {
@@ -616,67 +574,79 @@ function addExerciseLegend(container, containerWidth) {
    */
   async function getAllExercises(year) {
     const exercises = new Set();
-    
-    const start = new Date(year, 0, 1);
-    const end = new Date(year, 11, 31);
-    const today = new Date(); // Don't go beyond today
-    const endDate = end > today ? today : end;
-    
-    for (let dt = new Date(start); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
-      const dd = String(dt.getDate()).padStart(2, "0");
-      const mm = String(dt.getMonth() + 1).padStart(2, "0");
-      const yyyy = dt.getFullYear();
-      const fileName = `data/${dd}-${mm}-${yyyy}.json`;
-      
-      try {
-        const json = await d3.json(fileName);
-        
-        if (json && json.workout && Array.isArray(json.workout)) {
-          json.workout.forEach(set => {
-            if (set.Exercise) {
-              exercises.add(set.Exercise);
-            }
-          });
-        }
-      } catch (error) {
-        // File not found or other error, just continue
-        continue;
-      }
-    }
-    
-    return Array.from(exercises).sort();
-  }
-  
-  /**
-   * Load exercise data for the specified exercise and year
-   */
-  async function loadExerciseData(exerciseName, year) {
-    let exerciseData = [];
-    
     const start = new Date(year, 0, 1);
     const end = new Date(year, 11, 31);
     const today = new Date();
     const endDate = end > today ? today : end;
     
+    let promises = [];
     for (let dt = new Date(start); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
       const dd = String(dt.getDate()).padStart(2, "0");
       const mm = String(dt.getMonth() + 1).padStart(2, "0");
       const yyyy = dt.getFullYear();
       const fileName = `data/${dd}-${mm}-${yyyy}.json`;
       
-      try {
-        const json = await d3.json(fileName);
-        
-        // Skip if no workout or the file wasn't found
-        if (!json || !json.workout || !Array.isArray(json.workout)) {
-          continue;
-        }
-        
-        // Find all sets of the specified exercise
+      promises.push(
+        d3.json(fileName).catch(() => null)
+      );
+    }
+    
+    const results = await Promise.all(promises);
+    
+    results.forEach(json => {
+      if (json && json.workout && Array.isArray(json.workout)) {
+        json.workout.forEach(set => {
+          if (set.Exercise) exercises.add(set.Exercise);
+        });
+      }
+    });
+    
+    return Array.from(exercises).sort();
+  }
+  
+  
+  /**
+   * Load exercise data for the specified exercise and year
+   */
+  async function loadExerciseData(exerciseName, year) {
+    const exerciseData = [];
+  
+    const start = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+    const today = new Date();
+    // Use today's date if the year is current
+    const endDate = end > today ? today : end;
+  
+    // Create an array to store promises along with the associated date
+    const promises = [];
+    
+    // Loop through every day in the year (or until today)
+    for (let dt = new Date(start); dt <= endDate; dt.setDate(dt.getDate() + 1)) {
+      const dd = String(dt.getDate()).padStart(2, "0");
+      const mm = String(dt.getMonth() + 1).padStart(2, "0");
+      const yyyy = dt.getFullYear();
+      const fileName = `data/${dd}-${mm}-${yyyy}.json`;
+      // Make a copy of the current date to attach later since dt is mutated
+      const dtCopy = new Date(dt);
+      
+      // Push the promise into the array and catch errors by returning null
+      promises.push(
+        d3.json(fileName)
+          .then(json => ({ date: dtCopy, json }))
+          .catch(() => ({ date: dtCopy, json: null }))
+      );
+    }
+    
+    // Wait for all file requests to complete
+    const results = await Promise.all(promises);
+    
+    // Process the results array
+    results.forEach(({ date, json }) => {
+      if (json && json.workout && Array.isArray(json.workout)) {
+        // Filter out the sets that match the specified exercise
         const exerciseSets = json.workout.filter(set => set.Exercise === exerciseName);
-        
         if (exerciseSets.length > 0) {
-          // Parse and extract the data we need
+          // Parse and extract the necessary data for each set
           const parsedSets = exerciseSets.map(set => ({
             weight: parseWeight(set.Weight),
             reps: parseInt(set.Reps) || 0,
@@ -685,20 +655,20 @@ function addExerciseLegend(container, containerWidth) {
             muscleGroup: set["Muscle-Group"] || 'N/A'
           }));
           
-          // Extract the date
           exerciseData.push({
-            date: new Date(yyyy, mm - 1, dd),
+            date: date,
             sets: parsedSets
           });
         }
-      } catch (error) {
-        // File not found or other error, just continue
-        continue;
       }
-    }
+    });
+    
+    // Optional: sort the exercise data by date in ascending order
+    exerciseData.sort((a, b) => a.date - b.date);
     
     return exerciseData;
   }
+  
   
   /**
    * Parse weight string to extract the numeric value
@@ -714,13 +684,7 @@ function addExerciseLegend(container, containerWidth) {
     
     return 0;
   }
-  
 
-  
-/**
- * Render the exercise progression chart with error bands
- * Optimized for better space utilization on mobile screens
- */
 /**
  * Render the exercise progression chart with error bands
  * Fully responsive solution with layout detection
@@ -731,10 +695,6 @@ function renderExerciseChart(exerciseData, exerciseName) {
   if (!chartContainer) {
     chartContainer = document.createElement('div');
     chartContainer.className = 'exercise-chart-container';
-    chartContainer.style.width = '100%';
-    chartContainer.style.position = 'relative';
-    chartContainer.style.margin = '10px 0 0 0'; // Remove all horizontal margins
-    chartContainer.style.boxSizing = 'border-box';
     secondChartArea.appendChild(chartContainer);
   }
   
@@ -797,8 +757,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("height", "100%")
     .attr("viewBox", [0, 0, width, height])
     .attr("preserveAspectRatio", "xMidYMid meet")
-    .style("display", "block")
-    .style("overflow", "visible");
+    .attr("class", "exercise-chart");
   
   const g = svg.append("g")
     .attr("transform", `translate(${dynamicMargin.left},${dynamicMargin.top})`);
@@ -859,10 +818,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .tickSize(-innerHeight)
       .tickFormat("")
     )
-    .call(g => g.select(".domain").remove())
-    .call(g => g.selectAll(".tick line")
-      .attr("stroke", colors.gridLines)
-      .attr("stroke-opacity", 0.5));
+    .call(g => g.select(".domain").remove());
   
   g.append("g")
     .attr("class", "grid-lines-y")
@@ -871,10 +827,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .tickSize(-innerWidth)
       .tickFormat("")
     )
-    .call(g => g.select(".domain").remove())
-    .call(g => g.selectAll(".tick line")
-      .attr("stroke", colors.gridLines)
-      .attr("stroke-opacity", 0.5));
+    .call(g => g.select(".domain").remove());
   
   // Add x-axis with ultra-compact formatting for mobile
   const xAxis = g.append("g")
@@ -903,8 +856,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("transform", isMobile ? "rotate(-30)" : "rotate(-40)")
     .attr("text-anchor", "end")
     .attr("dx", isMobile ? "-0.2em" : "-0.5em")
-    .attr("dy", isMobile ? "0.1em" : "0.15em")
-    .style("font-size", isMobile ? "8px" : "9px");
+    .attr("dy", isMobile ? "0.1em" : "0.15em");
   
   // Add y-axis
   const yAxis = g.append("g")
@@ -917,24 +869,12 @@ function renderExerciseChart(exerciseData, exerciseName) {
   
   // Style y-axis
   yAxis.select(".domain").attr("stroke", "#ccc");
-  yAxis.selectAll("text")
-    .style("font-size", isMobile ? "8px" : "9px");
   
-  // Create tooltip
+  // Create tooltip if it doesn't exist
   let tooltip = d3.select("body").select(".exercise-tooltip");
   if (tooltip.empty()) {
     tooltip = d3.select("body").append("div")
-      .attr("class", "exercise-tooltip")
-      .style("position", "absolute")
-      .style("visibility", "hidden")
-      .style("background-color", "rgba(50, 50, 50, 0.9)")
-      .style("color", "white")
-      .style("padding", "8px")
-      .style("border-radius", "6px")
-      .style("font-size", "11px")
-      .style("pointer-events", "none")
-      .style("z-index", 1000)
-      .style("box-shadow", "0 4px 8px rgba(0,0,0,0.2)");
+      .attr("class", "exercise-tooltip");
   }
   
   // Define area generator for the error band
@@ -977,10 +917,6 @@ function renderExerciseChart(exerciseData, exerciseName) {
       .attr("cx", x(dayData.date))
       .attr("cy", y(dayData.weightedAvg))
       .attr("r", avgPointRadius)
-      .attr("fill", colors.primary)
-      .attr("stroke", "white")
-      .attr("stroke-width", 1.5)
-      .attr("cursor", "pointer")
       .on("mouseover", function(event) {
         d3.select(this)
           .attr("r", avgPointRadius + 1.5)
@@ -995,20 +931,20 @@ function renderExerciseChart(exerciseData, exerciseName) {
         // Get the proper exercise name
         const displayExerciseName = selectedExercise || exerciseName || "Exercise";
         
-        // Build ultra-compact tooltip content for mobile
+        // Build tooltip content
         let tooltipContent = `
-          <div style="font-weight:bold; margin-bottom:2px; font-size:12px;">${displayExerciseName}</div>
-          <div style="margin-bottom:1px; font-size:11px;">${dateStr}</div>
-          <div style="font-size:11px; margin-bottom:2px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:1px;">
+          <div class="tooltip-title">${displayExerciseName}</div>
+          <div class="tooltip-date">${dateStr}</div>
+          <div class="tooltip-stats">
+            <div class="tooltip-stat-line">
               <span>Avg:</span>
-              <span style="font-weight:bold;">${dayData.weightedAvg.toFixed(1)}kg</span>
+              <span class="tooltip-stat-value">${dayData.weightedAvg.toFixed(1)}kg</span>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:1px;">
+            <div class="tooltip-stat-line">
               <span>Range:</span>
               <span>${dayData.minWeight}-${dayData.maxWeight}kg</span>
             </div>
-            <div style="display:flex; justify-content:space-between;">
+            <div class="tooltip-stat-line">
               <span>Sets:</span>
               <span>${dayData.sets.length}</span>
             </div>
@@ -1048,11 +984,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
         .attr("class", "min-point")
         .attr("cx", x(dayData.date))
         .attr("cy", y(dayData.minWeight))
-        .attr("r", minMaxPointRadius)
-        .attr("fill", colors.primary)
-        .attr("fill-opacity", 0.5)
-        .attr("stroke", "white")
-        .attr("stroke-width", 0.8);
+        .attr("r", minMaxPointRadius);
     }
     
     if (dayData.maxWeight !== dayData.weightedAvg) {
@@ -1060,11 +992,7 @@ function renderExerciseChart(exerciseData, exerciseName) {
         .attr("class", "max-point")
         .attr("cx", x(dayData.date))
         .attr("cy", y(dayData.maxWeight))
-        .attr("r", minMaxPointRadius)
-        .attr("fill", colors.primary)
-        .attr("fill-opacity", 0.5)
-        .attr("stroke", "white")
-        .attr("stroke-width", 0.8);
+        .attr("r", minMaxPointRadius);
     }
   });
   
@@ -1078,44 +1006,10 @@ function renderExerciseChart(exerciseData, exerciseName) {
     .attr("x", innerWidth / 2)
     .attr("y", -dynamicMargin.top / 2)
     .attr("text-anchor", "middle")
-    .attr("font-size", isMobile ? "11px" : "13px")
-    .attr("font-weight", "bold")
     .text(titleText);
   
   // Add to DOM
   chartContainer.appendChild(svg.node());
-  
-  // Don't add the legend here - will be added separately
-}
-
-
-/**
- * Add a compact legend optimized for mobile devices
- */
-function addExerciseLegend(container, containerWidth) {
-  const isMobile = containerWidth < 500;
-  
-  const legend = document.createElement('div');
-  legend.style.marginTop = isMobile ? '2px' : '5px';
-  legend.style.fontSize = isMobile ? '9px' : '11px';
-  legend.style.color = '#666';
-  legend.style.textAlign = 'center';
-  
-  // On mobile, use a more compact horizontal layout
-  legend.innerHTML = `
-    <div style="display: flex; justify-content: center; align-items: center; gap: ${isMobile ? '8px' : '15px'};">
-      <div style="display: flex; align-items: center;">
-        <span style="display: inline-block; width: ${isMobile ? '15px' : '20px'}; height: 2px; background-color: ${colors.primary}; margin-right: 3px;"></span>
-        <span>Weighted Avg</span>
-      </div>
-      <div style="display: flex; align-items: center;">
-        <span style="display: inline-block; width: ${isMobile ? '15px' : '20px'}; height: ${isMobile ? '8px' : '12px'}; background-color: ${colors.primaryLight}; opacity: 0.3; margin-right: 3px;"></span>
-        <span>Range</span>
-      </div>
-    </div>
-  `;
-  
-  container.appendChild(legend);
 }
   
   /**
@@ -1128,16 +1022,16 @@ function addExerciseLegend(container, containerWidth) {
     const chartContainer = document.querySelector('.exercise-chart-container');
     if (chartContainer) {
       chartContainer.innerHTML = `
-        <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666;">
-          <div style="font-size: 16px; margin-bottom: 10px;">${message}</div>
-          <div style="font-size: 14px;">Try selecting a different year</div>
+        <div class="error-message">
+          <div class="error-message-primary">${message}</div>
+          <div class="error-message-secondary">Try selecting a different year</div>
         </div>
       `;
     } else {
       secondChartArea.innerHTML = `
-        <div style="height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666;">
-          <div style="font-size: 16px; margin-bottom: 10px;">${message}</div>
-          <div style="font-size: 14px;">Try selecting a different year</div>
+        <div class="error-message">
+          <div class="error-message-primary">${message}</div>
+          <div class="error-message-secondary">Try selecting a different year</div>
         </div>
       `;
     }
@@ -1148,9 +1042,9 @@ function addExerciseLegend(container, containerWidth) {
    */
   function showNoExerciseDataMessage(container, exerciseName) {
     container.innerHTML = `
-      <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #666;">
-        <div style="font-size: 16px; margin-bottom: 10px;">No data found for ${exerciseName || 'selected exercise'}</div>
-        <div style="font-size: 14px;">Try selecting a different exercise</div>
+      <div class="error-message">
+        <div class="error-message-primary">No data found for ${exerciseName || 'selected exercise'}</div>
+        <div class="error-message-secondary">Try selecting a different exercise</div>
       </div>
     `;
   }
@@ -1164,7 +1058,13 @@ function addExerciseLegend(container, containerWidth) {
   // Define a function to check if the DOM is ready and the chart area exists
   function checkAndInitialize() {
     console.log('checkAndInitialize called');
-    
+
+    // Call this function during initialization:
+    document.addEventListener("DOMContentLoaded", () => {
+      populateWAYearSelect();
+      initExerciseTracker(); // or whatever your main initialization function is
+    });
+        
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       // Check if the chart area exists
       if (document.getElementById('secondChartArea')) {
@@ -1463,197 +1363,6 @@ function createSingleColumnExerciseDropdown() {
     if (exerciseSelectorContainer) {
       exerciseSelectorContainer.style.display = 'none';
     }
-    
-    // Add the necessary CSS
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-      /* Base dropdown container */
-      .title-dropdown-container {
-        position: relative;
-        display: inline-block;
-        cursor: pointer;
-        margin: 0;
-        padding: 0;
-        z-index: 1000;
-      }
-      
-      /* Visible title area */
-      .visible-title {
-        display: flex;
-        align-items: center;
-        font-size: 1.4rem;
-        font-weight: 500;
-        color: #333;
-        user-select: none;
-        transition: color 0.2s ease;
-      }
-      
-      .title-text {
-        margin-right: 8px;
-      }
-      
-      .dropdown-arrow {
-        font-size: 0.8em;
-        color: #666;
-        transition: transform 0.2s ease, color 0.2s ease;
-      }
-      
-      /* Hover effects */
-      .title-dropdown-container:hover .dropdown-arrow,
-      .title-dropdown-container.active .dropdown-arrow {
-        color: #546bce;
-      }
-      
-      .title-dropdown-container:hover .title-text,
-      .title-dropdown-container.active .title-text {
-        color: #546bce;
-      }
-      
-      /* Active state (dropdown open) */
-      .title-dropdown-container.active .dropdown-arrow {
-        transform: rotate(180deg);
-      }
-      
-      /* Hidden select element */
-      .hidden-select {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
-        z-index: -1; /* Hide it behind the visible title */
-      }
-      
-      /* Custom dropdown menu */
-      .custom-dropdown-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        z-index: 1001;
-        margin-top: 8px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        width: 300px;
-        max-width: 90vw;
-        max-height: 450px;
-        overflow-y: auto;
-        padding: 0;
-        border: 1px solid #e6e6e6;
-      }
-      
-      /* Single column layout container */
-      .muscle-group-list {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-      }
-      
-      /* Individual muscle group section */
-      .muscle-group-section {
-        width: 100%;
-        margin-bottom: 1px;
-      }
-      
-      /* Muscle group header */
-      .muscle-group-header {
-        font-weight: 600;
-        color: #333;
-        padding: 10px 15px;
-        font-size: 0.95rem;
-        letter-spacing: 0.5px;
-        position: sticky;
-        top: 0;
-        z-index: 5;
-      }
-      
-      /* Exercise list container */
-      .exercise-list {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-      }
-      
-      /* Individual exercise item */
-      .exercise-item {
-        padding: 10px 15px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: all 0.15s ease;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      }
-      
-      .exercise-item:last-child {
-        border-bottom: none;
-      }
-      
-      .exercise-item:hover {
-        background-color: rgba(255, 255, 255, 0.7);
-      }
-      
-      .exercise-item.selected {
-        background-color: rgba(255, 255, 255, 0.9);
-        font-weight: 500;
-      }
-      
-      /* Small screen adjustments */
-      @media (max-width: 576px) {
-        .custom-dropdown-menu {
-          width: 250px;
-          left: 50%;
-          transform: translateX(-50%);
-        }
-        
-        .muscle-group-header {
-          font-size: 0.9rem;
-          padding: 8px 12px;
-        }
-        
-        .exercise-item {
-          font-size: 0.85rem;
-          padding: 8px 12px;
-        }
-      }
-      
-      /* Animation when dropdown appears */
-      @keyframes dropdownFadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-8px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      .custom-dropdown-menu {
-        animation: dropdownFadeIn 0.2s ease;
-      }
-      
-      /* Scrollbar styling */
-      .custom-dropdown-menu::-webkit-scrollbar {
-        width: 6px;
-      }
-      
-      .custom-dropdown-menu::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-      }
-      
-      .custom-dropdown-menu::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 10px;
-      }
-      
-      .custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-      }
-    `;
-    
-    document.head.appendChild(styleElement);
   }
   
   // First, fetch the muscle group data for each exercise
