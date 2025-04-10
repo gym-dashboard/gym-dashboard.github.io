@@ -137,7 +137,15 @@
       <!-- Second plot container -->
       <div id="secondPlot" class="p-3 rounded bg-white">
         <div class="content-header d-flex justify-content-between align-items-center">
-          <h3 class="content-title">Weight Analysis</h3>
+          <!-- REPLACE the h3 title with this pre-initialized dropdown container -->
+          <div class="title-dropdown-container">
+            <div class="visible-title">
+              <span class="title-text">Bench Press</span>
+              <span class="dropdown-arrow">▾</span>
+            </div>
+            <select id="title-exercise-select" class="hidden-select"></select>
+            <div class="custom-dropdown-menu" style="display: none;"></div>
+          </div>
           <div class="select-wrapper">
             <select id="waYearSelect" class="form-select form-select-sm"></select>
           </div>
@@ -146,7 +154,7 @@
         <div id="secondChartArea" class="chart-placeholder">
           Your second visualization will appear here
         </div>
-      </div>      
+      </div>    
     </div>
   </div>
   
