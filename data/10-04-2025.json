@@ -1,0 +1,114 @@
+{
+  "date": "10-04-2025",
+  "participants": ["André D.", "Mariana D."],
+  "start_time": "18:47",
+  "end_time": "20:05",
+  "total_time": "1 hour 18 minutes",
+  "overall_muscle_group": ["Back", "Biceps"],
+  "workout": [
+    {
+      "Exercise": "Pull-Ups",
+      "Reps": 12,
+      "Weight": "0 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Back",
+      "Location": null
+    },
+    {
+      "Exercise": "Pull-Ups",
+      "Reps": 12,
+      "Weight": "0 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": null
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 12,
+      "Weight": "45 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 8,
+      "Weight": "50 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 12,
+      "Weight": "50 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pullovers",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pullovers",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 18,
+      "Weight": "18 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 22,
+      "Weight": "18 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    }
+  ]
+}

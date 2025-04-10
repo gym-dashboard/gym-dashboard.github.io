@@ -169,6 +169,9 @@
         const exerciseDropdown = createExerciseDropdown(exercises);
         secondChartArea.appendChild(exerciseDropdown);
         dropdownCreated = true;
+        
+        // Hide the default dropdown immediately after creating it
+        hideDefaultExerciseDropdown();
       }
 
       // For basic select element, force the selected exercise to match the one chosen
@@ -270,6 +273,9 @@
       updateRangeControls();
       updateTitleText();
       renderMultiExerciseChart(getFilteredExerciseData());
+      
+      // Make sure dropdown remains hidden after updates
+      hideDefaultExerciseDropdown();
     }).catch(error => {
       console.error('Error updating exercise tracker:', error);
       showNoDataMessage('Error updating exercise data');
@@ -329,6 +335,10 @@
     });
 
     dropdownContainer.appendChild(select);
+    
+    // Hide the dropdown immediately after creation
+    dropdownContainer.style.cssText = 'position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;';
+    
     return dropdownContainer;
   }
 
@@ -357,6 +367,9 @@
         selectedExercises = [select.value];
       }
     }
+    
+    // Ensure the dropdown container remains hidden
+    hideDefaultExerciseDropdown();
   }
 
   /**
@@ -983,6 +996,17 @@
       }
     }
   }
+  
+  /**
+   * Function to hide the default exercise dropdown
+   */
+  function hideDefaultExerciseDropdown() {
+    const exerciseSelectorContainer = document.querySelector('.exercise-selector');
+    if (exerciseSelectorContainer) {
+      exerciseSelectorContainer.style.cssText = 'position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;';
+      exerciseSelectorContainer.setAttribute('data-hidden', 'true');
+    }
+  }
 
   // Expose functions and data loading routine for external usage (including enhanced dropdown)
   window.weightAnalysis = {
@@ -990,7 +1014,8 @@
     updateYear: updateYear,
     renderMultiExerciseChart: renderMultiExerciseChart,
     getFilteredExerciseData: getFilteredExerciseData,
-    loadExerciseData: loadExerciseData
+    loadExerciseData: loadExerciseData,
+    hideDefaultExerciseDropdown: hideDefaultExerciseDropdown
   };
 
   // Also expose rendering functions globally
@@ -1005,11 +1030,15 @@
     document.addEventListener("DOMContentLoaded", () => {
       populateWAYearSelect();
       initExerciseTracker();
+      // Hide dropdown after initialization
+      setTimeout(hideDefaultExerciseDropdown, 100);
     });
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       if (document.getElementById('secondChartArea')) {
         console.log('Exercise tracker: DOM is ready, initializing...');
         initExerciseTracker();
+        // Hide dropdown after initialization
+        setTimeout(hideDefaultExerciseDropdown, 100);
       } else {
         console.log('Exercise tracker: Chart area not found, will retry...');
         setTimeout(checkAndInitialize, 100);
@@ -1059,25 +1088,25 @@ function createEnhancedExerciseDropdown() {
   
   // Helper functions for different color states
   const getHoverColor = (muscleGroup) => {
-    if (!muscleGroup || !muscleBackgroundColors[muscleGroup]) return 'rgba(0, 0, 0, 0.03)';
+    if (!muscleGroup || !muscleBackgroundColors[muscleGroup]) return 'rgba(0, 0, 0, 0.02)';
     
     // Convert the hex color to a more transparent version for hover
     const hexColor = muscleBackgroundColors[muscleGroup].replace('#', '');
     const r = parseInt(hexColor.substr(0, 2), 16);
     const g = parseInt(hexColor.substr(2, 2), 16);
     const b = parseInt(hexColor.substr(4, 2), 16);
-    return `rgba(${r}, ${g}, ${b}, 0.5)`; // 50% opacity for hover
+    return `rgba(${r}, ${g}, ${b}, 0.25)`; // Reduced opacity for more faded hover
   };
   
   const getSelectionColor = (muscleGroup) => {
-    if (!muscleGroup || !muscleBackgroundColors[muscleGroup]) return 'rgba(0, 0, 0, 0.05)';
+    if (!muscleGroup || !muscleBackgroundColors[muscleGroup]) return 'rgba(0, 0, 0, 0.1)';
     
-    // Convert hex color to a slightly more solid version for selection
+    // Convert hex color to a more visible version for selection
     const hexColor = muscleBackgroundColors[muscleGroup].replace('#', '');
     const r = parseInt(hexColor.substr(0, 2), 16);
     const g = parseInt(hexColor.substr(2, 2), 16);
     const b = parseInt(hexColor.substr(4, 2), 16);
-    return `rgba(${r}, ${g}, ${b}, 0.7)`; // 70% opacity for selection
+    return `rgba(${r}, ${g}, ${b}, 0.35)`; // Better opacity level for selection
   };
   
   // Get the border color from the muscle group
@@ -1152,6 +1181,51 @@ function createEnhancedExerciseDropdown() {
     }
   });
 
+  // Function to fetch exercise workout counts
+  async function fetchExerciseWorkoutCounts() {
+    let workoutCounts = {};
+    const currentYear = window.currentYear || new Date().getFullYear();
+    try {
+      const start = new Date(currentYear, 0, 1);
+      const end = new Date();
+      
+      for (let dt = new Date(start); dt <= end; dt.setDate(dt.getDate() + 1)) {
+        const dd = String(dt.getDate()).padStart(2, "0");
+        const mm = String(dt.getMonth() + 1).padStart(2, "0");
+        const yyyy = dt.getFullYear();
+        const fileName = `data/${dd}-${mm}-${yyyy}.json`;
+        
+        try {
+          const response = await fetch(fileName);
+          if (!response.ok) continue;
+          const json = await response.json();
+          if (!json || !json.workout || !Array.isArray(json.workout)) continue;
+          
+          // Group by exercise
+          const exercisesForDay = new Set();
+          json.workout.forEach(set => {
+            if (set.Exercise) {
+              exercisesForDay.add(set.Exercise);
+            }
+          });
+          
+          // Count each exercise once per day
+          exercisesForDay.forEach(exercise => {
+            workoutCounts[exercise] = (workoutCounts[exercise] || 0) + 1;
+          });
+          
+        } catch (error) {
+          continue;
+        }
+      }
+      
+      return workoutCounts;
+    } catch (error) {
+      console.error('Error fetching exercise workout counts:', error);
+      return {};
+    }
+  }
+
   async function fetchExerciseMuscleGroups() {
     let exerciseData = {};
     const currentYear = window.currentYear || new Date().getFullYear();
@@ -1184,9 +1258,9 @@ function createEnhancedExerciseDropdown() {
     }
   }
 
-  // Updated hover effects with distinct hover/selection colors
+  // Updated hover effects with more faded hover colors
   function setupHoverEffects(item, muscleGroup) {
-    // When the mouse is over the item, use a transparent version of the muscle color
+    // When the mouse is over the item, use a very transparent version of the muscle color
     item.addEventListener('mouseover', () => {
       if (!item.classList.contains('selected')) {
         item.style.backgroundColor = getHoverColor(muscleGroup);
@@ -1201,18 +1275,14 @@ function createEnhancedExerciseDropdown() {
     });
   }
 
-  function createDropdownWithMuscleGroups(exerciseToMuscleGroup) {
+  async function createDropdownWithMuscleGroups() {
+    // Fetch exercise data
+    const exerciseToMuscleGroup = await fetchExerciseMuscleGroups();
+    const workoutCounts = await fetchExerciseWorkoutCounts();
+    
     customDropdown.innerHTML = '';
     
-    // Set dropdown width based on longest exercise name
-    const charWidth = 8; // Approximate width of a character in pixels
-    const padding = 80; // Extra padding for icons, margins, etc.
-    const estimatedWidth = Math.min(
-      Math.max((maxExerciseNameLength * charWidth) + padding, 240), // Min width of 240px
-      400 // Max width of 400px
-    );
-    customDropdown.style.width = `${estimatedWidth}px`;
-    
+    // Clear the dropdown content first
     const mobileHeader = document.createElement('div');
     mobileHeader.className = 'dropdown-mobile-header';
     mobileHeader.innerHTML = `
@@ -1231,18 +1301,45 @@ function createEnhancedExerciseDropdown() {
       };
     });
 
-    exerciseOptions.forEach(exercise => {
+    // FIXED: Define eligibleExercises BEFORE using it in width calculation
+    // Only include exercises with 3+ workouts
+    const eligibleExercises = exerciseOptions.filter(exercise => 
+      workoutCounts[exercise.text] && workoutCounts[exercise.text] >= 2
+    );
+
+    // FIXED: Now calculate width after eligibleExercises is defined
+    // Find the longest exercise name to calculate appropriate width
+    let maxLabelWidth = 0;
+    eligibleExercises.forEach(exercise => {
+      const tempSpan = document.createElement('span');
+      tempSpan.style.visibility = 'hidden';
+      tempSpan.style.position = 'absolute';
+      tempSpan.style.whiteSpace = 'nowrap';
+      tempSpan.style.font = '0.9rem sans-serif';
+      tempSpan.textContent = exercise.text;
+      document.body.appendChild(tempSpan);
+      const width = tempSpan.offsetWidth;
+      if (width > maxLabelWidth) maxLabelWidth = width;
+      document.body.removeChild(tempSpan);
+    });
+    
+    // Add margin for left border and some padding
+    const calculatedWidth = Math.min(Math.max(maxLabelWidth + 50, 240), 320);
+    customDropdown.style.width = `${calculatedWidth}px`;
+
+    eligibleExercises.forEach(exercise => {
       const muscleGroup = exerciseToMuscleGroup[exercise.text] || null;
       exercise.muscleGroup = muscleGroup;
       if (muscleGroup && muscleGroupsData[muscleGroup]) {
         muscleGroupsData[muscleGroup].exercises.push(exercise);
       } else {
+        // If no muscle group, add to first group (usually Chest)
         muscleGroupsData[muscleGroups[0]].exercises.push(exercise);
       }
     });
 
     hiddenSelect.innerHTML = '';
-    exerciseOptions.forEach(option => {
+    eligibleExercises.forEach(option => {
       const optElement = document.createElement('option');
       optElement.value = option.value;
       optElement.textContent = option.text;
@@ -1252,17 +1349,44 @@ function createEnhancedExerciseDropdown() {
     const groupList = document.createElement('div');
     groupList.className = 'muscle-group-list';
 
+    // Find at least one valid exercise to select by default if current selection is invalid
+    let hasValidSelection = enhancedSelectedExercises.length > 0 && 
+                             eligibleExercises.some(ex => enhancedSelectedExercises.includes(ex.value));
+    
+    let defaultExercise = null;
+    if (!hasValidSelection) {
+      // Reset selection and find a new default
+      if (eligibleExercises.length > 0) {
+        // Prefer Bench Press if available
+        defaultExercise = eligibleExercises.find(ex => ex.text === "Bench Press") || eligibleExercises[0];
+        enhancedSelectedExercises = [defaultExercise.value];
+      } else {
+        enhancedSelectedExercises = [];
+      }
+    }
+
+    // Add muscle groups with visual separators
+    let visibleGroupCount = 0;
     muscleGroups.forEach(groupKey => {
       const group = muscleGroupsData[groupKey];
       if (group.exercises.length > 0) {
+        // Add visual separator between muscle groups (only between groups, not before first)
+        if (visibleGroupCount > 0) {
+          const divider = document.createElement('div');
+          divider.className = 'muscle-group-divider';
+          groupList.appendChild(divider);
+        }
+        visibleGroupCount++;
+        
         const section = document.createElement('div');
         section.className = 'muscle-group-section';
+        section.dataset.group = groupKey; // Add data attribute for CSS targeting
         
-        // Centered muscle group header
+        // Muscle group header with background color
         const header = document.createElement('div');
         header.className = 'muscle-group-header';
-        header.style.backgroundColor = group.backgroundColor;
         header.textContent = group.name;
+        header.style.backgroundColor = group.backgroundColor;
         section.appendChild(header);
         
         const exerciseList = document.createElement('div');
@@ -1274,47 +1398,14 @@ function createEnhancedExerciseDropdown() {
           item.dataset.value = exercise.value;
           item.dataset.muscleGroup = exercise.muscleGroup || '';
           
-          // Create a simple label
+          // Create label
           const label = document.createElement('span');
           label.className = 'exercise-label';
           label.textContent = exercise.text;
           item.appendChild(label);
           
-          // Use updated hover effects
+          // Set up hover effects with color from muscle group
           setupHoverEffects(item, exercise.muscleGroup);
-          
-          // Updated selection handling with color-coordinated selection indicator
-          item.addEventListener('click', () => {
-            // Clear selection from all items
-            const allItems = customDropdown.querySelectorAll('.exercise-item');
-            allItems.forEach(el => {
-              el.classList.remove('selected');
-              el.setAttribute('aria-selected', 'false');
-              el.style.backgroundColor = '';
-              el.style.borderLeftColor = '';
-            });
-            
-            // Mark clicked item as selected
-            item.classList.add('selected');
-            item.setAttribute('aria-selected', 'true');
-            
-            // Apply distinct selection color and border color
-            item.style.backgroundColor = getSelectionColor(exercise.muscleGroup);
-            
-            // Set the border color based on muscle group
-            const borderColor = getBorderColor(exercise.muscleGroup);
-            item.style.borderLeftColor = borderColor;
-            
-            // Update selection state
-            enhancedSelectedExercises = [exercise.value];
-            
-            // Update UI and chart
-            updateTitleText();
-            updateExercisesChart();
-            
-            // Close dropdown
-            toggleDropdown(false);
-          });
           
           // Mark as selected if it's in the current selection
           if (enhancedSelectedExercises.includes(exercise.value)) {
@@ -1335,34 +1426,86 @@ function createEnhancedExerciseDropdown() {
     });
     
     customDropdown.appendChild(groupList);
-    setupEventListeners();
     
-    const exerciseSelectorContainer = existingDropdown.closest('.exercise-selector');
-    if (exerciseSelectorContainer) {
-      exerciseSelectorContainer.style.display = 'none';
+    // If no eligible exercises, show a message
+    if (eligibleExercises.length === 0) {
+      const noExercisesMsg = document.createElement('div');
+      noExercisesMsg.className = 'no-exercises-message';
+      noExercisesMsg.textContent = 'No exercises with 3+ workouts found.';
+      customDropdown.appendChild(noExercisesMsg);
+    }
+    
+    // FIXED: Use the new function to fix mobile clicks
+    fixMobileClickIssues(customDropdown, enhancedSelectedExercises);
+    
+    // Update title after setting up dropdown
+    updateTitleText();
+    
+    // Hide the default dropdown
+    if (window.weightAnalysis && window.weightAnalysis.hideDefaultExerciseDropdown) {
+      window.weightAnalysis.hideDefaultExerciseDropdown();
+    } else {
+      const exerciseSelectorContainer = existingDropdown.closest('.exercise-selector');
+      if (exerciseSelectorContainer) {
+        exerciseSelectorContainer.style.cssText = 'position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;';
+      }
     }
   }
 
-  function setupEventListeners() {
+  // FIXED: New function to fix mobile click issues
+  function fixMobileClickIssues(dropdownElement, selectedExercises) {
+    // Set up enhanced mobile toggle function
     window.toggleDropdown = (show) => {
-      if (show === undefined) show = customDropdown.style.display !== 'block';
+      if (show === undefined) show = dropdownElement.style.display !== 'block';
       if (show) {
         const isMobile = window.innerWidth <= 576;
-        customDropdown.style.display = 'block';
+        
+        // Position dropdown properly
+        dropdownElement.style.display = 'block';
+        
         if (isMobile) {
+          // Mobile centered positioning with proper z-index
+          dropdownElement.style.position = 'fixed';
+          dropdownElement.style.top = '50%';
+          dropdownElement.style.left = '50%';
+          dropdownElement.style.transform = 'translate(-50%, -50%)';
+          dropdownElement.style.maxHeight = '80vh';
+          dropdownElement.style.zIndex = '1051'; // Higher than backdrop
+          dropdownElement.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+          dropdownElement.style.borderRadius = '8px';
+          
+          // Ensure backdrop is visible and properly positioned
           backdrop.style.display = 'block';
+          backdrop.style.position = 'fixed';
+          backdrop.style.top = '0';
+          backdrop.style.left = '0';
+          backdrop.style.width = '100%';
+          backdrop.style.height = '100%';
+          backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
+          backdrop.style.zIndex = '1050';
+          backdrop.style.opacity = '1'; // Make sure it's fully visible
           setTimeout(() => backdrop.classList.add('active'), 10);
+        } else {
+          // Desktop positioning
+          dropdownElement.style.position = 'absolute';
+          dropdownElement.style.top = 'calc(100% + 10px)';
+          dropdownElement.style.left = '0';
+          dropdownElement.style.transform = 'none';
+          dropdownElement.style.maxHeight = '450px';
+          dropdownElement.style.zIndex = '1020';
         }
+        
         dropdownContainer.classList.add('active');
         setTimeout(() => {
-          const selected = customDropdown.querySelector('.exercise-item.selected');
+          const selected = dropdownElement.querySelector('.exercise-item.selected');
           if (selected) {
             selected.scrollIntoView({ block: 'center', behavior: 'smooth' });
           }
         }, 100);
       } else {
-        customDropdown.style.display = 'none';
+        dropdownElement.style.display = 'none';
         backdrop.classList.remove('active');
+        backdrop.style.opacity = '0';
         setTimeout(() => {
           if (!dropdownContainer.classList.contains('active')) {
             backdrop.style.display = 'none';
@@ -1372,6 +1515,101 @@ function createEnhancedExerciseDropdown() {
       }
     };
 
+    // Add direct click handler to each exercise item
+    const items = dropdownElement.querySelectorAll('.exercise-item');
+    items.forEach(item => {
+      // Replace the original click handler with a new one
+      item.onclick = null;
+      
+      // Remove all existing listeners by cloning the node
+      const newItem = item.cloneNode(true);
+      item.parentNode.replaceChild(newItem, item);
+      
+      // Add hover effects again after cloning
+      setupHoverEffects(newItem, newItem.dataset.muscleGroup);
+      
+      // Add the new click handler directly
+      newItem.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        // The exercise value we need to select
+        const exerciseValue = this.dataset.value;
+        const muscleGroup = this.dataset.muscleGroup;
+        
+        // Clear selection from all items
+        const allItems = dropdownElement.querySelectorAll('.exercise-item');
+        allItems.forEach(el => {
+          el.classList.remove('selected');
+          el.setAttribute('aria-selected', 'false');
+          el.style.backgroundColor = '';
+          el.style.borderLeftColor = '';
+        });
+        
+        // Mark clicked item as selected
+        this.classList.add('selected');
+        this.setAttribute('aria-selected', 'true');
+        
+        // Apply selection color and border
+        this.style.backgroundColor = getSelectionColor(muscleGroup);
+        this.style.borderLeftColor = getBorderColor(muscleGroup);
+        
+        // Update selection state
+        enhancedSelectedExercises = [exerciseValue];
+        
+        // Update UI and chart
+        updateTitleText();
+        updateExercisesChart();
+        
+        // Close dropdown
+        toggleDropdown(false);
+      });
+      
+      // Add touch-specific handler for mobile
+      newItem.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        this.click(); // Trigger the click event
+      }, { passive: false });
+    });
+    
+    // Fix the mobile header close button
+    const closeBtn = dropdownElement.querySelector('.dropdown-close');
+    if (closeBtn) {
+      const newCloseBtn = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+      
+      newCloseBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        toggleDropdown(false);
+      });
+      
+      newCloseBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        toggleDropdown(false);
+      }, { passive: false });
+    }
+    
+    // Fix backdrop interaction
+    backdrop.addEventListener('click', function(e) {
+      e.preventDefault();
+      toggleDropdown(false);
+    });
+    
+    backdrop.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      toggleDropdown(false);
+    }, { passive: false });
+    
+    // Setup document click to close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.title-dropdown-container') && 
+          !e.target.closest('.custom-dropdown-menu')) {
+        toggleDropdown(false);
+      }
+    });
+    
+    // Set up visible title click
     const visibleTitle = dropdownContainer.querySelector('.visible-title');
     if (visibleTitle) {
       const newVisibleTitle = visibleTitle.cloneNode(true);
@@ -1381,33 +1619,25 @@ function createEnhancedExerciseDropdown() {
         toggleDropdown();
       });
     }
-
-    customDropdown.addEventListener('click', (e) => {
-      // Handle close button
-      if (e.target.closest('.dropdown-close')) {
-        toggleDropdown(false);
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.title-dropdown-container') &&
-          !e.target.closest('.custom-dropdown-menu')) {
-        toggleDropdown(false);
-      }
-    });
     
-    backdrop.addEventListener('click', () => {
-      toggleDropdown(false);
-    });
+    // Make sure dropdown header is fixed
+    const mobileHeader = dropdownElement.querySelector('.dropdown-mobile-header');
+    if (mobileHeader) {
+      mobileHeader.style.position = 'sticky';
+      mobileHeader.style.top = '0';
+      mobileHeader.style.zIndex = '5';
+      mobileHeader.style.backgroundColor = 'white';
+    }
     
-    customDropdown.addEventListener('keydown', (e) => {
+    // Add keyboard navigation
+    dropdownElement.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         toggleDropdown(false);
         return;
       }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        const items = Array.from(customDropdown.querySelectorAll('.exercise-item'));
+        const items = Array.from(dropdownElement.querySelectorAll('.exercise-item'));
         const currentIndex = items.findIndex(item => item === document.activeElement);
         let newIndex;
         if (e.key === 'ArrowDown') {
@@ -1432,9 +1662,14 @@ function createEnhancedExerciseDropdown() {
       const selectedValue = enhancedSelectedExercises[0];
       const exercise = exerciseOptions.find(opt => opt.value === selectedValue);
       titleElement.textContent = exercise ? exercise.text : 'Select Exercise';
+      
       // Update the native select element
-      existingDropdown.value = selectedValue;
-      existingDropdown.dispatchEvent(new Event('change'));
+      if (existingDropdown && selectedValue) {
+        existingDropdown.value = selectedValue;
+        // Create and dispatch a change event
+        const event = new Event('change', { bubbles: true });
+        existingDropdown.dispatchEvent(event);
+      }
     }
   }
 
@@ -1454,6 +1689,12 @@ function createEnhancedExerciseDropdown() {
       }
       return;
     }
+    
+    // If we have a global selectedExercises array, update it
+    if (window.selectedExercises) {
+      window.selectedExercises = enhancedSelectedExercises;
+    }
+    
     const loadPromises = enhancedSelectedExercises.map(exercise => {
       if (window.allExerciseData && window.allExerciseData[exercise]) {
         return Promise.resolve(window.allExerciseData[exercise]);
@@ -1463,12 +1704,15 @@ function createEnhancedExerciseDropdown() {
         return Promise.resolve([]);
       }
     });
+    
     if (!window.allExerciseData) window.allExerciseData = {};
+    
     Promise.all(loadPromises).then(datasets => {
       enhancedSelectedExercises.forEach((exercise, index) => {
         window.allExerciseData[exercise] = datasets[index];
       });
-      if (window.renderMultiExerciseChart) {
+      
+      if (window.renderMultiExerciseChart && window.getFilteredExerciseData) {
         window.renderMultiExerciseChart(window.getFilteredExerciseData());
       } else {
         const existingDropdown = document.getElementById('exercise-select');
@@ -1477,14 +1721,19 @@ function createEnhancedExerciseDropdown() {
           existingDropdown.dispatchEvent(new Event('change'));
         }
       }
+      
+      // Make sure dropdown remains hidden after chart update
+      if (window.weightAnalysis && window.weightAnalysis.hideDefaultExerciseDropdown) {
+        window.weightAnalysis.hideDefaultExerciseDropdown();
+      }
     });
   }
 
-  fetchExerciseMuscleGroups().then(exerciseToMuscleGroup => {
-    createDropdownWithMuscleGroups(exerciseToMuscleGroup);
-  }).catch(error => {
+  // Start the process
+  createDropdownWithMuscleGroups().catch(error => {
     console.error('Error creating dropdown:', error);
-    createDropdownWithMuscleGroups({});
+    // Create a basic dropdown as fallback
+    customDropdown.innerHTML = '<div class="no-exercises-message">Failed to load exercises. Please try again.</div>';
   });
 }
 
