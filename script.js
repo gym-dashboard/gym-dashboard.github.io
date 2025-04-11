@@ -1614,6 +1614,9 @@ function getDateFromWeekKey(weekKey) {
   return new Date(year, month, day);
 }
 
+// Modify the updateStreakCounter function to count the current week
+// even if the previous week wasn't completed
+
 function updateStreakCounter() {
   const prevWeekCompleted = checkPreviousWeekCompleted();
   const currentWeekCount = countCurrentWeekWorkouts();
@@ -1655,29 +1658,33 @@ function updateStreakCounter() {
   let streak = 0;
   const sortedWeeks = [...weeklyData.completedWeeks].sort();
   
-  // IMPORTANT CHANGE: Only count a streak if the previous week was completed
-  if (sortedWeeks.length > 0 && prevWeekCompleted) {
-    // Start with 1 for the previous week that was just completed
-    streak = 1;
+  // FIXED: Count current week if it's completed, regardless of previous week
+  if (currentWeekCompleted) {
+    streak = 1; // Start with 1 for the current week
     
-    // Find the index of the previous week in our sorted array
-    const prevWeekIndex = sortedWeeks.indexOf(prevWeekKey);
-    
-    // If we found the previous week in our completed weeks
-    if (prevWeekIndex > 0) {
-      // Check consecutive weeks working backwards from the previous week
-      for (let i = prevWeekIndex; i > 0; i--) {
-        const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
-        const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
-        
-        // Check if these weeks are consecutive (7 days apart)
-        const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
-        
-        if (dayDiff === 7) {
-          streak++;
-        } else {
-          // Break on first non-consecutive week
-          break;
+    // Continue checking for streak only if previous week was also completed
+    if (prevWeekCompleted) {
+      streak++; // Add 1 for previous week
+      
+      // Find the index of the previous week in our sorted array
+      const prevWeekIndex = sortedWeeks.indexOf(prevWeekKey);
+      
+      // If we found the previous week in our completed weeks
+      if (prevWeekIndex > 0) {
+        // Check consecutive weeks working backwards from the previous week
+        for (let i = prevWeekIndex; i > 0; i--) {
+          const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
+          const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
+          
+          // Check if these weeks are consecutive (7 days apart)
+          const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
+          
+          if (dayDiff === 7) {
+            streak++;
+          } else {
+            // Break on first non-consecutive week
+            break;
+          }
         }
       }
     }

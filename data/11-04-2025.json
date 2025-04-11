@@ -1,0 +1,106 @@
+{
+  "date": "11-04-2025",
+  "participants": ["André D.", "Filipe P.", "Karl"],
+  "start_time": "11:55",
+  "end_time": "13:07",
+  "total_time": "1 hour 12 minutes",
+  "overall_muscle_group": ["Chest", "Triceps"],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "27.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 6,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 10,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 10,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Dips",
+      "Reps": 30,
+      "Weight": "31.5 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Triceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Dips",
+      "Reps": 15,
+      "Weight": "45 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Dips",
+      "Reps": 15,
+      "Weight": "45 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 8,
+      "Weight": "52.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 8,
+      "Weight": "52.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 7,
+      "Weight": "50 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    }
+  ]
+}

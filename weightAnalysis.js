@@ -21,11 +21,21 @@
   };
 
   // Create backdrop for mobile if not exists
+  // Create backdrop for mobile if not exists
   let backdrop = document.querySelector('.dropdown-backdrop');
   if (!backdrop) {
     backdrop = document.createElement('div');
     backdrop.className = 'dropdown-backdrop';
+    // Ensure the backdrop is hidden initially
+    backdrop.style.display = 'none';
+    backdrop.style.opacity = '0';
+    backdrop.style.pointerEvents = 'none';
     document.body.appendChild(backdrop);
+  } else {
+    // Reset any existing backdrop to ensure it's hidden
+    backdrop.style.display = 'none';
+    backdrop.style.opacity = '0';
+    backdrop.style.pointerEvents = 'none';
   }
 
   // Global state variables
@@ -1122,6 +1132,7 @@ function createEnhancedExerciseDropdown() {
     console.error('Exercise dropdown not found');
     return;
   }
+  
   if (!dropdownContainer) {
     const titleElement = document.querySelector('#secondPlot .content-header h3.content-title');
     if (!titleElement) return;
@@ -1155,11 +1166,21 @@ function createEnhancedExerciseDropdown() {
     dropdownContainer = newDropdownContainer;
   }
 
+  // Create backdrop for mobile if not exists - SINGLE BACKDROP INITIALIZATION
   let backdrop = document.querySelector('.dropdown-backdrop');
   if (!backdrop) {
     backdrop = document.createElement('div');
     backdrop.className = 'dropdown-backdrop';
+    // Ensure the backdrop is hidden initially
+    backdrop.style.display = 'none';
+    backdrop.style.opacity = '0';
+    backdrop.style.pointerEvents = 'none';
     document.body.appendChild(backdrop);
+  } else {
+    // Reset existing backdrop to ensure it's hidden
+    backdrop.style.display = 'none';
+    backdrop.style.opacity = '0';
+    backdrop.style.pointerEvents = 'none';
   }
 
   const visibleTitleText = dropdownContainer.querySelector('.title-text');
@@ -1301,13 +1322,12 @@ function createEnhancedExerciseDropdown() {
       };
     });
 
-    // FIXED: Define eligibleExercises BEFORE using it in width calculation
     // Only include exercises with 3+ workouts
     const eligibleExercises = exerciseOptions.filter(exercise => 
       workoutCounts[exercise.text] && workoutCounts[exercise.text] >= 2
     );
 
-    // FIXED: Now calculate width after eligibleExercises is defined
+    // Now calculate width after eligibleExercises is defined
     // Find the longest exercise name to calculate appropriate width
     let maxLabelWidth = 0;
     eligibleExercises.forEach(exercise => {
@@ -1435,7 +1455,7 @@ function createEnhancedExerciseDropdown() {
       customDropdown.appendChild(noExercisesMsg);
     }
     
-    // FIXED: Use the new function to fix mobile clicks
+    // Use the function to fix mobile clicks
     fixMobileClickIssues(customDropdown, enhancedSelectedExercises);
     
     // Update title after setting up dropdown
@@ -1452,7 +1472,7 @@ function createEnhancedExerciseDropdown() {
     }
   }
 
-  // FIXED: New function to fix mobile click issues
+  // Function to fix mobile click issues
   function fixMobileClickIssues(dropdownElement, selectedExercises) {
     // Set up enhanced mobile toggle function
     window.toggleDropdown = (show) => {
@@ -1483,8 +1503,11 @@ function createEnhancedExerciseDropdown() {
           backdrop.style.height = '100%';
           backdrop.style.backgroundColor = 'rgba(0,0,0,0.5)';
           backdrop.style.zIndex = '1050';
-          backdrop.style.opacity = '1'; // Make sure it's fully visible
-          setTimeout(() => backdrop.classList.add('active'), 10);
+          backdrop.style.pointerEvents = 'auto';
+          setTimeout(() => {
+            backdrop.style.opacity = '1';
+            backdrop.classList.add('active');
+          }, 10);
         } else {
           // Desktop positioning
           dropdownElement.style.position = 'absolute';
@@ -1506,6 +1529,7 @@ function createEnhancedExerciseDropdown() {
         dropdownElement.style.display = 'none';
         backdrop.classList.remove('active');
         backdrop.style.opacity = '0';
+        backdrop.style.pointerEvents = 'none';
         setTimeout(() => {
           if (!dropdownContainer.classList.contains('active')) {
             backdrop.style.display = 'none';
@@ -1596,10 +1620,10 @@ function createEnhancedExerciseDropdown() {
       toggleDropdown(false);
     });
     
-    backdrop.addEventListener('touchstart', function(e) {
-      e.preventDefault();
+    // Use touchend instead of touchstart and make it passive where possible
+    backdrop.addEventListener('touchend', function(e) {
       toggleDropdown(false);
-    }, { passive: false });
+    }, { passive: true });
     
     // Setup document click to close dropdown when clicking outside
     document.addEventListener('click', function(e) {

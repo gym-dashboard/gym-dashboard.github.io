@@ -374,7 +374,7 @@
   cursor: pointer;
   margin: 0;
   padding: 0;
-  z-index: 1010; /* Higher than standard UI elements */
+  z-index: 1100; /* Higher than standard UI elements */
   max-width: 100%;
 }
 
@@ -888,3 +888,5 @@
     border-width: 1.5px;
   }
 }
+
+
