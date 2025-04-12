@@ -386,45 +386,45 @@
    */
   function createRangeControls(container) {
     container.innerHTML = '';
-
+  
     const containerWidth = container.clientWidth || 300;
     const isMobile = window.innerWidth < 500;
-
+  
     const mainWrapper = document.createElement('div');
     mainWrapper.className = 'range-controls-and-legend';
     if (isMobile) mainWrapper.classList.add('mobile');
-
+  
     const controlsWrapper = document.createElement('div');
     controlsWrapper.className = 'range-controls-wrapper';
-
+  
     const label = document.createElement('div');
     label.textContent = 'Show:';
     label.className = 'range-label';
     if (isMobile) label.classList.add('mobile');
     controlsWrapper.appendChild(label);
-
+  
     const buttonGroup = document.createElement('div');
     buttonGroup.className = 'button-group';
-
+  
     let totalWorkouts = 0;
     Object.values(allExerciseData).forEach(data => {
       if (data && data.length > totalWorkouts) {
         totalWorkouts = data.length;
       }
     });
-
+  
     const presets = [];
     if (totalWorkouts >= 5) presets.push(5);
     if (totalWorkouts >= 10) presets.push(10);
     if (totalWorkouts >= 15 && containerWidth > 400) presets.push(15);
-
+  
     presets.forEach((count) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'btn btn-sm ' + (displayCount === count ? 'btn-primary' : 'btn-outline-secondary');
       button.textContent = `${count}`;
       if (isMobile) button.classList.add('mobile');
-
+  
       button.addEventListener('click', () => {
         displayCount = count;
         document.querySelectorAll('.button-group .btn').forEach(btn => {
@@ -436,17 +436,17 @@
         const slider = document.getElementById('range-slider');
         if (slider) slider.value = count;
         renderMultiExerciseChart(getFilteredExerciseData());
-        addExerciseLegend(document.querySelector('.legend-container'), containerWidth);
+        // Removed call to addExerciseLegend here
       });
       buttonGroup.appendChild(button);
     });
-
+  
     const allButton = document.createElement('button');
     allButton.type = 'button';
     allButton.className = 'btn btn-sm ' + (displayCount === null ? 'btn-primary' : 'btn-outline-secondary');
     allButton.textContent = 'All';
     if (isMobile) allButton.classList.add('mobile');
-
+  
     allButton.addEventListener('click', () => {
       displayCount = null;
       document.querySelectorAll('.button-group .btn').forEach(btn => {
@@ -458,15 +458,15 @@
       const slider = document.getElementById('range-slider');
       if (slider) slider.value = slider.max;
       renderMultiExerciseChart(getFilteredExerciseData());
-      addExerciseLegend(document.querySelector('.legend-container'), containerWidth);
+      // Removed call to addExerciseLegend here
     });
     buttonGroup.appendChild(allButton);
     controlsWrapper.appendChild(buttonGroup);
-
+  
     if (containerWidth > 400 && totalWorkouts > 5) {
       const sliderContainer = document.createElement('div');
       sliderContainer.className = 'slider-container';
-
+  
       const slider = document.createElement('input');
       slider.type = 'range';
       slider.id = 'range-slider';
@@ -474,7 +474,7 @@
       slider.min = Math.min(3, totalWorkouts);
       slider.max = totalWorkouts;
       slider.value = displayCount || totalWorkouts;
-
+  
       slider.addEventListener('input', (event) => {
         const count = parseInt(event.target.value);
         displayCount = count < totalWorkouts ? count : null;
@@ -498,22 +498,23 @@
           }
         }
         renderMultiExerciseChart(getFilteredExerciseData());
-        addExerciseLegend(document.querySelector('.legend-container'), containerWidth);
+        // Removed call to addExerciseLegend here
       });
       sliderContainer.appendChild(slider);
       controlsWrapper.appendChild(sliderContainer);
     }
-
+  
     mainWrapper.appendChild(controlsWrapper);
-
+  
+    // We still create the legendContainer for layout purposes,
+    // but we don't populate it with any content
     const legendContainer = document.createElement('div');
     legendContainer.className = 'legend-container';
     mainWrapper.appendChild(legendContainer);
-
+  
     container.appendChild(mainWrapper);
-    addExerciseLegend(legendContainer, containerWidth);
+    // Removed call to addExerciseLegend here
   }
-
   /**
    * Add a legend for selected exercises
    */
@@ -523,24 +524,29 @@
     const legend = document.createElement('div');
     legend.className = 'exercise-legend';
     if (isMobile) legend.classList.add('mobile');
-
+  
     selectedExercises.forEach((exerciseName, index) => {
       if (index >= 3) return;
-      const color = exerciseColors[index];
+      
+      // Get the muscle group and corresponding color
+      const muscleGroup = getExerciseMuscleGroup(exerciseName);
+      const color = muscleGroup && muscleColors[muscleGroup] 
+        ? muscleColors[muscleGroup] 
+        : exerciseColors[index % exerciseColors.length];
+      
       const lineItem = document.createElement('div');
       lineItem.className = 'legend-item';
-
+  
       const lineSwatch = document.createElement('span');
       lineSwatch.className = 'legend-swatch line';
-      lineSwatch.style.backgroundColor = color;
       if (isMobile) lineSwatch.classList.add('mobile');
-
+  
       const lineLabel = document.createElement('span');
       lineLabel.className = 'legend-label';
       const displayName = exerciseName.length > 12 ? exerciseName.substring(0, 10) + '...' : exerciseName;
       lineLabel.textContent = displayName;
       if (isMobile) lineLabel.classList.add('mobile');
-
+  
       lineItem.appendChild(lineSwatch);
       lineItem.appendChild(lineLabel);
       legend.appendChild(lineItem);
@@ -666,6 +672,89 @@
     return 0;
   }
 
+
+  /**
+ * Determine the muscle group for an exercise based on its data
+ */
+function getExerciseMuscleGroup(exerciseName) {
+  if (!exerciseName) return null;
+  
+  // Check if we have already cached the muscle group
+  if (window.exerciseMuscleGroups && window.exerciseMuscleGroups[exerciseName]) {
+    return window.exerciseMuscleGroups[exerciseName];
+  }
+  
+  // Initialize a new map if needed
+  if (!window.exerciseMuscleGroups) {
+    window.exerciseMuscleGroups = {};
+  }
+  
+  // If we have the exercise data, analyze it
+  if (window.allExerciseData && window.allExerciseData[exerciseName]) {
+    const exerciseData = window.allExerciseData[exerciseName];
+    const muscleGroupCounts = {};
+    
+    // Count occurrences of each muscle group
+    exerciseData.forEach(day => {
+      if (day.sets && day.sets.length > 0) {
+        day.sets.forEach(set => {
+          if (set.muscleGroup && set.muscleGroup !== 'N/A') {
+            muscleGroupCounts[set.muscleGroup] = (muscleGroupCounts[set.muscleGroup] || 0) + 1;
+          }
+        });
+      }
+    });
+    
+    // Find the most common muscle group
+    if (Object.keys(muscleGroupCounts).length > 0) {
+      const dominantMuscleGroup = Object.keys(muscleGroupCounts).reduce((a, b) => 
+        muscleGroupCounts[a] > muscleGroupCounts[b] ? a : b);
+      
+      // Cache for future use
+      window.exerciseMuscleGroups[exerciseName] = dominantMuscleGroup;
+      return dominantMuscleGroup;
+    }
+  }
+  
+  // Default to "Chest" if can't determine
+  return "Chest";
+}
+
+/**
+ * Define muscle-specific colors
+ */
+const muscleColors = {
+  "Chest": "#546bce", // Blue
+  "Back": "#32a852",  // Green
+  "Shoulders": "#ec812f", // Orange 
+  "Legs": "#9c27b0",  // Purple
+  "Biceps": "#2196f3", // Light blue
+  "Triceps": "#f44336" // Red
+};
+
+/**
+ * Get a lighter shade of a color for area fills
+ */
+function getLighterShade(hexColor, opacity = 0.15) {
+  try {
+    // Handle RGBA or other color formats
+    if (!hexColor || !hexColor.startsWith('#') || hexColor.length !== 7) {
+      return `rgba(128, 128, 128, ${opacity})`;  // fallback gray
+    }
+    
+    // Convert hex to RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Return rgba with opacity
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  } catch (e) {
+    console.error('Error getting lighter shade:', e);
+    return `rgba(128, 128, 128, ${opacity})`;  // fallback gray
+  }
+}
+
   /**
    * Render the line chart with error bands for the exercise data
    */
@@ -702,29 +791,32 @@
     const maxHeight = isStacked ? 320 : 240;
     const height = Math.max(minHeight, Math.min(maxHeight, baseHeight));
     chartContainer.style.height = `${height + 5}px`;
+    
+    // Updated margins to accommodate more informative labels on mobile
     const dynamicMargin = {
       top: 20,
       right: isMobile ? 40 : 60,
-      bottom: isMobile ? 30 : 40,
-      left: isMobile ? 35 : 45
+      bottom: isMobile ? 40 : 40, // Increased bottom margin on mobile for longer labels
+      left: isMobile ? 45 : 45    // Consistent left margin with enough space for kg units
     };
+    
     const innerWidth = width - dynamicMargin.left - dynamicMargin.right;
     const innerHeight = height - dynamicMargin.top - dynamicMargin.bottom;
-
+  
     const svg = d3.create("svg")
       .attr("width", "100%")
       .attr("height", "100%")
       .attr("viewBox", [0, 0, width, height])
       .attr("preserveAspectRatio", "xMidYMid meet")
       .attr("class", "exercise-chart");
-
+  
     const g = svg.append("g")
       .attr("transform", `translate(${dynamicMargin.left},${dynamicMargin.top})`);
-
+  
     const allProcessedData = {};
     let allDates = [];
     let allWeights = [];
-
+  
     exerciseNames.forEach((exerciseName, index) => {
       const exerciseData = exerciseDataMap[exerciseName];
       if (!exerciseData || exerciseData.length === 0) return;
@@ -753,7 +845,7 @@
         allWeights.push(day.minWeight);
       });
     });
-
+  
     const x = d3.scaleTime()
       .domain(d3.extent(allDates))
       .range([0, innerWidth])
@@ -765,64 +857,76 @@
       .domain([Math.max(0, minWeight - padding), maxWeight + padding])
       .range([innerHeight, 0])
       .nice();
-
+  
+    // Use consistent number of ticks for gridlines
     g.append("g")
       .attr("class", "grid-lines-x")
       .attr("transform", `translate(0,${innerHeight})`)
       .call(d3.axisBottom(x)
-        .ticks(Math.min(isMobile ? 4 : 6, d3.max(exerciseNames.map(name => allProcessedData[name] ? allProcessedData[name].length : 0))))
+        .ticks(Math.min(6, d3.max(exerciseNames.map(name => allProcessedData[name] ? allProcessedData[name].length : 0))))
         .tickSize(-innerHeight)
         .tickFormat("")
       )
       .call(g => g.select(".domain").remove());
-
+  
     g.append("g")
       .attr("class", "grid-lines-y")
       .call(d3.axisLeft(y)
-        .ticks(isMobile ? 4 : 5)
+        .ticks(5) // Consistent 5 ticks for both mobile and desktop
         .tickSize(-innerWidth)
         .tickFormat("")
       )
       .call(g => g.select(".domain").remove());
-
+  
+    // Updated x-axis with consistent formatting and presentation
     const xAxis = g.append("g")
       .attr("class", "x-axis")
       .attr("transform", `translate(0,${innerHeight})`)
       .call(d3.axisBottom(x)
-        .ticks(Math.min(isMobile ? 4 : 6, d3.max(exerciseNames.map(name => allProcessedData[name] ? allProcessedData[name].length : 0))))
+        .ticks(Math.min(6, d3.max(exerciseNames.map(name => allProcessedData[name] ? allProcessedData[name].length : 0))))
         .tickSizeOuter(0)
         .tickFormat(d => {
+          // Always show month and day for consistent formatting
           const day = d.getDate();
-          if (isMobile) return `${day}`;
           const month = d.getMonth();
           return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month]} ${day}`;
         })
       );
     xAxis.select(".domain").attr("stroke", "#ccc");
     xAxis.selectAll("text")
-      .attr("transform", isMobile ? "rotate(-30)" : "rotate(-40)")
+      .attr("transform", "rotate(-40)") // Consistent rotation angle
       .attr("text-anchor", "end")
-      .attr("dx", isMobile ? "-0.2em" : "-0.5em")
-      .attr("dy", isMobile ? "0.1em" : "0.15em");
-
+      .attr("dx", "-0.5em")
+      .attr("dy", "0.15em")
+      .style("font-size", isMobile ? "10px" : "12px"); // Adjust font size for mobile
+  
+    // Updated y-axis with consistent formatting
     const yAxis = g.append("g")
       .attr("class", "y-axis")
       .call(d3.axisLeft(y)
-        .ticks(isMobile ? 4 : 5)
+        .ticks(5) // Consistent 5 ticks for both mobile and desktop
         .tickSizeOuter(0)
-        .tickFormat(d => isMobile ? `${d}` : `${d}kg`)
+        .tickFormat(d => `${d}kg`) // Always include kg units
       );
     yAxis.select(".domain").attr("stroke", "#ccc");
-
+    yAxis.selectAll("text")
+      .style("font-size", isMobile ? "10px" : "12px"); // Adjust font size for mobile
+  
     let tooltip = d3.select("body").select(".exercise-tooltip");
     if (tooltip.empty()) {
       tooltip = d3.select("body").append("div")
         .attr("class", "exercise-tooltip");
     }
-
+  
     exerciseNames.forEach((exerciseName, index) => {
       if (!allProcessedData[exerciseName] || allProcessedData[exerciseName].length === 0) return;
-      const color = exerciseColors[index % exerciseColors.length];
+      
+      // Get the muscle group and corresponding color
+      const muscleGroup = getExerciseMuscleGroup(exerciseName);
+      const color = muscleGroup && muscleColors[muscleGroup] 
+        ? muscleColors[muscleGroup] 
+        : exerciseColors[index % exerciseColors.length];
+      
       const processedData = allProcessedData[exerciseName];
       const areaGenerator = d3.area()
         .x(d => x(d.date))
@@ -831,10 +935,10 @@
         .curve(d3.curveMonotoneX);
       g.append("path")
         .datum(processedData)
-        .attr("fill", color)
+        .attr("fill", color) // Use muscle-specific color
         .attr("fill-opacity", 0.15)
         .attr("d", areaGenerator);
-
+  
       const lineGenerator = d3.line()
         .x(d => x(d.date))
         .y(d => y(d.weightedAvg))
@@ -842,10 +946,10 @@
       g.append("path")
         .datum(processedData)
         .attr("fill", "none")
-        .attr("stroke", color)
+        .attr("stroke", color) // Use muscle-specific color
         .attr("stroke-width", isMobile ? 2 : 2.5)
         .attr("d", lineGenerator);
-
+  
       const avgPointRadius = isMobile ? 3 : 4;
       processedData.forEach(dayData => {
         g.append("circle")
@@ -853,7 +957,7 @@
           .attr("cx", x(dayData.date))
           .attr("cy", y(dayData.weightedAvg))
           .attr("r", avgPointRadius)
-          .attr("fill", color)
+          .style("fill", color) // Use muscle-specific color
           .attr("stroke", "white")
           .attr("stroke-width", 1.5)
           .on("mouseover", function(event) {
@@ -864,6 +968,8 @@
               month: 'short',
               day: 'numeric'
             });
+            
+            // Add muscle group to tooltip
             let tooltipContent = `
               <div class="tooltip-title">${exerciseName}</div>
               <div class="tooltip-date">${dateStr}</div>
@@ -879,6 +985,10 @@
                 <div class="tooltip-stat-line">
                   <span>Sets:</span>
                   <span>${dayData.sets.length}</span>
+                </div>
+                <div class="tooltip-stat-line">
+                  <span>Group:</span>
+                  <span>${muscleGroup || 'Unknown'}</span>
                 </div>
               </div>
             `;
@@ -905,14 +1015,20 @@
           });
       });
     });
-
+  
     if (exerciseNames.length > 1) {
       const legendG = svg.append("g")
         .attr("class", "chart-legend")
         .attr("transform", `translate(${width - dynamicMargin.right + 10}, ${dynamicMargin.top})`);
       exerciseNames.forEach((name, index) => {
         if (!allProcessedData[name] || allProcessedData[name].length === 0) return;
-        const color = exerciseColors[index % exerciseColors.length];
+        
+        // Get muscle color for legend
+        const muscleGroup = getExerciseMuscleGroup(name);
+        const color = muscleGroup && muscleColors[muscleGroup] 
+          ? muscleColors[muscleGroup] 
+          : exerciseColors[index % exerciseColors.length];
+        
         const displayName = name.length > 10 ? name.substring(0, 10) + '...' : name;
         const legendItem = legendG.append("g")
           .attr("transform", `translate(0, ${index * 20})`);
@@ -921,7 +1037,7 @@
           .attr("y1", 9)
           .attr("x2", 15)
           .attr("y2", 9)
-          .attr("stroke", color)
+          .attr("stroke", color) // Use muscle-specific color
           .attr("stroke-width", 2);
         legendItem.append("text")
           .attr("x", 20)
@@ -931,7 +1047,7 @@
           .text(displayName);
       });
     }
-
+  
     let titleText;
     if (exerciseNames.length === 1) {
       titleText = exerciseNames[0];
@@ -944,10 +1060,9 @@
       .attr("y", -dynamicMargin.top / 2)
       .attr("text-anchor", "middle")
       .text(titleText);
-
+  
     chartContainer.appendChild(svg.node());
   }
-
   /**
    * Display message when no exercise data is available
    */
@@ -1695,7 +1810,7 @@ function createEnhancedExerciseDropdown() {
         dropdownContainer.classList.remove('active');
       }
     };
-
+  
     // Add direct click handler to each exercise item with improved touch handling
     const items = dropdownElement.querySelectorAll('.exercise-item');
     items.forEach(item => {
@@ -1743,13 +1858,20 @@ function createEnhancedExerciseDropdown() {
       });
       
       // Improved touch event handling - CRITICAL FIX
-      newItem.addEventListener('touchstart', function(e) {
+      newItem.addEventListener('touchstart', function() {
         // Mark this element as being touched
         this.dataset.touchActive = 'true';
       }, { passive: true });
       
+      // Add touchmove handler to cancel the touch when scrolling - CRITICAL FIX
+      newItem.addEventListener('touchmove', function() {
+        // Cancel the active state as soon as any movement is detected
+        this.dataset.touchActive = 'false';
+      }, { passive: true });
+      
       newItem.addEventListener('touchend', function(e) {
         // Only process if this element was the one that received touchstart
+        // and no touchmove occurred (touchActive is still true)
         if (this.dataset.touchActive === 'true') {
           e.preventDefault();
           e.stopPropagation();
@@ -1786,6 +1908,11 @@ function createEnhancedExerciseDropdown() {
         this.dataset.touchActive = 'true';
       }, { passive: true });
       
+      // Add touchmove handler to cancel touch when moving - CRITICAL FIX
+      newCloseBtn.addEventListener('touchmove', function() {
+        this.dataset.touchActive = 'false';
+      }, { passive: true });
+      
       newCloseBtn.addEventListener('touchend', function(e) {
         if (this.dataset.touchActive === 'true') {
           e.preventDefault();
@@ -1805,6 +1932,11 @@ function createEnhancedExerciseDropdown() {
     // Add touchstart to immediately capture the touch
     backdrop.addEventListener('touchstart', function() {
       this.dataset.touchActive = 'true';
+    }, { passive: true });
+    
+    // Add touchmove handler to cancel touch when moving - CRITICAL FIX
+    backdrop.addEventListener('touchmove', function() {
+      this.dataset.touchActive = 'false'; 
     }, { passive: true });
     
     // Improved touchend handling for backdrop
@@ -1874,6 +2006,11 @@ function createEnhancedExerciseDropdown() {
       // Better touch handling for the title
       newVisibleTitle.addEventListener('touchstart', function() {
         this.dataset.touchActive = 'true';
+      }, { passive: true });
+      
+      // Add touchmove handler to cancel touch when moving - CRITICAL FIX
+      newVisibleTitle.addEventListener('touchmove', function() {
+        this.dataset.touchActive = 'false';
       }, { passive: true });
       
       newVisibleTitle.addEventListener('touchend', function(e) {

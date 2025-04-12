@@ -129,9 +129,6 @@
   height: 2px;
 }
 
-.legend-swatch.line {
-  background-color: #546bce;
-}
 
 .legend-swatch.range {
   height: 8px;
@@ -269,7 +266,6 @@
 }
 
 .avg-point {
-  fill: #546bce;
   stroke: white;
   stroke-width: 1.5;
   cursor: pointer;
@@ -450,7 +446,7 @@
   z-index: 1050; /* Increased to ensure it's above other elements */
   margin-top: 2px;
   background: white;
-  border-radius: 0; /* Square corners */
+  border-radius: 12px; /* Square corners */
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
   width: auto !important; /* Allow width to adapt to content - important to override inline styles */
   min-width: 240px; /* Minimum width */
@@ -502,32 +498,50 @@
 .dropdown-title {
   font-weight: 600;
   font-size: 1rem;
-  color: #333;
+  color: #5a5a5a;
 }
 
+/* Dropdown Close Button - Corrected Styling */
 .dropdown-close {
+  /* Keep existing positioning */
   width: 28px;
   height: 28px;
+  
+  /* Match tooltip mobile close button aesthetics */
+  background-color: #4f4f4f;
+  color: white;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0; /* Square button */
-  background: rgba(0, 0, 0, 0.06);
-  color: #666;
-  border: none;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: bold;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid white;
   cursor: pointer;
-  transition: all 0.2s;
-  min-width: 36px; /* Larger touch target */
-  min-height: 36px; /* Larger touch target */
-  -webkit-tap-highlight-color: transparent; /* No flash on tap */
+  transition: transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Hover effect */
 .dropdown-close:hover {
-  background: rgba(0, 0, 0, 0.12);
+  transform: scale(1.05);
 }
 
+/* Active effect */
 .dropdown-close:active {
-  background: rgba(0, 0, 0, 0.18); /* Darker when pressed */
+  transform: scale(0.95);
+}
+
+/* Mobile adjustments */
+@media (max-width: 576px) {
+  .dropdown-close {
+    width: 28px;
+    height: 28px;
+    min-width: 28px !important;
+    min-height: 28px !important;
+  }
 }
 
 /* Muscle Group Organization */
@@ -592,13 +606,29 @@
   display: flex;
   align-items: center;
   min-height: 36px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: none;
   white-space: nowrap;
   border-left: 4px solid transparent; /* Default invisible border */
   touch-action: manipulation; /* Improves touch behavior */
   -webkit-tap-highlight-color: transparent; /* Remove iOS tap highlight */
   user-select: none; /* Prevent text selection */
   z-index: 1; /* Ensure clickable */
+}
+
+.exercise-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%; /* Make the bottom border shorter */
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.06); /* Same color as original border */
+}
+
+/* Remove the pseudo-element from the last item */
+.exercise-item:last-child::after {
+  display: none;
 }
 
 /* For more faded hover states */
