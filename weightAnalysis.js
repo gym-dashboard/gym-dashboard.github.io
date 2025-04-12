@@ -1006,7 +1006,7 @@
       tooltip.classed("mobile-tooltip", true);
       
       // Get color for background
-      let bgColor = "#546bce"; // Default color
+      let bgColor = "#363636"; // Default color
       if (muscleGroup && calendarMuscleColors[muscleGroup]) {
         const baseColor = calendarMuscleColors[muscleGroup];
         bgColor = darkenColor(baseColor, 0.2); // Same darkening as calendar script
@@ -1220,6 +1220,35 @@
         // Different event handling for mobile vs desktop
         if (isTouchDevice) {
           // Mobile/touch behavior
+          g.append("circle")
+          .attr("class", "touch-target")
+          .attr("cx", x(dayData.date))
+          .attr("cy", y(dayData.weightedAvg))
+          .attr("r", 15) // Much larger radius for touch (3-4x visual size)
+          .attr("fill", "transparent")
+          .attr("stroke", "transparent")
+          .attr("pointer-events", "all") // Make it capture events
+          .style("cursor", "pointer")
+          .on("click", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Highlight the visible point
+            point
+              .attr("r", avgPointRadius + 1.5)
+              .attr("stroke-width", 1.8);
+            
+            // Show mobile-style tooltip
+            showExerciseTooltipMobile(event, dayData, exerciseName, muscleGroup);
+            
+            // Return point to normal size after a delay
+            setTimeout(() => {
+              point
+                .attr("r", avgPointRadius)
+                .attr("stroke-width", 1.5);
+            }, 300);
+          });
+
           point
             .style("cursor", "pointer")
             .on("click", function(event) {
@@ -1269,6 +1298,13 @@
 
               // Calculate total volume
               const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+
+              // Get color for background based on muscle group - ADD THIS SECTION
+              let bgColor = "#363636"; // Default color
+              if (muscleGroup && calendarMuscleColors[muscleGroup]) {
+                const baseColor = calendarMuscleColors[muscleGroup];
+                bgColor = darkenColor(baseColor, 0.2); // Same darkening as used for mobile
+              }
               
               // Build tooltip content with enhanced structure
               let tooltipContent = `
@@ -1316,7 +1352,8 @@
                 .html(tooltipContent)
                 .style("visibility", "visible")
                 .style("opacity", 1)
-                .style("pointer-events", "none");
+                .style("pointer-events", "none")
+                .style("background-color", bgColor);
             })
             .on("mousemove", function(event) {
               // Position tooltip near cursor
@@ -1392,12 +1429,6 @@
     } else {
       titleText = `${exerciseNames.length} Exercises Comparison`;
     }
-    g.append("text")
-      .attr("class", "chart-title")
-      .attr("x", innerWidth / 2)
-      .attr("y", -dynamicMargin.top / 2)
-      .attr("text-anchor", "middle")
-      .text(titleText);
   
     chartContainer.appendChild(svg.node());
   }
