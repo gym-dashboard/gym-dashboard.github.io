@@ -204,7 +204,7 @@
    CHART TOOLTIP
    ------------------------------ */
 
-/* Tooltip */
+/* Exercise Tooltip Styles */
 .exercise-tooltip {
   position: absolute;
   visibility: hidden;
@@ -216,32 +216,261 @@
   pointer-events: none;
   z-index: 1000;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: opacity 0.2s ease;
+  min-width: 200px;
+  max-width: 250px;
 }
 
+/* Mobile tooltip styles */
+.exercise-tooltip.mobile-tooltip {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: auto !important;
+  max-width: 90% !important;
+  padding: 12px 15px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  border: none;
+  overflow: visible;
+  touch-action: manipulation;
+  -webkit-overflow-scrolling: touch;
+  pointer-events: auto;
+  z-index: 9999;
+}
+
+/* Tooltip sections */
 .tooltip-title {
   font-weight: bold;
   margin-bottom: 2px;
-  font-size: 12px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
 }
 
 .tooltip-date {
-  margin-bottom: 1px;
+  margin-bottom: 3px;
   font-size: 11px;
+  opacity: 0.8;
 }
 
 .tooltip-stats {
   font-size: 11px;
-  margin-bottom: 2px;
+  margin-bottom: 5px;
 }
 
 .tooltip-stat-line {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1px;
+  margin-bottom: 3px;
+  font-size: 0.85rem;
 }
 
 .tooltip-stat-value {
   font-weight: bold;
+}
+
+/* Close button for mobile tooltip */
+.exercise-tooltip .tooltip-close-btn {
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 32px;
+  height: 32px;
+  background-color: #4f4f4f;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: bold;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  border: 2px solid white;
+  z-index: 10000;
+  cursor: pointer;
+}
+
+/* Tooltip overlay */
+#exercise-tooltip-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9900;
+  background-color: rgba(0, 0, 0, 0.5);
+  touch-action: manipulation;
+}
+
+/* Hint text in the overlay */
+.tooltip-hint {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: white;
+  font-size: 14px;
+  padding: 8px;
+  width: 150px;
+  margin: 0 auto;
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 8px;
+  opacity: 0.8;
+}
+
+/* Ensure content has proper spacing */
+.exercise-tooltip .tooltip-header {
+  margin-bottom: 8px;
+  font-weight: 600;
+  position: relative;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.exercise-tooltip .tooltip-exercises {
+  overflow-y: auto;
+  margin-bottom: 6px;
+  padding-right: 4px;
+  max-height: 50vh;
+}
+
+/* Enhanced tooltip section titles */
+.tooltip-section-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.02em;
+}
+
+/* Summary section styling */
+.tooltip-summary {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+/* Divider between sections */
+.tooltip-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 6px 0;
+  width: 100%;
+}
+
+/* Sets grid layout */
+.tooltip-sets-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 4px;
+  padding-right: 4px;
+}
+
+/* Individual set item styling */
+.tooltip-set-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+/* Set number styling */
+.set-number {
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* Weight value styling */
+.set-weight {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Reps styling */
+.set-reps {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Effort styling */
+.set-effort {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  margin-left: auto;
+  font-style: italic;
+}
+
+/* Improved scrollbar for set details */
+.tooltip-sets-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tooltip-sets-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.tooltip-sets-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.tooltip-sets-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* For tablet devices - adjust to behave more like desktop */
+@media (min-width: 768px) and (pointer: coarse) {
+  .exercise-tooltip.mobile-tooltip {
+    position: absolute !important;
+    transform: none !important;
+    pointer-events: none !important;
+    padding: 8px 12px;
+    max-width: 300px !important;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .exercise-tooltip.mobile-tooltip .tooltip-close-btn {
+    display: none !important;
+  }
+  
+  #exercise-tooltip-overlay {
+    display: none !important;
+  }
+  
+  .tooltip-sets-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    max-height: 120px;
+  }
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 576px) {
+  .exercise-tooltip.mobile-tooltip .tooltip-sets-grid {
+    max-height: 30vh; /* Larger scrollable area on mobile */
+    grid-template-columns: 1fr; /* Always single column on mobile */
+  }
+  
+  .exercise-tooltip.mobile-tooltip .tooltip-set-item {
+    padding: 6px 8px; /* Larger touch targets */
+  }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 768px) and (max-width: 991px) {
+  .exercise-tooltip:not(.mobile-tooltip) {
+    width: 280px !important;
+  }
 }
 
 /* ------------------------------
@@ -736,7 +965,7 @@
 }
 
 .exercise-item[data-muscle-group="Legs"].selected {
-  border-left-color: #9c27b0 !important;
+  border-left-color: #ffdb53 !important;
 }
 
 /* Biceps */
@@ -762,7 +991,7 @@
 }
 
 .exercise-item[data-muscle-group="Triceps"].selected {
-  border-left-color: #f44336 !important;
+  border-left-color: #ff8f8f !important;
 }
 
 /* ------------------------------
@@ -918,8 +1147,3 @@
     border-width: 1.5px;
   }
 }
-
-
-
-
-

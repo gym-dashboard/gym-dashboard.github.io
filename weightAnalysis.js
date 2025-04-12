@@ -20,6 +20,25 @@
     gridLines: '#e5e7eb'
   };
 
+  // Add these window-level functions for tooltips
+  window.hideExerciseTooltip = hideExerciseTooltip;
+  window.showExerciseTooltipMobile = showExerciseTooltipMobile;
+
+  // Add global function references for tooltips
+  window.hideExerciseTooltip = function() {
+    const tooltip = d3.select(".exercise-tooltip");
+    tooltip
+      .style("opacity", 0)
+      .style("visibility", "hidden")
+      .style("pointer-events", "none")
+      .classed("mobile-tooltip", false);
+    
+    // Hide the overlay
+    d3.select("#exercise-tooltip-overlay")
+      .style("display", "none")
+      .style("pointer-events", "none");
+  };
+
   // Create backdrop for mobile if not exists
   let backdrop = document.querySelector('.dropdown-backdrop');
   if (!backdrop) {
@@ -674,91 +693,104 @@
 
 
   /**
- * Determine the muscle group for an exercise based on its data
- */
-function getExerciseMuscleGroup(exerciseName) {
-  if (!exerciseName) return null;
-  
-  // Check if we have already cached the muscle group
-  if (window.exerciseMuscleGroups && window.exerciseMuscleGroups[exerciseName]) {
-    return window.exerciseMuscleGroups[exerciseName];
-  }
-  
-  // Initialize a new map if needed
-  if (!window.exerciseMuscleGroups) {
-    window.exerciseMuscleGroups = {};
-  }
-  
-  // If we have the exercise data, analyze it
-  if (window.allExerciseData && window.allExerciseData[exerciseName]) {
-    const exerciseData = window.allExerciseData[exerciseName];
-    const muscleGroupCounts = {};
+   * Function to determine the muscle group for an exercise based on its data
+   */
+  function getExerciseMuscleGroup(exerciseName) {
+    if (!exerciseName) return null;
     
-    // Count occurrences of each muscle group
-    exerciseData.forEach(day => {
-      if (day.sets && day.sets.length > 0) {
-        day.sets.forEach(set => {
-          if (set.muscleGroup && set.muscleGroup !== 'N/A') {
-            muscleGroupCounts[set.muscleGroup] = (muscleGroupCounts[set.muscleGroup] || 0) + 1;
-          }
-        });
-      }
-    });
-    
-    // Find the most common muscle group
-    if (Object.keys(muscleGroupCounts).length > 0) {
-      const dominantMuscleGroup = Object.keys(muscleGroupCounts).reduce((a, b) => 
-        muscleGroupCounts[a] > muscleGroupCounts[b] ? a : b);
-      
-      // Cache for future use
-      window.exerciseMuscleGroups[exerciseName] = dominantMuscleGroup;
-      return dominantMuscleGroup;
+    // Check if we have already cached the muscle group
+    if (window.exerciseMuscleGroups && window.exerciseMuscleGroups[exerciseName]) {
+      return window.exerciseMuscleGroups[exerciseName];
     }
+    
+    // Initialize a new map if needed
+    if (!window.exerciseMuscleGroups) {
+      window.exerciseMuscleGroups = {};
+    }
+    
+    // If we have the exercise data, analyze it
+    if (window.allExerciseData && window.allExerciseData[exerciseName]) {
+      const exerciseData = window.allExerciseData[exerciseName];
+      const muscleGroupCounts = {};
+      
+      // Count occurrences of each muscle group
+      exerciseData.forEach(day => {
+        if (day.sets && day.sets.length > 0) {
+          day.sets.forEach(set => {
+            if (set.muscleGroup && set.muscleGroup !== 'N/A') {
+              muscleGroupCounts[set.muscleGroup] = (muscleGroupCounts[set.muscleGroup] || 0) + 1;
+            }
+          });
+        }
+      });
+      
+      // Find the most common muscle group
+      if (Object.keys(muscleGroupCounts).length > 0) {
+        const dominantMuscleGroup = Object.keys(muscleGroupCounts).reduce((a, b) => 
+          muscleGroupCounts[a] > muscleGroupCounts[b] ? a : b);
+        
+        // Cache for future use
+        window.exerciseMuscleGroups[exerciseName] = dominantMuscleGroup;
+        return dominantMuscleGroup;
+      }
+    }
+    
+    // Default to "Chest" if can't determine
+    return "Chest";
   }
-  
-  // Default to "Chest" if can't determine
-  return "Chest";
-}
 
-/**
- * Define muscle-specific colors
- */
-const muscleColors = {
-  "Chest": "#546bce", // Blue
-  "Back": "#32a852",  // Green
-  "Shoulders": "#ec812f", // Orange 
-  "Legs": "#9c27b0",  // Purple
-  "Biceps": "#2196f3", // Light blue
-  "Triceps": "#f44336" // Red
-};
+  /**
+   * Define muscle-specific colors - updated to be consistent with calendar colors
+   * but darkened for better visibility in line charts
+   */
+  const muscleColors = {
+    // Darkened versions of the calendar colors for better visibility in charts
+    "Chest": "#546bce",     // Darker blue (from #c8ceee)
+    "Triceps": "#ff8eba",   // Darker red (from #f9c5c7)
+    "Legs": "#ffdb53",      // Darker amber (fromrgb(192, 183, 247))
+    "Shoulders": "#e67e22", // Darker orange (fromrgb(255, 244, 34))
+    "Back": "#cbd3ad",      // Darker green (from #cbd3ad)
+    "Biceps": "#3498db"     // Darker blue (from #c6e2e7)
+  };
 
-/**
- * Get a lighter shade of a color for area fills
- */
-function getLighterShade(hexColor, opacity = 0.15) {
-  try {
-    // Handle RGBA or other color formats
-    if (!hexColor || !hexColor.startsWith('#') || hexColor.length !== 7) {
+  /**
+   * Get a lighter shade of a color for area fills
+   */
+  function getLighterShade(hexColor, opacity = 0.15) {
+    try {
+      // Handle RGBA or other color formats
+      if (!hexColor || !hexColor.startsWith('#') || hexColor.length !== 7) {
+        return `rgba(128, 128, 128, ${opacity})`;  // fallback gray
+      }
+      
+      // Convert hex to RGB
+      const r = parseInt(hexColor.slice(1, 3), 16);
+      const g = parseInt(hexColor.slice(3, 5), 16);
+      const b = parseInt(hexColor.slice(5, 7), 16);
+      
+      // Return rgba with opacity
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    } catch (e) {
+      console.error('Error getting lighter shade:', e);
       return `rgba(128, 128, 128, ${opacity})`;  // fallback gray
     }
-    
-    // Convert hex to RGB
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    
-    // Return rgba with opacity
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  } catch (e) {
-    console.error('Error getting lighter shade:', e);
-    return `rgba(128, 128, 128, ${opacity})`;  // fallback gray
   }
-}
 
   /**
    * Render the line chart with error bands for the exercise data
    */
   function renderMultiExerciseChart(exerciseDataMap) {
+
+    const calendarMuscleColors = {
+      "Chest": "#c8ceee",
+      "Triceps": "#f9c5c7", 
+      "Legs": "#f7e5b7",
+      "Shoulders": "#ffc697",
+      "Back": "#cbd3ad",
+      "Biceps": "#c6e2e7",
+    };
+
+
     let chartContainer = document.querySelector('.exercise-chart-container');
     if (!chartContainer) {
       chartContainer = document.createElement('div');
@@ -912,11 +944,234 @@ function getLighterShade(hexColor, opacity = 0.15) {
     yAxis.selectAll("text")
       .style("font-size", isMobile ? "10px" : "12px"); // Adjust font size for mobile
   
+    // Initialize tooltip
     let tooltip = d3.select("body").select(".exercise-tooltip");
     if (tooltip.empty()) {
       tooltip = d3.select("body").append("div")
-        .attr("class", "exercise-tooltip");
+        .attr("class", "exercise-tooltip")
+        .style("opacity", 0)
+        .style("visibility", "hidden");
     }
+  
+    // Initialize tooltip overlay for mobile
+    let tooltipOverlay = d3.select("body").select("#exercise-tooltip-overlay");
+    if (tooltipOverlay.empty()) {
+      tooltipOverlay = d3.select("body").append("div")
+        .attr("id", "exercise-tooltip-overlay")
+        .style("display", "none")
+        .style("position", "fixed")
+        .style("top", "0")
+        .style("left", "0")
+        .style("right", "0")
+        .style("bottom", "0")
+        .style("background-color", "rgba(0, 0, 0, 0.5)")
+        .style("z-index", "9900")
+        .style("touch-action", "manipulation");
+      
+      // Add hint text
+      tooltipOverlay.append("div")
+        .attr("class", "tooltip-hint")
+        .style("position", "fixed")
+        .style("bottom", "20px")
+        .style("left", "0")
+        .style("right", "0")
+        .style("text-align", "center")
+        .style("color", "white")
+        .style("font-size", "14px")
+        .style("padding", "8px")
+        .style("width", "150px")
+        .style("margin", "0 auto")
+        .style("background-color", "rgba(0,0,0,0.5)")
+        .style("border-radius", "8px")
+        .style("opacity", "0.8")
+        .text("Tap outside to close");
+    }
+  
+    // Add click handler to overlay to close tooltip
+    tooltipOverlay.on("click", function() {
+      hideExerciseTooltip();
+    });
+  
+    // Add touch handlers to overlay
+    tooltipOverlay.on("touchstart", function(event) {
+      event.stopPropagation();
+    });
+  
+    // Function to show tooltip for mobile
+    function showExerciseTooltipMobile(event, dayData, exerciseName, muscleGroup) {
+      // Hide any existing tooltips
+      hideExerciseTooltip();
+      
+      // Add CSS classes for mobile tooltip
+      tooltip.classed("mobile-tooltip", true);
+      
+      // Get color for background
+      let bgColor = "#546bce"; // Default color
+      if (muscleGroup && calendarMuscleColors[muscleGroup]) {
+        const baseColor = calendarMuscleColors[muscleGroup];
+        bgColor = darkenColor(baseColor, 0.2); // Same darkening as calendar script
+      } else if (color) {
+        // Fallback to the current color if muscle group not found
+        bgColor = darkenColor(color, 0.3);
+      }
+      
+      // Format date for display
+      const dateStr = dayData.date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
+
+      // Calculate total volume (weight × reps summed across all sets)
+      const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+      
+      // Build tooltip content with enhanced structure
+      let tooltipContent = `
+        <div style="position:relative;">
+          <div class="tooltip-close-btn">&times;</div>
+          <div class="tooltip-header">
+            <div class="tooltip-title">${exerciseName}</div>
+            <div class="tooltip-date">${dateStr}</div>
+          </div>
+          <div class="tooltip-summary">
+            <div class="tooltip-section-title">Summary</div>
+            <div class="tooltip-stat-line">
+              <span>Average:</span>
+              <span class="tooltip-stat-value">${dayData.weightedAvg.toFixed(1)}kg</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Volume:</span>
+              <span class="tooltip-stat-value">${totalVolume.toLocaleString()}kg</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Range:</span>
+              <span>${dayData.minWeight}-${dayData.maxWeight}kg</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Sets:</span>
+              <span>${dayData.sets.length}</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Group:</span>
+              <span>${muscleGroup || 'Unknown'}</span>
+            </div>
+          </div>
+          <div class="tooltip-divider"></div>
+          <div class="tooltip-sets">
+            <div class="tooltip-section-title">Set Details</div>
+            <div class="tooltip-sets-grid">
+              ${dayData.sets.map((set, idx) => `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${idx + 1}:</span>
+                  <span class="set-weight">${set.weight}kg</span>
+                  <span class="set-reps">× ${set.reps}</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      tooltip.html(tooltipContent);
+      
+      // Apply styles for mobile
+      tooltip
+        .style("position", "fixed")
+        .style("top", "50%")
+        .style("left", "50%")
+        .style("transform", "translate(-50%, -50%)")
+        .style("width", "auto")
+        .style("max-width", "90%")
+        .style("background-color", bgColor)
+        .style("color", "#ffffff")
+        .style("border-radius", "12px")
+        .style("padding", "15px")
+        .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.4)")
+        .style("z-index", "9999")
+        .style("opacity", 1)
+        .style("visibility", "visible")
+        .style("pointer-events", "auto");
+      
+      // Show the overlay
+      tooltipOverlay
+        .style("display", "block")
+        .style("opacity", 1)
+        .style("pointer-events", "auto");
+      
+      // Add click handler for close button
+      setTimeout(() => {
+        const closeBtn = document.querySelector('.exercise-tooltip .tooltip-close-btn');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            hideExerciseTooltip();
+          });
+        }
+      }, 10);
+    }
+  
+    // Function to hide exercise tooltip
+    function hideExerciseTooltip() {
+      tooltip
+        .style("opacity", 0)
+        .style("visibility", "hidden")
+        .style("pointer-events", "none")
+        .classed("mobile-tooltip", false);
+      
+      // Hide the overlay
+      tooltipOverlay
+        .style("display", "none")
+        .style("pointer-events", "none");
+    }
+  
+    // Function to darken color for tooltip background
+    function darkenColor(hexColor, factor) {
+      // For rgba colors
+      if (hexColor.startsWith('rgba')) {
+        const matches = hexColor.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([.\d]+)\)/);
+        if (matches) {
+          let r = parseInt(matches[1]);
+          let g = parseInt(matches[2]);
+          let b = parseInt(matches[3]);
+          let a = parseFloat(matches[4]);
+          
+          r = Math.floor(r * (1 - factor));
+          g = Math.floor(g * (1 - factor));
+          b = Math.floor(b * (1 - factor));
+          
+          return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+      }
+      
+      // For hex colors
+      if (hexColor.startsWith('#')) {
+        let r = parseInt(hexColor.slice(1, 3), 16);
+        let g = parseInt(hexColor.slice(3, 5), 16);
+        let b = parseInt(hexColor.slice(5, 7), 16);
+        
+        r = Math.floor(r * (1 - factor));
+        g = Math.floor(g * (1 - factor));
+        b = Math.floor(b * (1 - factor));
+        
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+        
+        return `rgba(${r}, ${g}, ${b}, 0.95)`;
+      }
+      
+      return hexColor; // Return unchanged if not rgba or hex
+    }
+  
+    // Add window function references for external access
+    window.hideExerciseTooltip = hideExerciseTooltip;
+  
+    // Check if we're on a tablet
+    const isTablet = window.innerWidth >= 768;
+    
+    // Determine if this is a mobile device with touch (but not tablet)
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches && !isTablet;
   
     exerciseNames.forEach((exerciseName, index) => {
       if (!allProcessedData[exerciseName] || allProcessedData[exerciseName].length === 0) return;
@@ -952,68 +1207,151 @@ function getLighterShade(hexColor, opacity = 0.15) {
   
       const avgPointRadius = isMobile ? 3 : 4;
       processedData.forEach(dayData => {
-        g.append("circle")
+        // Create the data point
+        const point = g.append("circle")
           .attr("class", "avg-point")
           .attr("cx", x(dayData.date))
           .attr("cy", y(dayData.weightedAvg))
           .attr("r", avgPointRadius)
           .style("fill", color) // Use muscle-specific color
           .attr("stroke", "white")
-          .attr("stroke-width", 1.5)
-          .on("mouseover", function(event) {
-            d3.select(this)
-              .attr("r", avgPointRadius + 1.5)
-              .attr("stroke-width", 1.8);
-            const dateStr = dayData.date.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric'
+          .attr("stroke-width", 1.5);
+        
+        // Different event handling for mobile vs desktop
+        if (isTouchDevice) {
+          // Mobile/touch behavior
+          point
+            .style("cursor", "pointer")
+            .on("click", function(event) {
+              event.preventDefault();
+              event.stopPropagation();
+              // Highlight the point
+              d3.select(this)
+                .attr("r", avgPointRadius + 1.5)
+                .attr("stroke-width", 1.8);
+              
+              // Show mobile-style tooltip
+              showExerciseTooltipMobile(event, dayData, exerciseName, muscleGroup);
+              
+              // Return point to normal size after a delay
+              setTimeout(() => {
+                d3.select(this)
+                  .attr("r", avgPointRadius)
+                  .attr("stroke-width", 1.5);
+              }, 300);
+            })
+            .on("touchstart", function(event) {
+              d3.select(this)
+                .attr("r", avgPointRadius + 1.5)
+                .attr("stroke-width", 1.8);
+            })
+            .on("touchend", function(event) {
+              // Return to normal size but leave tooltip management to click handler
+              setTimeout(() => {
+                d3.select(this)
+                  .attr("r", avgPointRadius)
+                  .attr("stroke-width", 1.5);
+              }, 300);
             });
-            
-            // Add muscle group to tooltip
-            let tooltipContent = `
-              <div class="tooltip-title">${exerciseName}</div>
-              <div class="tooltip-date">${dateStr}</div>
-              <div class="tooltip-stats">
-                <div class="tooltip-stat-line">
-                  <span>Avg:</span>
-                  <span class="tooltip-stat-value">${dayData.weightedAvg.toFixed(1)}kg</span>
+        } else {
+          // Desktop behavior with mouseover
+          point
+            .on("mouseover", function(event) {
+              d3.select(this)
+                .attr("r", avgPointRadius + 1.5)
+                .attr("stroke-width", 1.8);
+              
+              // Format date for tooltip
+              const dateStr = dayData.date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              });
+
+              // Calculate total volume
+              const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+              
+              // Build tooltip content with enhanced structure
+              let tooltipContent = `
+                <div class="tooltip-header">
+                  <div class="tooltip-title">${exerciseName}</div>
+                  <div class="tooltip-date">${dateStr}</div>
                 </div>
-                <div class="tooltip-stat-line">
-                  <span>Range:</span>
-                  <span>${dayData.minWeight}-${dayData.maxWeight}kg</span>
+                <div class="tooltip-summary">
+                  <div class="tooltip-section-title">Summary</div>
+                  <div class="tooltip-stat-line">
+                    <span>Average:</span>
+                    <span class="tooltip-stat-value">${dayData.weightedAvg.toFixed(1)}kg</span>
+                  </div>
+                  <div class="tooltip-stat-line">
+                    <span>Volume:</span>
+                    <span class="tooltip-stat-value">${totalVolume.toLocaleString()}kg</span>
+                  </div>
+                  <div class="tooltip-stat-line">
+                    <span>Range:</span>
+                    <span>${dayData.minWeight}-${dayData.maxWeight}kg</span>
+                  </div>
+                  <div class="tooltip-stat-line">
+                    <span>Sets:</span>
+                    <span>${dayData.sets.length}</span>
+                  </div>
                 </div>
-                <div class="tooltip-stat-line">
-                  <span>Sets:</span>
-                  <span>${dayData.sets.length}</span>
+                <div class="tooltip-divider"></div>
+                <div class="tooltip-sets">
+                  <div class="tooltip-section-title">Set Details</div>
+                  <div class="tooltip-sets-grid">
+                    ${dayData.sets.map((set, idx) => `
+                      <div class="tooltip-set-item">
+                        <span class="set-number">Set ${idx + 1}:</span>
+                        <span class="set-weight">${set.weight}kg</span>
+                        <span class="set-reps">× ${set.reps}</span>
+                        ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
+                      </div>
+                    `).join('')}
+                  </div>
                 </div>
-                <div class="tooltip-stat-line">
-                  <span>Group:</span>
-                  <span>${muscleGroup || 'Unknown'}</span>
-                </div>
-              </div>
-            `;
-            tooltip
-              .style("visibility", "visible")
-              .html(tooltipContent);
-          })
-          .on("mousemove", function(event) {
-            const tooltipWidth = 150;
-            const windowWidth = window.innerWidth;
-            let xPosition = event.pageX + 10;
-            if (xPosition + tooltipWidth > windowWidth) {
-              xPosition = event.pageX - tooltipWidth - 10;
-            }
-            tooltip
-              .style("top", (event.pageY - 10) + "px")
-              .style("left", xPosition + "px");
-          })
-          .on("mouseout", function() {
-            d3.select(this)
-              .attr("r", avgPointRadius)
-              .attr("stroke-width", 1.5);
-            tooltip.style("visibility", "hidden");
-          });
+              `;
+              
+              // Position and display tooltip
+              tooltip
+                .html(tooltipContent)
+                .style("visibility", "visible")
+                .style("opacity", 1)
+                .style("pointer-events", "none");
+            })
+            .on("mousemove", function(event) {
+              // Position tooltip near cursor
+              const tooltipWidth = 220;
+              const windowWidth = window.innerWidth;
+              let xPosition = event.pageX + 10;
+              if (xPosition + tooltipWidth > windowWidth) {
+                xPosition = event.pageX - tooltipWidth - 10;
+              }
+              tooltip
+                .style("top", (event.pageY - 10) + "px")
+                .style("left", xPosition + "px");
+            })
+            .on("mouseout", function() {
+              d3.select(this)
+                .attr("r", avgPointRadius)
+                .attr("stroke-width", 1.5);
+              tooltip.style("visibility", "hidden");
+            });
+        }
       });
+    });
+  
+    // Add document click handler to close tooltips when clicking outside
+    document.addEventListener('click', function(e) {
+      const tooltip = document.querySelector('.exercise-tooltip');
+      const overlay = document.getElementById('exercise-tooltip-overlay');
+      
+      // If clicking outside the tooltip and it's visible
+      if (tooltip && 
+          tooltip.style.visibility === 'visible' &&
+          !tooltip.contains(e.target) && 
+          !e.target.closest('.avg-point')) {
+        hideExerciseTooltip();
+      }
     });
   
     if (exerciseNames.length > 1) {
@@ -1149,6 +1487,21 @@ function getLighterShade(hexColor, opacity = 0.15) {
   /**
    * Check that DOM is ready before initializing
    */
+  // Add document click handler to close tooltips when clicking outside
+  document.addEventListener('click', function(e) {
+    const tooltip = document.querySelector('.exercise-tooltip');
+    const overlay = document.getElementById('exercise-tooltip-overlay');
+    
+    // If clicking outside the tooltip and it's visible
+    if (tooltip && 
+        tooltip.style.visibility === 'visible' &&
+        !tooltip.contains(e.target) && 
+        !e.target.closest('.avg-point')) {
+      window.hideExerciseTooltip();
+    }
+  });
+
+
   function checkAndInitialize() {
     console.log('checkAndInitialize called');
     document.addEventListener("DOMContentLoaded", () => {
@@ -1179,6 +1532,126 @@ function getLighterShade(hexColor, opacity = 0.15) {
   // Note: Do not call initializeTitleWithDropdown() again here to avoid duplicate initialization.
 })();
 
+// Function to show exercise tooltip for mobile devices
+function showExerciseTooltipMobile(event, dayData) {
+  // Hide any existing tooltips
+  hideExerciseTooltip();
+  
+  const tooltipDiv = d3.select(".exercise-tooltip");
+  
+  // Add CSS classes for mobile tooltip
+  tooltipDiv.classed("mobile-tooltip", true);
+  
+  // Get the muscle group color for background
+  let bgColor = "#546bce"; // Default color
+  
+  // Format date for display
+  const dateStr = dayData.date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  });
+  
+  // Calculate total volume (weight × reps summed across all sets)
+  const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+  
+  // Build enhanced tooltip content
+  let tooltipContent = `
+    <div style="position:relative;">
+      <div class="tooltip-close-btn">&times;</div>
+      <div class="tooltip-header">
+        <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
+        <div class="tooltip-date">${dateStr}</div>
+      </div>
+      <div class="tooltip-summary">
+        <div class="tooltip-section-title">Summary</div>
+        <div class="tooltip-stat-line">
+          <span>Average:</span>
+          <span class="tooltip-stat-value">${dayData.weightedAvg.toFixed(1)}kg</span>
+        </div>
+        <div class="tooltip-stat-line">
+          <span>Volume:</span>
+          <span class="tooltip-stat-value">${totalVolume.toLocaleString()}kg</span>
+        </div>
+        <div class="tooltip-stat-line">
+          <span>Range:</span>
+          <span>${dayData.minWeight}-${dayData.maxWeight}kg</span>
+        </div>
+        <div class="tooltip-stat-line">
+          <span>Sets:</span>
+          <span>${dayData.sets.length}</span>
+        </div>
+      </div>
+      <div class="tooltip-divider"></div>
+      <div class="tooltip-sets">
+        <div class="tooltip-section-title">Set Details</div>
+        <div class="tooltip-sets-grid">
+          ${dayData.sets.map((set, idx) => `
+            <div class="tooltip-set-item">
+              <span class="set-number">Set ${idx + 1}:</span>
+              <span class="set-weight">${set.weight}kg</span>
+              <span class="set-reps">× ${set.reps}</span>
+              ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  tooltipDiv.html(tooltipContent);
+  
+  // Apply styles for mobile
+  tooltipDiv
+    .style("position", "fixed")
+    .style("top", "50%")
+    .style("left", "50%")
+    .style("transform", "translate(-50%, -50%)")
+    .style("width", "auto")
+    .style("max-width", "90%")
+    .style("background-color", bgColor)
+    .style("color", "#ffffff")
+    .style("border-radius", "12px")
+    .style("padding", "15px")
+    .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.4)")
+    .style("z-index", "9999")
+    .style("opacity", 1)
+    .style("visibility", "visible")
+    .style("pointer-events", "auto");
+  
+  // Show the overlay
+  d3.select("#exercise-tooltip-overlay")
+    .style("display", "block")
+    .style("opacity", 1)
+    .style("pointer-events", "auto");
+  
+  // Add click handler for close button
+  setTimeout(() => {
+    const closeBtn = document.querySelector('.exercise-tooltip .tooltip-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        hideExerciseTooltip();
+      });
+    }
+  }, 10);
+}
+
+// Function to hide exercise tooltip
+function hideExerciseTooltip() {
+  const tooltip = d3.select(".exercise-tooltip");
+  tooltip
+    .style("opacity", 0)
+    .style("visibility", "hidden")
+    .style("pointer-events", "none")
+    .classed("mobile-tooltip", false);
+  
+  // Hide the overlay
+  d3.select("#exercise-tooltip-overlay")
+    .style("display", "none")
+    .style("pointer-events", "none");
+}
+
 function createEnhancedExerciseDropdown() {
   const muscleGroups = ["Chest", "Back", "Shoulders", "Legs", "Biceps", "Triceps"];
   const muscleDisplayNames = {
@@ -1195,20 +1668,22 @@ function createEnhancedExerciseDropdown() {
     "Chest": "#546bce", // Blue
     "Back": "#32a852", // Green
     "Shoulders": "#ec812f", // Orange 
-    "Legs": "#9c27b0", // Purple
+    "Legs": "#ffdb53", 
     "Biceps": "#2196f3", // Light blue
     "Triceps": "#f44336" // Red
   };
   
   // Define background colors (lighter versions)
   const muscleBackgroundColors = {
-    "Chest": "#e8eaf6",
-    "Back": "#e5f1e6",
-    "Shoulders": "#fff8e1", 
-    "Legs": "#f3e5f5",
-    "Biceps": "#e1f5fe",
-    "Triceps": "#fbe9e7"
+    "Chest": "#e8eaf6",     // Light blue
+    "Triceps": "#ffeef5",   // Light pink
+    "Legs": "#fbebb4",      // Light yellow
+    "Shoulders": "#f6d8bb", // Light orange
+    "Back": "#f1f3e8",      // Light green
+    "Biceps": "#e1f5fe"     // Light blue
   };
+
+
   
   // Helper functions for different color states
   const getHoverColor = (muscleGroup) => {
