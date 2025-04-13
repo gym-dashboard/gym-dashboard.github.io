@@ -796,7 +796,7 @@
   height: 12px; /* Creates visual gap */
   margin: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  background-color: #f8f9fa;
+  background-color: #eee;
 }
 
 /* Muscle Group Header */
@@ -959,15 +959,15 @@
 
 /* Legs */
 .muscle-group-section[data-group="Legs"] .muscle-group-header {
-  background-color: #f3e5f5;
+  background-color: #f5f4e5;
 }
 
 .exercise-item[data-muscle-group="Legs"]:hover:not(.selected) {
-  background-color: rgba(156, 39, 176, 0.05);
+  background-color: #ffda531f;
 }
 
 .exercise-item[data-muscle-group="Legs"].selected {
-  border-left-color: #ffdb53 !important;
+  border-left-color: #ffda53 !important;
 }
 
 /* Biceps */
