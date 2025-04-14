@@ -858,9 +858,9 @@
     // Darkened versions of the calendar colors for better visibility in charts
     "Chest": "#546bce",     // Darker blue (from #c8ceee)
     "Triceps": "#ff8eba",   // Darker red (from #f9c5c7)
-    "Legs": "#ffdb53",      // Darker amber (fromrgb(192, 183, 247))
+    "Legs": "#ffd112",      // Darker amber (fromrgb(192, 183, 247))
     "Shoulders": "#e67e22", // Darker orange (fromrgb(255, 244, 34))
-    "Back": "#cbd3ad",      // Darker green (from #cbd3ad)
+    "Back": "#64832f",      // Darker green (from #cbd3ad)
     "Biceps": "#3498db"     // Darker blue (from #c6e2e7)
   };
 
@@ -2249,15 +2249,32 @@ function createNestedExerciseDropdown() {
           group.exercises.sort((a, b) => a.baseName.localeCompare(b.baseName));
           
           group.exercises.forEach(exerciseGroup => {
+            // Check if this exercise has multiple variants
+            const hasMultipleVariants = exerciseGroup.variants.length > 1;
+            
             // Create parent item (base exercise name)
             const parentItem = document.createElement('div');
             parentItem.className = 'exercise-parent-item';
             parentItem.dataset.baseName = exerciseGroup.baseName;
             parentItem.dataset.muscleGroup = exerciseGroup.muscleGroup || '';
             
-            // Check if this group should be expanded (if it contains the selected exercise)
-            const isExpanded = exerciseGroup.baseName === selectedBaseName;
-            parentItem.classList.toggle('expanded', isExpanded);
+            // Only add expandable class and expanded state if multiple variants
+            if (hasMultipleVariants) {
+              // Add expandable class for styling
+              parentItem.classList.add('expandable');
+              
+              // Check if this group should be expanded (if it contains the selected exercise)
+              const isExpanded = exerciseGroup.baseName === selectedBaseName;
+              parentItem.classList.toggle('expanded', isExpanded);
+            } else {
+              // Add non-expandable class for styling
+              parentItem.classList.add('non-expandable');
+              
+              // For single variants, store the variant value directly on the parent
+              if (exerciseGroup.variants.length === 1) {
+                parentItem.dataset.variantValue = exerciseGroup.variants[0].value;
+              }
+            }
             
             // Create label with base exercise name and indicator
             const parentLabel = document.createElement('div');
@@ -2269,94 +2286,81 @@ function createNestedExerciseDropdown() {
             nameSpan.textContent = exerciseGroup.baseName;
             parentLabel.appendChild(nameSpan);
             
-            // Create variant count badge
-            const variantCount = document.createElement('span');
-            variantCount.className = 'variant-count';
-            variantCount.textContent = exerciseGroup.variants.length > 1 ? 
-              `(${exerciseGroup.variants.length})` : '';
-            parentLabel.appendChild(variantCount);
-            
-            // Create expand/collapse indicator
-            const expandIcon = document.createElement('span');
-            expandIcon.className = 'expand-icon';
-            expandIcon.innerHTML = isExpanded ? '&#9650;' : '&#9660;'; // Up/down triangle
-            parentLabel.appendChild(expandIcon);
+            // Only add variant count and expand icons for multi-variant exercises
+            if (hasMultipleVariants) {
+              // Create variant count badge
+              const variantCount = document.createElement('span');
+              variantCount.className = 'variant-count';
+              variantCount.textContent = `(${exerciseGroup.variants.length})`;
+              parentLabel.appendChild(variantCount);
+              
+              // Create expand/collapse indicator
+              const expandIcon = document.createElement('span');
+              expandIcon.className = 'expand-icon';
+              expandIcon.innerHTML = parentItem.classList.contains('expanded') ? '&#9650;' : '&#9660;'; // Up/down triangle
+              parentLabel.appendChild(expandIcon);
+            } else if (exerciseGroup.variants.length === 1) {
+              // For single variants, show the location in the parent
+              const locationBadge = document.createElement('span');
+              locationBadge.className = 'location-badge';
+              locationBadge.textContent = `(${exerciseGroup.variants[0].location})`;
+              locationBadge.style.color = '#666';
+              locationBadge.style.fontSize = '0.85em';
+              locationBadge.style.marginLeft = '6px';
+              parentLabel.appendChild(locationBadge);
+            }
             
             parentItem.appendChild(parentLabel);
             
             // Set up hover effects
             setupHoverEffects(parentItem, exerciseGroup.muscleGroup);
             
-            // Setup expand/collapse behavior
-            parentItem.addEventListener('click', function(e) {
-              e.stopPropagation();
-              const isCurrentlyExpanded = this.classList.contains('expanded');
-              
-              // Toggle expanded state
-              this.classList.toggle('expanded', !isCurrentlyExpanded);
-              
-              // Update the icon
-              const icon = this.querySelector('.expand-icon');
-              if (icon) {
-                icon.innerHTML = !isCurrentlyExpanded ? '&#9650;' : '&#9660;';
-              }
-              
-              // Show/hide the variants container
-              const variantsContainer = this.nextElementSibling;
-              if (variantsContainer && variantsContainer.classList.contains('exercise-variants')) {
-                variantsContainer.style.display = !isCurrentlyExpanded ? 'block' : 'none';
-              }
-            });
+            // Check if currently selected
+            const isSingleAndSelected = exerciseGroup.variants.length === 1 && 
+                enhancedSelectedExercises.includes(exerciseGroup.variants[0].value);
             
-            exerciseList.appendChild(parentItem);
+            if (isSingleAndSelected) {
+              // Apply selection styling to parent for single variants
+              parentItem.classList.add('selected-parent');
+              parentItem.style.backgroundColor = getSelectionColor(exerciseGroup.muscleGroup);
+              parentItem.style.borderLeftColor = getBorderColor(exerciseGroup.muscleGroup);
+            }
             
-            // Create container for variants
-            const variantsContainer = document.createElement('div');
-            variantsContainer.className = 'exercise-variants';
-            variantsContainer.style.display = isExpanded ? 'block' : 'none';
-            
-            // Sort variants by location name
-            exerciseGroup.variants.sort((a, b) => a.location.localeCompare(b.location));
-            
-            // Add each variant as a child item
-            exerciseGroup.variants.forEach(variant => {
-              const variantItem = document.createElement('div');
-              variantItem.className = 'exercise-variant-item';
-              variantItem.setAttribute('role', 'option');
-              variantItem.dataset.value = variant.value;
-              variantItem.dataset.muscleGroup = variant.muscleGroup || '';
-              
-              // Create variant label
-              const variantLabel = document.createElement('span');
-              variantLabel.className = 'variant-label';
-              
-              // Show only the location part
-              variantLabel.textContent = variant.location;
-              
-              variantItem.appendChild(variantLabel);
-              
-              // Set up hover effects
-              setupHoverEffects(variantItem, variant.muscleGroup);
-              
-              // Mark as selected if in current selection
-              if (enhancedSelectedExercises.includes(variant.value)) {
-                variantItem.classList.add('selected');
-                variantItem.setAttribute('aria-selected', 'true');
-                variantItem.style.backgroundColor = getSelectionColor(variant.muscleGroup);
-                variantItem.style.borderLeftColor = getBorderColor(variant.muscleGroup);
-              } else {
-                variantItem.setAttribute('aria-selected', 'false');
-              }
-              
-              // Handle selection
-              variantItem.addEventListener('click', function(e) {
-                e.stopPropagation(); // Prevent event bubbling to parent
+            // Setup different behavior based on variant count
+            if (hasMultipleVariants) {
+              // For multiple variants: Setup expand/collapse behavior
+              parentItem.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isCurrentlyExpanded = this.classList.contains('expanded');
                 
-                // The exercise value we need to select
-                const exerciseValue = this.dataset.value;
-                const muscleGroup = this.dataset.muscleGroup;
+                // Toggle expanded state
+                this.classList.toggle('expanded', !isCurrentlyExpanded);
                 
-                // Clear selection from all items
+                // Update the icon
+                const icon = this.querySelector('.expand-icon');
+                if (icon) {
+                  icon.innerHTML = !isCurrentlyExpanded ? '&#9650;' : '&#9660;';
+                }
+                
+                // Show/hide the variants container
+                const variantsContainer = this.nextElementSibling;
+                if (variantsContainer && variantsContainer.classList.contains('exercise-variants')) {
+                  variantsContainer.style.display = !isCurrentlyExpanded ? 'block' : 'none';
+                }
+              });
+            } else {
+              // For single variant: Direct selection behavior
+              parentItem.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                if (exerciseGroup.variants.length === 0) return; // Skip if no variants
+                
+                // Get the single variant
+                const singleVariant = exerciseGroup.variants[0];
+                const exerciseValue = singleVariant.value;
+                const muscleGroup = singleVariant.muscleGroup;
+                
+                // Clear selection from all items (both variant items and parent items)
                 const allVariantItems = customDropdown.querySelectorAll('.exercise-variant-item');
                 allVariantItems.forEach(el => {
                   el.classList.remove('selected');
@@ -2365,11 +2369,17 @@ function createNestedExerciseDropdown() {
                   el.style.borderLeftColor = '';
                 });
                 
-                // Mark clicked item as selected
-                this.classList.add('selected');
-                this.setAttribute('aria-selected', 'true');
+                const allParentItems = customDropdown.querySelectorAll('.exercise-parent-item');
+                allParentItems.forEach(el => {
+                  el.classList.remove('selected-parent');
+                  if (!el.classList.contains('expandable')) {
+                    el.style.backgroundColor = '';
+                    el.style.borderLeftColor = '';
+                  }
+                });
                 
-                // Apply selection color and border
+                // Mark this parent as selected
+                this.classList.add('selected-parent');
                 this.style.backgroundColor = getSelectionColor(muscleGroup);
                 this.style.borderLeftColor = getBorderColor(muscleGroup);
                 
@@ -2383,20 +2393,99 @@ function createNestedExerciseDropdown() {
                 // Close dropdown
                 toggleDropdown(false);
               });
-              
-              variantsContainer.appendChild(variantItem);
-            });
+            }
             
-            exerciseList.appendChild(variantsContainer);
+            exerciseList.appendChild(parentItem);
+            
+            // Create container for variants (only needed for multi-variant)
+            if (hasMultipleVariants) {
+              const variantsContainer = document.createElement('div');
+              variantsContainer.className = 'exercise-variants';
+              variantsContainer.style.display = parentItem.classList.contains('expanded') ? 'block' : 'none';
+              
+              // Sort variants by location name
+              exerciseGroup.variants.sort((a, b) => a.location.localeCompare(b.location));
+              
+              // Add each variant as a child item
+              exerciseGroup.variants.forEach(variant => {
+                const variantItem = document.createElement('div');
+                variantItem.className = 'exercise-variant-item';
+                variantItem.setAttribute('role', 'option');
+                variantItem.dataset.value = variant.value;
+                variantItem.dataset.muscleGroup = variant.muscleGroup || '';
+                
+                // Create variant label
+                const variantLabel = document.createElement('span');
+                variantLabel.className = 'variant-label';
+                
+                // Show only the location part
+                variantLabel.textContent = variant.location;
+                
+                variantItem.appendChild(variantLabel);
+                
+                // Set up hover effects
+                setupHoverEffects(variantItem, variant.muscleGroup);
+                
+                // Mark as selected if in current selection
+                if (enhancedSelectedExercises.includes(variant.value)) {
+                  variantItem.classList.add('selected');
+                  variantItem.setAttribute('aria-selected', 'true');
+                  variantItem.style.backgroundColor = getSelectionColor(variant.muscleGroup);
+                  variantItem.style.borderLeftColor = getBorderColor(variant.muscleGroup);
+                } else {
+                  variantItem.setAttribute('aria-selected', 'false');
+                }
+                
+                // Handle selection
+                variantItem.addEventListener('click', function(e) {
+                  e.stopPropagation(); // Prevent event bubbling to parent
+                  
+                  // The exercise value we need to select
+                  const exerciseValue = this.dataset.value;
+                  const muscleGroup = this.dataset.muscleGroup;
+                  
+                  // Clear selection from all items
+                  const allVariantItems = customDropdown.querySelectorAll('.exercise-variant-item');
+                  allVariantItems.forEach(el => {
+                    el.classList.remove('selected');
+                    el.setAttribute('aria-selected', 'false');
+                    el.style.backgroundColor = '';
+                    el.style.borderLeftColor = '';
+                  });
+                  
+                  // Mark clicked item as selected
+                  this.classList.add('selected');
+                  this.setAttribute('aria-selected', 'true');
+                  
+                  // Apply selection color and border
+                  this.style.backgroundColor = getSelectionColor(muscleGroup);
+                  this.style.borderLeftColor = getBorderColor(muscleGroup);
+                  
+                  // Update selection state
+                  enhancedSelectedExercises = [exerciseValue];
+                  
+                  // Update UI and chart
+                  updateTitleText();
+                  updateExercisesChart();
+                  
+                  // Close dropdown
+                  toggleDropdown(false);
+                });
+                
+                variantsContainer.appendChild(variantItem);
+              });
+              
+              exerciseList.appendChild(variantsContainer);
+            }
           });
           
           section.appendChild(exerciseList);
           groupList.appendChild(section);
         }
       });
-      
+
       customDropdown.appendChild(groupList);
-      
+
       // Show message if no exercises found
       if (Object.keys(exerciseGroups).length === 0) {
         const noExercisesMsg = document.createElement('div');
@@ -2404,13 +2493,13 @@ function createNestedExerciseDropdown() {
         noExercisesMsg.textContent = 'No exercises with 3+ workouts found.';
         customDropdown.appendChild(noExercisesMsg);
       }
-      
+
       // Fix mobile click issues with improved handling
       fixMobileClickIssues(customDropdown, enhancedSelectedExercises);
-      
+
       // Update title text
       updateTitleText();
-      
+
       // Hide default dropdown
       if (window.weightAnalysis && window.weightAnalysis.hideDefaultExerciseDropdown) {
         window.weightAnalysis.hideDefaultExerciseDropdown();
@@ -2420,11 +2509,11 @@ function createNestedExerciseDropdown() {
           exerciseSelectorContainer.style.cssText = 'position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;';
         }
       }
-      
+
       return true;
-    } catch (error) {
+      } catch (error) {
       console.error('Error creating nested dropdown:', error);
-      
+
       // Show error state in dropdown
       if (customDropdown) {
         customDropdown.innerHTML = `
@@ -2437,13 +2526,13 @@ function createNestedExerciseDropdown() {
           </div>
         `;
       }
-      
+
       // Still make sure we have a working fix for mobile click issues
       fixMobileClickIssues(customDropdown, enhancedSelectedExercises);
-      
+
       return false;
-    }
-  }
+      }
+      }
 
   // Async function to fetch exercise workout counts
   async function fetchExerciseWorkoutCounts() {
@@ -2540,34 +2629,93 @@ function createNestedExerciseDropdown() {
       // Set up hover effects again
       setupHoverEffects(newItem, newItem.dataset.muscleGroup);
       
-      // Add click handler
-      newItem.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const isCurrentlyExpanded = this.classList.contains('expanded');
-        
-        // Toggle expanded state
-        this.classList.toggle('expanded', !isCurrentlyExpanded);
-        
-        // Update the icon
-        const icon = this.querySelector('.expand-icon');
-        if (icon) {
-          icon.innerHTML = !isCurrentlyExpanded ? '&#9650;' : '&#9660;';
-        }
-        
-        // Show/hide the variants container
-        const variantsContainer = this.nextElementSibling;
-        if (variantsContainer && variantsContainer.classList.contains('exercise-variants')) {
-          variantsContainer.style.display = !isCurrentlyExpanded ? 'block' : 'none';
-        }
-      });
+      // Check if this is an expandable item
+      const isExpandable = newItem.classList.contains('expandable');
       
-      // Improved touch handling
+      // Add different click handlers based on expandable status
+      if (isExpandable) {
+        // For expandable items: expand/collapse functionality
+        newItem.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isCurrentlyExpanded = this.classList.contains('expanded');
+          
+          // Toggle expanded state
+          this.classList.toggle('expanded', !isCurrentlyExpanded);
+          
+          // Update the icon
+          const icon = this.querySelector('.expand-icon');
+          if (icon) {
+            icon.innerHTML = !isCurrentlyExpanded ? '&#9650;' : '&#9660;';
+          }
+          
+          // Show/hide the variants container
+          const variantsContainer = this.nextElementSibling;
+          if (variantsContainer && variantsContainer.classList.contains('exercise-variants')) {
+            variantsContainer.style.display = !isCurrentlyExpanded ? 'block' : 'none';
+          }
+        });
+      } else {
+        // For non-expandable items: direct selection
+        newItem.addEventListener('click', function(e) {
+          e.stopPropagation();
+          
+          // Get the variant value from the dataset
+          const exerciseValue = this.dataset.variantValue;
+          if (!exerciseValue) return; // Skip if no variant value
+          
+          const muscleGroup = this.dataset.muscleGroup;
+          
+          // Clear selection from all variant items
+          const allVariantItems = dropdownElement.querySelectorAll('.exercise-variant-item');
+          allVariantItems.forEach(el => {
+            el.classList.remove('selected');
+            el.setAttribute('aria-selected', 'false');
+            el.style.backgroundColor = '';
+            el.style.borderLeftColor = '';
+          });
+          
+          // Clear selection from all non-expandable parent items
+          const allParentItems = dropdownElement.querySelectorAll('.exercise-parent-item.non-expandable');
+          allParentItems.forEach(el => {
+            el.classList.remove('selected-parent');
+            el.style.backgroundColor = '';
+            el.style.borderLeftColor = '';
+          });
+          
+          // Mark this parent as selected
+          this.classList.add('selected-parent');
+          this.style.backgroundColor = getSelectionColor(muscleGroup);
+          this.style.borderLeftColor = getBorderColor(muscleGroup);
+          
+          // Update selection state
+          enhancedSelectedExercises = [exerciseValue];
+          
+          // Update UI and chart
+          updateTitleText();
+          updateExercisesChart();
+          
+          // Close dropdown
+          toggleDropdown(false);
+        });
+      }
+      
+      // Improved touch handling for all parent items
       newItem.addEventListener('touchstart', function() {
         this.dataset.touchActive = 'true';
+        
+        // Visual feedback for touch
+        if (!isExpandable) {
+          this.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+        }
       }, { passive: true });
       
       newItem.addEventListener('touchmove', function() {
         this.dataset.touchActive = 'false';
+        
+        // Remove touch feedback if user is scrolling
+        if (!isExpandable && !this.classList.contains('selected-parent')) {
+          this.style.backgroundColor = '';
+        }
       }, { passive: true });
       
       newItem.addEventListener('touchend', function(e) {
@@ -2575,6 +2723,11 @@ function createNestedExerciseDropdown() {
           e.preventDefault();
           e.stopPropagation();
           this.dataset.touchActive = 'false';
+          
+          // Remove touch feedback unless selected
+          if (!isExpandable && !this.classList.contains('selected-parent')) {
+            this.style.backgroundColor = '';
+          }
           
           // Trigger the click event
           this.click();
@@ -2592,7 +2745,7 @@ function createNestedExerciseDropdown() {
       // Set up hover effects again
       setupHoverEffects(newItem, newItem.dataset.muscleGroup);
       
-      // Add click handler
+      // Add click handler for variant selection
       newItem.addEventListener('click', function(e) {
         e.stopPropagation();
         
@@ -2600,11 +2753,19 @@ function createNestedExerciseDropdown() {
         const exerciseValue = this.dataset.value;
         const muscleGroup = this.dataset.muscleGroup;
         
-        // Clear selection from all items
+        // Clear selection from all variant items
         const allVariantItems = dropdownElement.querySelectorAll('.exercise-variant-item');
         allVariantItems.forEach(el => {
           el.classList.remove('selected');
           el.setAttribute('aria-selected', 'false');
+          el.style.backgroundColor = '';
+          el.style.borderLeftColor = '';
+        });
+        
+        // Clear selection from all non-expandable parent items
+        const allParentItems = dropdownElement.querySelectorAll('.exercise-parent-item.non-expandable');
+        allParentItems.forEach(el => {
+          el.classList.remove('selected-parent');
           el.style.backgroundColor = '';
           el.style.borderLeftColor = '';
         });
@@ -2628,13 +2789,21 @@ function createNestedExerciseDropdown() {
         toggleDropdown(false);
       });
       
-      // Improved touch handling
+      // Improved touch handling for variants
       newItem.addEventListener('touchstart', function() {
         this.dataset.touchActive = 'true';
+        // Visual feedback for touch
+        if (!this.classList.contains('selected')) {
+          this.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+        }
       }, { passive: true });
       
       newItem.addEventListener('touchmove', function() {
         this.dataset.touchActive = 'false';
+        // Remove visual feedback if scrolling
+        if (!this.classList.contains('selected')) {
+          this.style.backgroundColor = '';
+        }
       }, { passive: true });
       
       newItem.addEventListener('touchend', function(e) {
@@ -2642,6 +2811,11 @@ function createNestedExerciseDropdown() {
           e.preventDefault();
           e.stopPropagation();
           this.dataset.touchActive = 'false';
+          
+          // Remove touch feedback unless selected
+          if (!this.classList.contains('selected')) {
+            this.style.backgroundColor = '';
+          }
           
           // Trigger the click event
           this.click();
@@ -2665,10 +2839,12 @@ function createNestedExerciseDropdown() {
       // Better touch handling for close button
       newCloseBtn.addEventListener('touchstart', function() {
         this.dataset.touchActive = 'true';
+        this.style.opacity = '0.7';
       }, { passive: true });
       
       newCloseBtn.addEventListener('touchmove', function() {
         this.dataset.touchActive = 'false';
+        this.style.opacity = '1';
       }, { passive: true });
       
       newCloseBtn.addEventListener('touchend', function(e) {
@@ -2676,6 +2852,7 @@ function createNestedExerciseDropdown() {
           e.preventDefault();
           e.stopPropagation();
           this.dataset.touchActive = 'false';
+          this.style.opacity = '1';
           toggleDropdown(false);
         }
       }, { passive: false });
@@ -2827,7 +3004,7 @@ function createNestedExerciseDropdown() {
       if (e.key === 'Enter') {
         const activeElement = document.activeElement;
         if (activeElement.classList.contains('exercise-parent-item')) {
-          // Expand/collapse parent
+          // Either expand/collapse or select based on if expandable
           activeElement.click();
         } else if (activeElement.classList.contains('exercise-variant-item')) {
           // Select variant
@@ -2849,9 +3026,9 @@ function createNestedExerciseDropdown() {
       const exercise = exerciseOptions.find(opt => opt.value === selectedValue);
       
       if (exercise) {
-        const { exercise: baseName, location } = window.weightAnalysis.parseExerciseAndLocation(exercise.text);
-        // Show base name and location format: "Bench Press - Bar"
-        titleElement.textContent = `${baseName} - ${location || 'Bodyweight'}`;
+        const { exercise: baseName } = window.weightAnalysis.parseExerciseAndLocation(exercise.text);
+        // Show only the base name without location
+        titleElement.textContent = baseName;
       } else {
         titleElement.textContent = 'Select Exercise';
       }
@@ -2979,13 +3156,13 @@ function createNestedExerciseDropdown() {
         margin: 8px 0;
       }
       
-      /* Parent exercise items */
+      /* Parent exercise items - base styles */
       .exercise-parent-item {
         position: relative;
         padding: 10px 12px;
         cursor: pointer;
         border-left: 3px solid transparent;
-        transition: background-color 0.2s;
+        transition: background-color 0.2s, border-left-color 0.2s;
         display: flex;
         align-items: center;
         user-select: none;
@@ -3002,6 +3179,7 @@ function createNestedExerciseDropdown() {
         font-weight: 500;
       }
       
+      /* Variant count badge (for expandable items) */
       .variant-count {
         margin-left: 6px;
         font-size: 0.85em;
@@ -3009,6 +3187,48 @@ function createNestedExerciseDropdown() {
         opacity: 0.8;
       }
       
+      /* Location badge (for non-expandable items) */
+      .location-badge {
+        margin-left: 6px;
+        font-size: 0.85em;
+        color: #666;
+        opacity: 0.8;
+      }
+  
+      /* Different styles for expandable vs non-expandable items */
+      .exercise-parent-item.expandable {
+        /* Specific styles for expandable items */
+        cursor: pointer;
+      }
+      
+      .exercise-parent-item.non-expandable {
+        /* Specific styles for non-expandable items */
+        padding-left: 15px;  /* Adjust padding since there's no arrow */
+        border-radius: 0;
+        transition: all 0.15s ease-in-out;
+      }
+      
+      .exercise-parent-item.non-expandable:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+      
+      /* Visual styling for selected non-expandable parent */
+      .exercise-parent-item.selected-parent {
+        font-weight: 500;
+      }
+      
+      /* Visual feedback for direct selection */
+      @keyframes select-pulse {
+        0% { background-color: rgba(0, 0, 0, 0); }
+        50% { background-color: rgba(0, 0, 0, 0.1); }
+        100% { background-color: rgba(0, 0, 0, 0); }
+      }
+      
+      .selected-parent {
+        animation: select-pulse 0.3s ease;
+      }
+      
+      /* Expand icon (for expandable items) */
       .expand-icon {
         margin-left: auto;
         font-size: 0.7em;
@@ -3062,6 +3282,10 @@ function createNestedExerciseDropdown() {
           padding: 12px 16px;
         }
         
+        .exercise-parent-item.non-expandable {
+          padding-left: 16px;
+        }
+        
         .exercise-variant-item {
           min-height: 40px;
           padding: 10px 12px 10px 16px;
@@ -3071,6 +3295,19 @@ function createNestedExerciseDropdown() {
           min-width: 44px;
           min-height: 44px;
         }
+      }
+  
+      /* Fix for mobile touches */
+      .exercise-item, .exercise-parent-item, .exercise-variant-item {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      
+      /* Improved touch handling */
+      .exercise-item[data-touch-active="true"],
+      .exercise-parent-item[data-touch-active="true"],
+      .exercise-variant-item[data-touch-active="true"] {
+        background-color: rgba(0, 0, 0, 0.05);
       }
     `;
     document.head.appendChild(style);

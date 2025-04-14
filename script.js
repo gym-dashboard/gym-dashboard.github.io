@@ -1616,8 +1616,11 @@ function getDateFromWeekKey(weekKey) {
 
 // Modify the updateStreakCounter function to count the current week
 // even if the previous week wasn't completed
-
 function updateStreakCounter() {
+  // Clear any invalid data in localStorage from past runs
+  // This will force a fresh calculation based on actual workout data
+  cleanupCompletedWeeksData();
+  
   const prevWeekCompleted = checkPreviousWeekCompleted();
   const currentWeekCount = countCurrentWeekWorkouts();
   const currentWeekCompleted = currentWeekCount >= 4;
@@ -1651,40 +1654,40 @@ function updateStreakCounter() {
     weeklyData.completedWeeks.push(prevWeekKey);
   }
   
-  // Sort completed weeks chronologically
-  weeklyData.completedWeeks.sort();
-  
-  // Calculate streak by checking for consecutive weeks
+  // Calculate streak - simplest approach
   let streak = 0;
-  const sortedWeeks = [...weeklyData.completedWeeks].sort();
   
-  // FIXED: Count current week if it's completed, regardless of previous week
+  // 1. If current week is completed, that's 1 week streak already
   if (currentWeekCompleted) {
-    streak = 1; // Start with 1 for the current week
+    streak = 1;
+  } 
+  // 2. Otherwise, if previous week was completed, that's 1 week streak
+  else if (prevWeekCompleted) {
+    streak = 1;
     
-    // Continue checking for streak only if previous week was also completed
+    // 3. If both current week and previous week are completed, it's at least 2 weeks
+    if (currentWeekCompleted) {
+      streak = 2;
+    }
+    
+    // 4. Only check earlier weeks if previous week was completed
+    // (to see if the streak extends further back)
     if (prevWeekCompleted) {
-      streak++; // Add 1 for previous week
+      let checkDate = new Date(prevWeekStart);
       
-      // Find the index of the previous week in our sorted array
-      const prevWeekIndex = sortedWeeks.indexOf(prevWeekKey);
-      
-      // If we found the previous week in our completed weeks
-      if (prevWeekIndex > 0) {
-        // Check consecutive weeks working backwards from the previous week
-        for (let i = prevWeekIndex; i > 0; i--) {
-          const currentWeek = getDateFromWeekKey(sortedWeeks[i]);
-          const previousWeek = getDateFromWeekKey(sortedWeeks[i-1]);
-          
-          // Check if these weeks are consecutive (7 days apart)
-          const dayDiff = Math.round((currentWeek - previousWeek) / (1000 * 60 * 60 * 24));
-          
-          if (dayDiff === 7) {
-            streak++;
-          } else {
-            // Break on first non-consecutive week
-            break;
-          }
+      // Keep checking earlier weeks
+      while (true) {
+        // Go to the start of the week before
+        checkDate.setDate(checkDate.getDate() - 7);
+        
+        // Check if this week was completed
+        const weekToCheck = wasWeekCompleted(checkDate);
+        
+        if (weekToCheck) {
+          streak++;
+        } else {
+          // Week not completed, break the streak
+          break;
         }
       }
     }
@@ -1706,6 +1709,49 @@ function updateStreakCounter() {
   if (streakSubtitle) {
     streakSubtitle.textContent = weeklyData.weekStreakCount === 1 ? 'Week in a row' : 'Weeks in a row';
   }
+}
+
+// Helper function to check if a specific week was completed 
+// by looking at the actual workout data, not just the completedWeeks array
+function wasWeekCompleted(weekStartDate) {
+  // Clone the date to avoid modifying the original
+  const startDate = new Date(weekStartDate);
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+  
+  let workoutCount = 0;
+  const year = startDate.getFullYear();
+  
+  // Ensure we have data for this year
+  if (!yearData[year]) return false;
+  
+  // Count workouts for each day in the week
+  for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
+    const month = day.getMonth();
+    const dayOfMonth = day.getDate() - 1;
+    
+    // Check if there's workout data for this day
+    if (yearData[year][month] && 
+        yearData[year][month][dayOfMonth] && 
+        yearData[year][month][dayOfMonth].muscles && 
+        yearData[year][month][dayOfMonth].muscles.length > 0) {
+      workoutCount++;
+    }
+  }
+  
+  // Week is completed if at least 4 workouts
+  return workoutCount >= 4;
+}
+
+// Helper function to clean up potentially invalid data in completedWeeks
+function cleanupCompletedWeeksData() {
+  if (!Array.isArray(weeklyData.completedWeeks)) return;
+  
+  // Filter out any weeks that don't actually have 4+ workouts
+  weeklyData.completedWeeks = weeklyData.completedWeeks.filter(weekKey => {
+    const date = getDateFromWeekKey(weekKey);
+    return wasWeekCompleted(date);
+  });
 }
 
 function updateProgressBar(workoutCount) {
