@@ -858,10 +858,10 @@
     // Darkened versions of the calendar colors for better visibility in charts
     "Chest": "#546bce",     // Darker blue (from #c8ceee)
     "Triceps": "#ff8eba",   // Darker red (from #f9c5c7)
-    "Legs": "#ffd112",      // Darker amber (fromrgb(192, 183, 247))
+    "Legs": "#c9b165",      // Darker amber (fromrgb(192, 183, 247))
     "Shoulders": "#e67e22", // Darker orange (fromrgb(255, 244, 34))
     "Back": "#64832f",      // Darker green (from #cbd3ad)
-    "Biceps": "#3498db"     // Darker blue (from #c6e2e7)
+    "Biceps": "#80add3"     // Darker blue (from #c6e2e7)
   };
 
   /**
@@ -1312,7 +1312,7 @@
       g.append("path")
         .datum(processedData)
         .attr("fill", color) // Use muscle-specific color
-        .attr("fill-opacity", 0.15)
+        .attr("fill-opacity", 0.1)
         .attr("d", areaGenerator);
   
       const lineGenerator = d3.line()
