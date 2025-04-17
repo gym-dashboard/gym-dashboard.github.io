@@ -1,0 +1,106 @@
+{
+  "date": "17-04-2025",
+  "participants": [
+    "André D.",
+    "Tomás T.",
+    "Mariana D."
+  ],
+  "start_time": "17:45",
+  "end_time": "18:46",
+  "total_time": "1 hour 1 minutes",
+  "overall_muscle_group": [
+    "Shoulders",
+    "Back",
+    "Chest"
+  ],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 9,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 6,
+      "Weight": "45 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 10,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 8,
+      "Weight": "60 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Chest Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Chest Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "35 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 7,
+      "Weight": "35 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 10,
+      "Weight": "50 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Pec Fly",
+      "Reps": 7,
+      "Weight": "60 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 20,
+      "Weight": "10 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    }
+  ]
+}
