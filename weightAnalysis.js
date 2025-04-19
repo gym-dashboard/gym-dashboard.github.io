@@ -902,8 +902,8 @@ function renderMultiExerciseChart(exerciseDataMap) {
     Shoulders: "#ffc697", Back: "cbd3ad", Biceps: "#c6e2e7",
   };
   const ZOOM_SENSITIVITY = 0.006;
-  const LONG_PRESS_MS    = 150;
-  const MIN_DOMAIN_SPAN  = 0.5;    // kg
+  const LONG_PRESS_MS    = 100;
+  const MIN_DOMAIN_SPAN  = 1;    // kg
   const MAX_DOMAIN_SPAN  = 300;  // kg
   const GRID_TICKS       = 5;
 
