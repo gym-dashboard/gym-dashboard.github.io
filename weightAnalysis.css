@@ -1,3 +1,11 @@
+/* anywhere in your CSS */
+html, body, svg {
+  touch-action: none;    /* disable native pan/zoom */
+  user-select: none;        /* stop text selection */
+}
+
+
+
 /* ------------------------------
    EXERCISE TRACKER MAIN STYLES
    ------------------------------ */

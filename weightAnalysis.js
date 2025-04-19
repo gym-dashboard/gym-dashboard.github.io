@@ -902,7 +902,7 @@ function renderMultiExerciseChart(exerciseDataMap) {
     Shoulders: "#ffc697", Back: "cbd3ad", Biceps: "#c6e2e7",
   };
   const ZOOM_SENSITIVITY = 0.006;
-  const LONG_PRESS_MS    = 350;
+  const LONG_PRESS_MS    = 150;
   const MIN_DOMAIN_SPAN  = 2;    // kg
   const MAX_DOMAIN_SPAN  = 300;  // kg
   const GRID_TICKS       = 5;
@@ -1055,8 +1055,9 @@ function renderMultiExerciseChart(exerciseDataMap) {
   /********************** 10. Y‑AXIS DRAG‑ZOOM **********************/
   // Create a drag behavior that listens for move/up on the entire document body
   const drag = d3.drag()
-    .container(d3.select('body').node())   // ← once started, capture events anywhere on the page
+    .container(document.documentElement)       // capture everywhere
     .on('start', ev => {
+      ev.sourceEvent.preventDefault();         // block native gestures
       startY = ev.y;
       longPressOK = !isTouch;
       if (isTouch) setTimeout(() => longPressOK = true, LONG_PRESS_MS);
@@ -1086,12 +1087,15 @@ function renderMultiExerciseChart(exerciseDataMap) {
   // Attach to the y‑axis group and grab the pointer on down
   yAxisG
     .on('pointerdown', function(event) {
-      // lock all pointer events (move/up) to this axis element
+      event.preventDefault();
+      this.setPointerCapture(event.pointerId);
+    })
+    .on('pointercancel', function(event) {
       this.setPointerCapture(event.pointerId);
     })
     .call(drag)
     .style('cursor', 'ns-resize')
-    .style('touch-action', 'none');  // disable native scrolling while dragging
+    .style('touch-action', 'none');
 
 
   /********************** 11. LEGEND ********************************/
