@@ -903,7 +903,7 @@ function renderMultiExerciseChart(exerciseDataMap) {
   };
   const ZOOM_SENSITIVITY = 0.006;
   const LONG_PRESS_MS    = 150;
-  const MIN_DOMAIN_SPAN  = 2;    // kg
+  const MIN_DOMAIN_SPAN  = 0.5;    // kg
   const MAX_DOMAIN_SPAN  = 300;  // kg
   const GRID_TICKS       = 5;
 
@@ -1054,48 +1054,51 @@ function renderMultiExerciseChart(exerciseDataMap) {
 
   /********************** 10. Y‑AXIS DRAG‑ZOOM **********************/
   // Create a drag behavior that listens for move/up on the entire document body
-  const drag = d3.drag()
-    .container(document.documentElement)       // capture everywhere
-    .on('start', ev => {
-      ev.sourceEvent.preventDefault();         // block native gestures
-      startY = ev.y;
-      longPressOK = !isTouch;
-      if (isTouch) setTimeout(() => longPressOK = true, LONG_PRESS_MS);
-    })
-    .on('drag', ev => {
-      if (!longPressOK) return;
-      // compute zoom delta
-      const dy   = ev.y - startY;
-      startY      = ev.y;
-      const span  = curDomain[1] - curDomain[0];
-      let newSpan = span * (1 + (dy > 0 ? 1 : -1) * Math.abs(dy) * ZOOM_SENSITIVITY);
-      newSpan      = Math.max(MIN_DOMAIN_SPAN, Math.min(MAX_DOMAIN_SPAN, newSpan));
-      // recenter domain
-      const mid   = (curDomain[0] + curDomain[1]) / 2;
-      curDomain   = [mid - newSpan/2, mid + newSpan/2];
-      y.domain(curDomain);
+const drag = d3.drag()
+  .container(document.documentElement)
+  .on('start', ev => {
+    if (isTouch) ev.sourceEvent.preventDefault();
+    startY = ev.y;
+    longPressOK = !isTouch;
+    if (isTouch) setTimeout(() => longPressOK = true, LONG_PRESS_MS);
+  })
+  .on('drag', ev => {
+    if (!longPressOK) return;
+    const dy   = ev.y - startY;
+    startY      = ev.y;
+    const span  = curDomain[1] - curDomain[0];
+    const newSpan = span * (1 + (dy>0?1:-1) * Math.abs(dy) * ZOOM_SENSITIVITY);
+    // ← no hard clamp here
 
-      // redraw axis, grid, and all series
-      drawYAxis();
-      drawGridY();
-      svg.selectAll('.exercise-area').attr('d', area);
-      svg.selectAll('.exercise-line').attr('d', line);
-      svg.selectAll('.avg-point').attr('cy', p => y(p.weightedAvg));
-      svg.selectAll('.touch-target').attr('cy', p => y(p.weightedAvg));
-    });
+    const mid   = (curDomain[0] + curDomain[1]) / 2;
+    curDomain   = [mid - newSpan/2, mid + newSpan/2];
+    y.domain(curDomain);
 
-  // Attach to the y‑axis group and grab the pointer on down
-  yAxisG
-    .on('pointerdown', function(event) {
+    drawYAxis();
+    drawGridY();
+    svg.selectAll('.exercise-area').attr('d', area);
+    svg.selectAll('.exercise-line').attr('d', line);
+    svg.selectAll('.avg-point').attr('cy', p => y(p.weightedAvg));
+    svg.selectAll('.touch-target').attr('cy', p => y(p.weightedAvg));
+  });
+
+yAxisG
+  .on('pointerdown', function(event) {
+    if (event.pointerType === 'touch') {
       event.preventDefault();
       this.setPointerCapture(event.pointerId);
-    })
-    .on('pointercancel', function(event) {
+    }
+  })
+  .on('pointercancel', function(event) {
+    if (event.pointerType === 'touch') {
       this.setPointerCapture(event.pointerId);
-    })
-    .call(drag)
-    .style('cursor', 'ns-resize')
-    .style('touch-action', 'none');
+    }
+  })
+  .call(drag)
+  .style('cursor', 'ns-resize')
+  .style('touch-action', 'none');
+
+
 
 
   /********************** 11. LEGEND ********************************/
