@@ -1,8 +1,3 @@
-/* anywhere in your CSS */
-html, body, svg {
-  touch-action: none;    /* disable native pan/zoom */
-}
-
 
 
 /* ------------------------------
