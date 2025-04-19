@@ -1053,8 +1053,9 @@ function renderMultiExerciseChart(exerciseDataMap) {
   });
 
   /********************** 10. Y‑AXIS DRAG‑ZOOM **********************/
+  // Create a drag behavior that listens for move/up on the entire document body
   const drag = d3.drag()
-    .container(svg.node())                    // ← capture events on the whole SVG
+    .container(d3.select('body').node())   // ← once started, capture events anywhere on the page
     .on('start', ev => {
       startY = ev.y;
       longPressOK = !isTouch;
@@ -1062,13 +1063,18 @@ function renderMultiExerciseChart(exerciseDataMap) {
     })
     .on('drag', ev => {
       if (!longPressOK) return;
-      const dy = ev.y - startY; startY = ev.y;
-      const span = curDomain[1] - curDomain[0];
+      // compute zoom delta
+      const dy   = ev.y - startY;
+      startY      = ev.y;
+      const span  = curDomain[1] - curDomain[0];
       let newSpan = span * (1 + (dy > 0 ? 1 : -1) * Math.abs(dy) * ZOOM_SENSITIVITY);
-      newSpan = Math.max(MIN_DOMAIN_SPAN, Math.min(MAX_DOMAIN_SPAN, newSpan));
-      const mid = (curDomain[0] + curDomain[1]) / 2;
-      curDomain = [mid - newSpan / 2, mid + newSpan / 2];
+      newSpan      = Math.max(MIN_DOMAIN_SPAN, Math.min(MAX_DOMAIN_SPAN, newSpan));
+      // recenter domain
+      const mid   = (curDomain[0] + curDomain[1]) / 2;
+      curDomain   = [mid - newSpan/2, mid + newSpan/2];
       y.domain(curDomain);
+
+      // redraw axis, grid, and all series
       drawYAxis();
       drawGridY();
       svg.selectAll('.exercise-area').attr('d', area);
@@ -1076,13 +1082,17 @@ function renderMultiExerciseChart(exerciseDataMap) {
       svg.selectAll('.avg-point').attr('cy', p => y(p.weightedAvg));
       svg.selectAll('.touch-target').attr('cy', p => y(p.weightedAvg));
     });
+
+  // Attach to the y‑axis group and grab the pointer on down
   yAxisG
     .on('pointerdown', function(event) {
+      // lock all pointer events (move/up) to this axis element
       this.setPointerCapture(event.pointerId);
     })
     .call(drag)
     .style('cursor', 'ns-resize')
-    .style('touch-action', 'none');   // prevent the browser’s default scrolling
+    .style('touch-action', 'none');  // disable native scrolling while dragging
+
 
   /********************** 11. LEGEND ********************************/
   if (exerciseNames.length > 1) {
