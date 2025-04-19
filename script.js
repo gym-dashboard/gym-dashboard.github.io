@@ -1617,99 +1617,44 @@ function getDateFromWeekKey(weekKey) {
 // Modify the updateStreakCounter function to count the current week
 // even if the previous week wasn't completed
 function updateStreakCounter() {
-  // Clear any invalid data in localStorage from past runs
-  // This will force a fresh calculation based on actual workout data
   cleanupCompletedWeeksData();
-  
-  const prevWeekCompleted = checkPreviousWeekCompleted();
+
   const currentWeekCount = countCurrentWeekWorkouts();
   const currentWeekCompleted = currentWeekCount >= 4;
-  
-  // Get week identifiers for current and previous week
-  const { startDate } = getCurrentWeekDateRange();
-  const currentWeekKey = `${startDate.getFullYear()}-${startDate.getMonth()}-${startDate.getDate()}`;
-  
-  // Get previous week key
-  const prevWeekEnd = new Date(startDate);
-  prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
-  const prevWeekStart = new Date(prevWeekEnd);
-  prevWeekStart.setDate(prevWeekEnd.getDate() - 6);
-  const prevWeekKey = `${prevWeekStart.getFullYear()}-${prevWeekStart.getMonth()}-${prevWeekStart.getDate()}`;
-  
-  // Initialize completedWeeks array if it doesn't exist
-  if (!Array.isArray(weeklyData.completedWeeks)) {
-    weeklyData.completedWeeks = [];
-  }
-  
-  // Handle current week completion
-  if (currentWeekCompleted && !weeklyData.completedWeeks.includes(currentWeekKey)) {
-    weeklyData.completedWeeks.push(currentWeekKey);
-    weeklyData.lastCompletedWeek = currentWeekKey;
-  }
-  
-  // Handle previous week tracking
-  const hadPrevWeekCompleted = weeklyData.completedWeeks.includes(prevWeekKey);
-  if (prevWeekCompleted && !hadPrevWeekCompleted) {
-    // If we just detected that previous week was completed but wasn't in our records
-    weeklyData.completedWeeks.push(prevWeekKey);
-  }
-  
-  // Calculate streak - simplest approach
+
+  // find the Monday (or whatever start day) of the current week:
+  const { startDate: currentWeekStart } = getCurrentWeekDateRange();
+
+  // Start your “cursor” at the current week if it’s done,
+  // otherwise jump back one week to last week:
   let streak = 0;
-  
-  // 1. If current week is completed, that's 1 week streak already
-  if (currentWeekCompleted) {
-    streak = 1;
-  } 
-  // 2. Otherwise, if previous week was completed, that's 1 week streak
-  else if (prevWeekCompleted) {
-    streak = 1;
-    
-    // 3. If both current week and previous week are completed, it's at least 2 weeks
-    if (currentWeekCompleted) {
-      streak = 2;
-    }
-    
-    // 4. Only check earlier weeks if previous week was completed
-    // (to see if the streak extends further back)
-    if (prevWeekCompleted) {
-      let checkDate = new Date(prevWeekStart);
-      
-      // Keep checking earlier weeks
-      while (true) {
-        // Go to the start of the week before
-        checkDate.setDate(checkDate.getDate() - 7);
-        
-        // Check if this week was completed
-        const weekToCheck = wasWeekCompleted(checkDate);
-        
-        if (weekToCheck) {
-          streak++;
-        } else {
-          // Week not completed, break the streak
-          break;
-        }
-      }
-    }
+  let weekStartCursor = new Date(currentWeekStart);
+  if (!currentWeekCompleted) {
+    weekStartCursor.setDate(weekStartCursor.getDate() - 7);
   }
-  
-  // Update the streak count
+
+  // Now walk back, one week at a time:
+  while (wasWeekCompleted(weekStartCursor)) {
+    streak++;
+    weekStartCursor.setDate(weekStartCursor.getDate() - 7);
+  }
+
+  // Save and display:
   weeklyData.weekStreakCount = streak;
-  
-  // Save updated streak data
   saveStreakData();
-  
-  // Update the streak display with proper pluralization
-  const streakNumber = document.querySelector('.streak-number');
+
+  const streakNumber   = document.querySelector('.streak-number');
   const streakSubtitle = document.querySelector('.streak-subtitle');
-  
   if (streakNumber) {
-    streakNumber.textContent = weeklyData.weekStreakCount;
+    streakNumber.textContent = streak;
   }
   if (streakSubtitle) {
-    streakSubtitle.textContent = weeklyData.weekStreakCount === 1 ? 'Week in a row' : 'Weeks in a row';
+    streakSubtitle.textContent = streak === 1
+      ? 'Week in a row'
+      : 'Weeks in a row';
   }
 }
+
 
 // Helper function to check if a specific week was completed 
 // by looking at the actual workout data, not just the completedWeeks array
