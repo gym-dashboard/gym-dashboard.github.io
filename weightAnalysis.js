@@ -1053,47 +1053,59 @@ function renderMultiExerciseChart(exerciseDataMap) {
   });
 
   /********************** 10. Y‑AXIS DRAG‑ZOOM **********************/
-  const drag = d3.drag()
+/********************** 10. Y‑AXIS DRAG‑ZOOM **********************/
+// 1) turn off native mobile scrolling/zoom on the svg
+svg.style('touch-action', 'none');
+
+const drag = d3.drag()
   .on('start', ev => {
+    // prevent the very first touch from doing anything else
     if (isTouch) ev.sourceEvent.preventDefault();
     startY = ev.y;
     longPressOK = !isTouch;
     if (isTouch) setTimeout(() => longPressOK = true, LONG_PRESS_MS);
   })
   .on('drag', ev => {
+    // keep suppressing default so no pointercancel fires
+    if (isTouch) ev.sourceEvent.preventDefault();
     if (!longPressOK) return;
-    const dy      = ev.y - startY;
-    startY         = ev.y;
-    const span     = curDomain[1] - curDomain[0];
-    const newSpan  = span * (1 + (dy > 0 ? 1 : -1) * Math.abs(dy) * ZOOM_SENSITIVITY);
-    const mid      = (curDomain[0] + curDomain[1]) / 2;
-    curDomain      = [mid - newSpan/2, mid + newSpan/2];
-    y.domain(curDomain);
 
+    // compute new domain
+    const dy     = ev.y - startY;
+    startY       = ev.y;
+    const span   = curDomain[1] - curDomain[0];
+    const factor = 1 + (dy > 0 ? 1 : -1) * Math.abs(dy) * ZOOM_SENSITIVITY;
+    const newSpan = span * factor;
+    const mid    = (curDomain[0] + curDomain[1]) / 2;
+    curDomain    = [mid - newSpan/2, mid + newSpan/2];
+
+    // push domain into the scale and redraw
+    y.domain(curDomain);
     drawYAxis();
     drawGridY();
     svg.selectAll('.exercise-area').attr('d', area);
     svg.selectAll('.exercise-line').attr('d', line);
-    svg.selectAll('.avg-point').attr('cy', p => y(p.weightedAvg));
-    svg.selectAll('.touch-target').attr('cy', p => y(p.weightedAvg));
+    svg.selectAll('.avg-point').attr('cy', d => y(d.weightedAvg));
+    svg.selectAll('.touch-target').attr('cy', d => y(d.weightedAvg));
   });
 
-  // Attach pointer capture to the Y‐axis <g> so all moves go there even off‐screen
-  yAxisG
+// 2) pointer‐capture on the axis <g> so you still get events off the SVG
+yAxisG
   .on('pointerdown', function(event) {
     if (event.pointerType === 'touch') {
       event.preventDefault();
       this.setPointerCapture(event.pointerId);
     }
   })
-  .on('pointerup pointercancel', function(event) {
+  .on('pointerup', function(event) {
     if (event.pointerType === 'touch') {
       this.releasePointerCapture(event.pointerId);
     }
   })
   .call(drag)
   .style('cursor', 'ns-resize')
-  .style('touch-action', 'none');
+  .style('touch-action', 'none');  // ensure this <g> won’t let the browser steal the touch
+
 
 
 
