@@ -1053,9 +1053,7 @@ function renderMultiExerciseChart(exerciseDataMap) {
   });
 
   /********************** 10. Y‑AXIS DRAG‑ZOOM **********************/
-  // Create a drag behavior that listens for move/up on the entire document body
-const drag = d3.drag()
-  .container(document.documentElement)
+  const drag = d3.drag()
   .on('start', ev => {
     if (isTouch) ev.sourceEvent.preventDefault();
     startY = ev.y;
@@ -1064,14 +1062,12 @@ const drag = d3.drag()
   })
   .on('drag', ev => {
     if (!longPressOK) return;
-    const dy   = ev.y - startY;
-    startY      = ev.y;
-    const span  = curDomain[1] - curDomain[0];
-    const newSpan = span * (1 + (dy>0?1:-1) * Math.abs(dy) * ZOOM_SENSITIVITY);
-    // ← no hard clamp here
-
-    const mid   = (curDomain[0] + curDomain[1]) / 2;
-    curDomain   = [mid - newSpan/2, mid + newSpan/2];
+    const dy      = ev.y - startY;
+    startY         = ev.y;
+    const span     = curDomain[1] - curDomain[0];
+    const newSpan  = span * (1 + (dy > 0 ? 1 : -1) * Math.abs(dy) * ZOOM_SENSITIVITY);
+    const mid      = (curDomain[0] + curDomain[1]) / 2;
+    curDomain      = [mid - newSpan/2, mid + newSpan/2];
     y.domain(curDomain);
 
     drawYAxis();
@@ -1082,21 +1078,23 @@ const drag = d3.drag()
     svg.selectAll('.touch-target').attr('cy', p => y(p.weightedAvg));
   });
 
-yAxisG
+  // Attach pointer capture to the Y‐axis <g> so all moves go there even off‐screen
+  yAxisG
   .on('pointerdown', function(event) {
     if (event.pointerType === 'touch') {
       event.preventDefault();
       this.setPointerCapture(event.pointerId);
     }
   })
-  .on('pointercancel', function(event) {
+  .on('pointerup pointercancel', function(event) {
     if (event.pointerType === 'touch') {
-      this.setPointerCapture(event.pointerId);
+      this.releasePointerCapture(event.pointerId);
     }
   })
   .call(drag)
   .style('cursor', 'ns-resize')
   .style('touch-action', 'none');
+
 
 
 
