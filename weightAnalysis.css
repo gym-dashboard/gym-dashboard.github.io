@@ -10,7 +10,7 @@
   height: auto;
   min-height: 250px;
   position: relative;
-  margin: 10px 0 5px 0;
+  margin: 0px 0 0px 0;
   box-sizing: border-box;
 }
 
@@ -47,12 +47,13 @@
 
 /* Range Controls Wrapper */
 .range-controls-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 0;
-  flex-shrink: 0;
+  /* these may already exist—override if needed */
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
 }
+
+
 
 /* Range Label */
 .range-label {
@@ -88,15 +89,44 @@
 
 /* Slider Container */
 .slider-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  margin-left: 10px;
-  max-width: 120px;
+  width: 80%;      /* or tweak as you like */
+  margin: 0 auto;  /* center in parent */
 }
 
 .slider-container .form-range {
-  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  outline: none;
+  transition: background 0.2s;
+}
+
+/* WebKit track fix */
+.slider-container .form-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+}
+
+/* Thumb styling */
+.slider-container .form-range::-webkit-slider-thumb,
+.slider-container .form-range::-moz-range-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #546bce;      /* main chart color */
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+/* Hover / active thumb effects */
+.slider-container .form-range::-webkit-slider-thumb:hover,
+.slider-container .form-range::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: #8c9fe0;      /* lighter shade */
 }
 
 /* ------------------------------
