@@ -1,0 +1,90 @@
+{
+  "date": "22-04-2025",
+  "participants": ["André D.", "Mariana D."],
+  "start_time": "18:52",
+  "end_time": "20:05",
+  "total_time": "1 hour 13 minutes",
+  "overall_muscle_group": ["Chest", "Shoulders", "Back", "Biceps"],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 6,
+      "Weight": "30 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 6,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 9,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 11,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 12,
+      "Weight": "55 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 12,
+      "Weight": "62.5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Tension Hammer Curls",
+      "Reps": 12,
+      "Weight": "10 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Tension Hammer Curls",
+      "Reps": 10,
+      "Weight": "10 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    }
+  ]
+}

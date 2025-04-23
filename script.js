@@ -756,15 +756,17 @@ function drawYearCalendar(year) {
         gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
         gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
         gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
-      } else if (muscles.length > 3) {
-        // just use the first 3
+      } else if (muscles.length >= 4) {
         gradient.append("stop").attr("offset", "0%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "30%").attr("stop-color", colorScale(muscles[0]));
-        gradient.append("stop").attr("offset", "35%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "65%").attr("stop-color", colorScale(muscles[1]));
-        gradient.append("stop").attr("offset", "70%").attr("stop-color", colorScale(muscles[2]));
-        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "24%").attr("stop-color", colorScale(muscles[0]));
+        gradient.append("stop").attr("offset", "25%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "49%").attr("stop-color", colorScale(muscles[1]));
+        gradient.append("stop").attr("offset", "50%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "74%").attr("stop-color", colorScale(muscles[2]));
+        gradient.append("stop").attr("offset", "75%").attr("stop-color", colorScale(muscles[3]));
+        gradient.append("stop").attr("offset", "100%").attr("stop-color", colorScale(muscles[3]));
       }
+      
     });
     
     const cellsGroup = svg.append("g")
