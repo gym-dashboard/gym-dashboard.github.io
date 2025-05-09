@@ -1,0 +1,111 @@
+{
+  "date": "05-05-2025",
+  "participants": [
+    "André D.",
+    "Mariana D."
+  ],
+  "start_time": "19:07",
+  "end_time": "20:07",
+  "total_time": "1 hours 0 minutes",
+  "overall_muscle_group": [
+    "Legs"
+  ],
+  "workout": [
+    {
+      "Exercise": "Leg Press",
+      "Reps": 15,
+      "Weight": "110 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 12,
+      "Weight": "120 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 8,
+      "Weight": "130 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 10,
+      "Weight": "20 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 10,
+      "Weight": "20 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 10,
+      "Weight": "22.5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 15,
+      "Weight": "54 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 15,
+      "Weight": "54 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 15,
+      "Weight": "54 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    }
+  ]
+}
