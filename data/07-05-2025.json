@@ -1,0 +1,114 @@
+{
+  "date": "07-05-2025",
+  "participants": ["André D."],
+  "start_time": "18:38",
+  "end_time": "19:37",
+  "total_time": "0 hours 59 minutes",
+  "overall_muscle_group": ["Chest", "Back", "Shoulders", "Triceps"],
+  "workout": [
+    {
+      "Exercise": "Chest Press",
+      "Reps": 12,
+      "Weight": "32.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Chest Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Chest Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 8,
+      "Weight": "60 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 10,
+      "Weight": "60 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 10,
+      "Weight": "60 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 12,
+      "Weight": "10 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 12,
+      "Weight": "10 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Dips",
+      "Reps": 16,
+      "Weight": "45 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Triceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Dips",
+      "Reps": 15,
+      "Weight": "45 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Triceps",
+      "Location": "Machine"
+    }
+  ]
+}
