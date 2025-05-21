@@ -1,0 +1,97 @@
+{
+  "date": "19-05-2025",
+  "participants": [
+    "André D.",
+    "Mariana D."
+  ],
+  "start_time": "18:48",
+  "end_time": "19:51",
+  "total_time": "1 hour 3 minutes",
+  "overall_muscle_group": [
+    "Chest",
+    "Back",
+    "Shoulders"
+  ],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "27.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 6,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 8,
+      "Weight": "55 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Chest Press",
+      "Reps": 10,
+      "Weight": "30 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Chest Press",
+      "Reps": 12,
+      "Weight": "27.5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Low Rows",
+      "Reps": 10,
+      "Weight": "95 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Low Rows",
+      "Reps": 10,
+      "Weight": "95 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "date": "20-05-2025",
+  "participants": [
+    "André D.",
+    "Duarte T."
+  ],
+  "start_time": "18:10",
+  "end_time": "19:15",
+  "total_time": "1 hour 5 minutes",
+  "overall_muscle_group": [
+    "Legs",
+    "Abs"
+  ],
+  "workout": [
+    {
+      "Exercise": "Leg Press",
+      "Reps": 10,
+      "Weight": "120 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 8,
+      "Weight": "130 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 6,
+      "Weight": "130 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "RDL",
+      "Reps": 12,
+      "Weight": "15 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "RDL",
+      "Reps": 10,
+      "Weight": "17.5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 41,
+      "Weight": "0 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 30,
+      "Weight": "0 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    }
+  ]
+}
