@@ -1,13 +1,21 @@
 {
   "date": "30-04-2025",
-  "participants": ["André D.", "Tomás T.", "Duarte T."],
+  "participants": [
+    "André D.",
+    "Tomás T.",
+    "Duarte T."
+  ],
   "start_time": "11:57",
   "end_time": "13:03",
   "total_time": "1 hour 6 minutes",
-  "overall_muscle_group": ["Chest", "Back", "Shoulders"],
+  "overall_muscle_group": [
+    "Chest",
+    "Back",
+    "Shoulders"
+  ],
   "workout": [
     {
-      "Exercise": "Chest Press",
+      "Exercise": "Bench Press",
       "Reps": 9,
       "Weight": "40 kg",
       "Effort": "100%",
@@ -15,7 +23,7 @@
       "Location": "Machine"
     },
     {
-      "Exercise": "Chest Press",
+      "Exercise": "Bench Press",
       "Reps": 8,
       "Weight": "42.5 kg",
       "Effort": "100%",

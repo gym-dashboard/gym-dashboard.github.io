@@ -1,10 +1,17 @@
 {
   "date": "11-04-2025",
-  "participants": ["André D.", "Filipe P.", "Karl"],
+  "participants": [
+    "André D.",
+    "Filipe P.",
+    "Karl"
+  ],
   "start_time": "11:55",
   "end_time": "13:07",
   "total_time": "1 hour 12 minutes",
-  "overall_muscle_group": ["Chest", "Triceps"],
+  "overall_muscle_group": [
+    "Chest",
+    "Triceps"
+  ],
   "workout": [
     {
       "Exercise": "Bench Press",

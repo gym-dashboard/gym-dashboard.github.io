@@ -1,10 +1,16 @@
 {
   "date": "16-05-2025",
-  "participants": ["André D.", "Mariana D."],
+  "participants": [
+    "André D.",
+    "Mariana D."
+  ],
   "start_time": "18:35",
   "end_time": "19:40",
   "total_time": "1 hour 5 minutes",
-  "overall_muscle_group": ["Legs", "Abs"],
+  "overall_muscle_group": [
+    "Legs",
+    "Abs"
+  ],
   "workout": [
     {
       "Exercise": "Leg Press",

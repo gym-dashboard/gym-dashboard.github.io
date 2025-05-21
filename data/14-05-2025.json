@@ -1,10 +1,16 @@
 {
   "date": "14-05-2025",
-  "participants": ["André D."],
+  "participants": [
+    "André D."
+  ],
   "start_time": "18:12",
   "end_time": "19:15",
   "total_time": "1 hour 3 minutes",
-  "overall_muscle_group": ["Chest", "Back", "Shoulders"],
+  "overall_muscle_group": [
+    "Chest",
+    "Back",
+    "Shoulders"
+  ],
   "workout": [
     {
       "Exercise": "Bench Press",

@@ -1,101 +1,103 @@
 {
-    "date": "19-03-2025",
-    "participants": [
-        "André D.",
-        "Duarte T."
-    ],
-    "start_time": "07:50",
-    "end_time": "08:50",
-    "total_time": "1 hour 0 minutes",
-    "overall_muscle_group": ["Shoulders"],
-    "workout": [
-        {
-            "Exercise": "Shoulder Press",
-            "Reps": 15,
-            "Weight": "30 kg",
-            "Effort": "100%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Machine"
-        },
-        {
-            "Exercise": "Shoulder Press",
-            "Reps": 9,
-            "Weight": "35 kg",
-            "Effort": "100%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Machine"
-        },
-        {
-            "Exercise": "Shoulder Press",
-            "Reps": 9.5,
-            "Weight": "35 kg",
-            "Effort": "100%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Machine"
-        },
-        {
-            "Exercise": "Lateral Raises",
-            "Reps": 20,
-            "Weight": "8 kg",
-            "Effort": "70%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Dumbbells"
-        },
-        {
-            "Exercise": "Lateral Raises",
-            "Reps": 20,
-            "Weight": "8 kg",
-            "Effort": "80%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Dumbbells"
-        },
-        {
-            "Exercise": "Lateral Raises",
-            "Reps": 20,
-            "Weight": "8 kg",
-            "Effort": "85%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Dumbbells"
-        },
-        {
-            "Exercise": "Front Raises",
-            "Reps": 12,
-            "Weight": "25 kg",
-            "Effort": "70%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Cables"
-        },
-        {
-            "Exercise": "Front Raises",
-            "Reps": 12,
-            "Weight": "27.5 kg",
-            "Effort": "85%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Cables"
-        },
-        {
-            "Exercise": "Reverse Cable Crossover",
-            "Reps": 8,
-            "Weight": "5 kg",
-            "Effort": "90%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Cables"
-        },
-        {
-            "Exercise": "Reverse Cable Crossover",
-            "Reps": 10,
-            "Weight": "5 kg",
-            "Effort": "95%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Cables"
-        },
-        {
-            "Exercise": "Reverse Cable Crossover",
-            "Reps": 10,
-            "Weight": "5 kg",
-            "Effort": "100%",
-            "Muscle-Group": "Shoulders",
-            "Location": "Cables"
-        }
-    ]
+  "date": "19-03-2025",
+  "participants": [
+    "André D.",
+    "Duarte T."
+  ],
+  "start_time": "07:50",
+  "end_time": "08:50",
+  "total_time": "1 hour 0 minutes",
+  "overall_muscle_group": [
+    "Shoulders"
+  ],
+  "workout": [
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 15,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 9,
+      "Weight": "35 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 9.5,
+      "Weight": "35 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 20,
+      "Weight": "8 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 20,
+      "Weight": "8 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 20,
+      "Weight": "8 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Front Raises",
+      "Reps": 12,
+      "Weight": "25 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Front Raises",
+      "Reps": 12,
+      "Weight": "27.5 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Reverse Cable Crossover",
+      "Reps": 8,
+      "Weight": "5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Reverse Cable Crossover",
+      "Reps": 10,
+      "Weight": "5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Reverse Cable Crossover",
+      "Reps": 10,
+      "Weight": "5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Cables"
+    }
+  ]
 }

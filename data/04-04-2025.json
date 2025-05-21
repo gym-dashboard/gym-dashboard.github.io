@@ -12,7 +12,7 @@
   ],
   "workout": [
     {
-      "Exercise": "Chest Press",
+      "Exercise": "Bench Press",
       "Reps": 16,
       "Weight": "30 kg",
       "Effort": "100%",
@@ -20,7 +20,7 @@
       "Location": "Machine"
     },
     {
-      "Exercise": "Chest Press",
+      "Exercise": "Bench Press",
       "Reps": 7,
       "Weight": "35 kg",
       "Effort": "100%",
@@ -28,7 +28,7 @@
       "Location": "Machine"
     },
     {
-      "Exercise": "Chest Press",
+      "Exercise": "Bench Press",
       "Reps": 10,
       "Weight": "35 kg",
       "Effort": "100%",
@@ -36,7 +36,7 @@
       "Location": "Machine"
     },
     {
-      "Exercise": "Incline Chest Press",
+      "Exercise": "Incline Bench Press",
       "Reps": 12,
       "Weight": "30 kg",
       "Effort": "100%",
@@ -44,7 +44,7 @@
       "Location": "Machine"
     },
     {
-      "Exercise": "Incline Chest Press",
+      "Exercise": "Incline Bench Press",
       "Reps": 6,
       "Weight": "35 kg",
       "Effort": "100%",
@@ -52,7 +52,7 @@
       "Location": "Machine"
     },
     {
-      "Exercise": "Incline Chest Press",
+      "Exercise": "Incline Bench Press",
       "Reps": 10,
       "Weight": "30 kg",
       "Effort": "100%",

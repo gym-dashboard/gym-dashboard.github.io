@@ -1,10 +1,15 @@
 {
   "date": "15-04-2025",
-  "participants": ["André D.", "Mariana D."],
+  "participants": [
+    "André D.",
+    "Mariana D."
+  ],
   "start_time": "17:38",
   "end_time": "19:01",
   "total_time": "1 hour 23 minutes",
-  "overall_muscle_group": ["Legs"],
+  "overall_muscle_group": [
+    "Legs"
+  ],
   "workout": [
     {
       "Exercise": "Squat",

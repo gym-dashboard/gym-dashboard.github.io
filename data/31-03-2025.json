@@ -1,10 +1,16 @@
 {
   "date": "31-03-2025",
-  "participants": ["André D.", "Tomás T.", "Mariana D."],
+  "participants": [
+    "André D.",
+    "Tomás T.",
+    "Mariana D."
+  ],
   "start_time": "07:59",
   "end_time": "08:42",
   "total_time": "0 hours 43 minutes",
-  "overall_muscle_group": ["Shoulders"],
+  "overall_muscle_group": [
+    "Shoulders"
+  ],
   "workout": [
     {
       "Exercise": "Shoulder Press",

@@ -1,10 +1,16 @@
 {
   "date": "10-04-2025",
-  "participants": ["André D.", "Mariana D."],
+  "participants": [
+    "André D.",
+    "Mariana D."
+  ],
   "start_time": "18:47",
   "end_time": "20:05",
   "total_time": "1 hour 18 minutes",
-  "overall_muscle_group": ["Back", "Biceps"],
+  "overall_muscle_group": [
+    "Back",
+    "Biceps"
+  ],
   "workout": [
     {
       "Exercise": "Pull-Ups",

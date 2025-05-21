@@ -8,7 +8,10 @@
   "start_time": "07:52",
   "end_time": "08:36",
   "total_time": "0 hours 44 minutes",
-  "overall_muscle_group": ["Shoulders", "Biceps"],
+  "overall_muscle_group": [
+    "Shoulders",
+    "Biceps"
+  ],
   "workout": [
     {
       "Exercise": "Shoulder Press",

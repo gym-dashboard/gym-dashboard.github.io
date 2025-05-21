@@ -7,7 +7,9 @@
   "start_time": "7:55",
   "end_time": "8:33",
   "total_time": "0 hours 38 minutes",
-  "overall_muscle_group": ["Legs"],
+  "overall_muscle_group": [
+    "Legs"
+  ],
   "workout": [
     {
       "Exercise": "Leg Press",
