@@ -1,0 +1,82 @@
+{
+  "date": "22-05-2025",
+  "participants": ["André D.", "Mariana D."],
+  "start_time": "18:50",
+  "end_time": "20:15",
+  "total_time": "1 hour 25 minutes",
+  "overall_muscle_group": ["Back", "Chest", "Shoulders"],
+  "workout": [
+    {
+      "Exercise": "Pull-Ups",
+      "Reps": 12,
+      "Weight": "0 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": null
+    },
+    {
+      "Exercise": "Pull-Ups",
+      "Reps": 10,
+      "Weight": "0 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": null
+    },
+    {
+      "Exercise": "Pull-Ups",
+      "Reps": 10,
+      "Weight": "0 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": null
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 10,
+      "Weight": "37.5 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 12,
+      "Weight": "60 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 10,
+      "Weight": "70 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "35 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    }
+  ]
+}
