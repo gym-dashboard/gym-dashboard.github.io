@@ -1,11 +1,12 @@
 /**
- * weightAnalysis.js - Exercise Progress Tracker with Range Controls and Location Support
+ * weightAnalysis.js - Exercise Progress Tracker with X-axis Sliding and Location Support
  *
  * Enhanced version that tracks exercises by both name and location (equipment type)
+ * Now with X-axis sliding functionality instead of range controls
  */
 
 (function() {
-  console.log('Enhanced exercise tracker with location support loaded');
+  console.log('Enhanced exercise tracker with location support and x-axis sliding loaded');
 
   // References to DOM elements
   const secondChartArea = document.getElementById('secondChartArea');
@@ -52,7 +53,8 @@
   let selectedExercises = [];  
   let dropdownCreated = false;   // Track if dropdown was created
   let allExerciseData = {};      // Store all loaded exercise data keyed by exercise name
-  let displayCount = null;       // Number of workouts to display (null = all)
+  let xAxisWindow = 5;           // Number of workouts to display (default 5)
+  let xAxisOffset = 0;           // Offset from the end (0 = show last 5, 1 = show 5 before last, etc.)
   let titleElements = null;      // Reference to title dropdown elements
 
   // Exercise colors for multi-select
@@ -124,8 +126,6 @@
       menu.style.display = 'none';
     });
   }
-
-
 
   /**
    * Create title dropdown with custom UI
@@ -278,14 +278,6 @@
         secondChartArea.appendChild(chartContainer);
       }
 
-      // Create range control container if missing
-      let rangeControlContainer = document.querySelector('.range-control-container');
-      if (!rangeControlContainer) {
-        rangeControlContainer = document.createElement('div');
-        rangeControlContainer.className = 'range-control-container';
-        secondChartArea.appendChild(rangeControlContainer);
-      }
-
       // Load exercise data for the selected exercise(s)
       const loadPromises = selectedExercises.map(exercise => loadExerciseData(exercise, currentYear));
       Promise.all(loadPromises).then(datasets => {
@@ -293,7 +285,8 @@
           allExerciseData[exercise] = datasets[index];
         });
 
-        createRangeControls(rangeControlContainer);
+        // Reset x-axis window to show last 5 entries
+        xAxisOffset = 0;
         renderMultiExerciseChart(getFilteredExerciseData());
       });
 
@@ -306,7 +299,6 @@
     const handleResize = () => {
       if (Object.keys(allExerciseData).length > 0 && selectedExercises.length > 0) {
         renderMultiExerciseChart(getFilteredExerciseData());
-        createRangeControls(document.querySelector('.range-control-container'));
       }
     };
 
@@ -356,7 +348,9 @@
       selectedExercises.forEach((exercise, index) => {
         allExerciseData[exercise] = datasets[index];
       });
-      updateRangeControls();
+      
+      // Reset x-axis window to show last 5 entries
+      xAxisOffset = 0;
       updateTitleText();
       renderMultiExerciseChart(getFilteredExerciseData());
       
@@ -411,7 +405,9 @@
       try {
         const data = await loadExerciseData(selectedValue, currentYear);
         allExerciseData[selectedValue] = data;
-        updateRangeControls();
+        
+        // Reset x-axis window to show last 5 entries
+        xAxisOffset = 0;
         updateTitleText();
         renderMultiExerciseChart(getFilteredExerciseData());
       } catch (error) {
@@ -460,112 +456,8 @@
     hideDefaultExerciseDropdown();
   }
 
-
-  function createRangeControls(container) {
-    container.innerHTML = '';
-  
-    const containerWidth = container.clientWidth || 300;
-    const isMobile = window.innerWidth < 500;
-  
-    // Wrapper for controls + (empty) legend
-    const mainWrapper = document.createElement('div');
-    mainWrapper.className = 'range-controls-and-legend';
-    if (isMobile) mainWrapper.classList.add('mobile');
-  
-    const controlsWrapper = document.createElement('div');
-    controlsWrapper.className = 'range-controls-wrapper';
-  
-  
-    // Compute how many workouts total
-    let totalWorkouts = 0;
-    Object.values(allExerciseData).forEach(data => {
-      if (data && data.length > totalWorkouts) {
-        totalWorkouts = data.length;
-      }
-    });
-  
-    // ONLY SLIDER SECTION
-    if (containerWidth > 400 && totalWorkouts > 5) {
-      const sliderContainer = document.createElement('div');
-      sliderContainer.className = 'slider-container';
-  
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.id = 'range-slider';
-      slider.className = 'form-range';
-      slider.min = Math.min(3, totalWorkouts);
-      slider.max = totalWorkouts;
-      slider.value = displayCount || totalWorkouts;
-  
-      slider.addEventListener('input', (event) => {
-        const count = parseInt(event.target.value, 10);
-        displayCount = count < totalWorkouts ? count : null;
-        renderMultiExerciseChart(getFilteredExerciseData());
-      });
-  
-      sliderContainer.appendChild(slider);
-      controlsWrapper.appendChild(sliderContainer);
-    }
-  
-    mainWrapper.appendChild(controlsWrapper);
-  
-    // Legend container (empty, for layout)
-    const legendContainer = document.createElement('div');
-    legendContainer.className = 'legend-container';
-    mainWrapper.appendChild(legendContainer);
-  
-    container.appendChild(mainWrapper);
-  }
-  
   /**
-   * Add a legend for selected exercises
-   */
-  function addExerciseLegend(container, containerWidth) {
-    container.innerHTML = '';
-    const isMobile = window.innerWidth < 500;
-    const legend = document.createElement('div');
-    legend.className = 'exercise-legend';
-    if (isMobile) legend.classList.add('mobile');
-  
-    selectedExercises.forEach((exerciseName, index) => {
-      if (index >= 3) return;
-      
-      // Get the muscle group and corresponding color
-      const muscleGroup = getExerciseMuscleGroup(exerciseName);
-      const color = muscleGroup && muscleColors[muscleGroup] 
-        ? muscleColors[muscleGroup] 
-        : exerciseColors[index % exerciseColors.length];
-      
-      const lineItem = document.createElement('div');
-      lineItem.className = 'legend-item';
-  
-      const lineSwatch = document.createElement('span');
-      lineSwatch.className = 'legend-swatch line';
-      if (isMobile) lineSwatch.classList.add('mobile');
-  
-      const lineLabel = document.createElement('span');
-      lineLabel.className = 'legend-label';
-      const displayName = exerciseName.length > 12 ? exerciseName.substring(0, 10) + '...' : exerciseName;
-      lineLabel.textContent = displayName;
-      if (isMobile) lineLabel.classList.add('mobile');
-  
-      lineItem.appendChild(lineSwatch);
-      lineItem.appendChild(lineLabel);
-      legend.appendChild(lineItem);
-    });
-    if (selectedExercises.length > 0) container.appendChild(legend);
-  }
-
-  /**
-   * Update range controls when data has changed
-   */
-  function updateRangeControls() {
-    const container = document.querySelector('.range-control-container');
-    if (container) createRangeControls(container);
-  }
-
-  /**
-   * Return filtered exercise data based on displayCount setting
+   * Return filtered exercise data based on xAxisWindow and xAxisOffset
    */
   function getFilteredExerciseData() {
     const filteredData = {};
@@ -576,12 +468,16 @@
           filteredData[exerciseName] = [];
           return;
         }
-        if (!displayCount || displayCount >= exerciseData.length) {
-          filteredData[exerciseName] = [...exerciseData];
-        } else {
-          const sortedData = [...exerciseData].sort((a, b) => a.date - b.date);
-          filteredData[exerciseName] = sortedData.slice(-displayCount);
-        }
+
+        // Sort data by date
+        const sortedData = [...exerciseData].sort((a, b) => a.date - b.date);
+        
+        // Calculate the slice based on window and offset
+        const totalWorkouts = sortedData.length;
+        const endIndex = totalWorkouts - xAxisOffset;
+        const startIndex = Math.max(0, endIndex - xAxisWindow);
+        
+        filteredData[exerciseName] = sortedData.slice(startIndex, endIndex);
       }
     });
     return filteredData;
@@ -637,7 +533,6 @@
     const filteredExercises = Array.from(exercisesWithLocation).filter(
       exercise => workoutCounts[exercise] >= 3
     );
-
 
     return filteredExercises.sort();
   }
@@ -712,7 +607,6 @@
     }
     return 0;
   }
-
 
   /**
    * Function to determine the muscle group for an exercise based on its data
@@ -801,922 +695,519 @@
     }
   }
 
-
-
-// function renderMultiExerciseChart(exerciseDataMap) {
-//   /********************** 0. CONFIG & HELPERS *************************/
-//   const calendarMuscleColors = {
-//     Chest: "#c8ceee", Triceps: "#f9c5c7", Legs: "#f7e5b7",
-//     Shoulders: "#ffc697", Back: "#cbd3ad", Biceps: "#c6e2e7",
-//   };
-//   const ZOOM_SENSITIVITY = 0.006;
-//   const MIN_DOMAIN_SPAN  = 1;    // kg
-//   const MAX_DOMAIN_SPAN  = 300;  // kg
-//   const GRID_TICKS       = 5;
-
-//   let chartContainer = document.querySelector('.exercise-chart-container');
-//   if (!chartContainer) {
-//     chartContainer = document.createElement('div');
-//     chartContainer.className = 'exercise-chart-container';
-//     secondChartArea.appendChild(chartContainer);
-//   }
-//   chartContainer.innerHTML = '';
-//   if (!Object.keys(exerciseDataMap).length) {
-//     showNoDataMessage('No exercise data available');
-//     return;
-//   }
-//   const exerciseNames = Object.keys(exerciseDataMap);
-//   if (!exerciseNames.some(n => exerciseDataMap[n]?.length)) {
-//     showNoDataMessage('No data found for selected exercises');
-//     return;
-//   }
-
-//   /********************** 1. SIZING *********************************/
-//   const cw        = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
-//   const isMobile  = window.innerWidth < 500;
-//   const isStacked = window.innerWidth < 992;
-//   const ar        = isStacked
-//     ? (cw < 400 ? 1.2 : 1.5)
-//     : (cw < 400 ? 1.8 : 2.0);
-//   const width     = cw;
-//   const baseH     = width / ar;
-//   const height    = Math.max(
-//     isStacked ? 220 : 170,
-//     Math.min(isStacked ? 4000 : 300, baseH)
-//   );
-//   chartContainer.style.height = `${height + 5}px`;
-//   const margin = { top: 5, right: isMobile ? 10 : 15, bottom: 35, left: 45 };
-//   const innerW = width - margin.left - margin.right;
-//   const innerH = height - margin.top - margin.bottom;
-
-//   /********************** 2. SVG / CLIP *****************************/
-//   const svg = d3.create('svg')
-//     .attr('width', '100%')
-//     .attr('height', '100%')
-//     .attr('viewBox', [0, 0, width, height])
-//     .attr('preserveAspectRatio', 'xMidYMid meet')
-//     .attr('class', 'exercise-chart');
-
-//   const g = svg.append('g')
-//     .attr('transform', `translate(${margin.left},${margin.top})`);
-
-//   g.append('defs').append('clipPath').attr('id', 'chartClip')
-//     .append('rect')
-//       .attr('width', innerW)
-//       .attr('height', innerH);
-
-//   g.append('rect')  // outer border
-//     .attr('x', 0).attr('y', 0)
-//     .attr('width', innerW).attr('height', innerH)
-//     .attr('fill', 'none')
-//     .attr('stroke', '#ccc');
-
-//   /********************** 3. DATA PREP ******************************/
-//   const processedByName = {};
-//   let allDates = [], allWeights = [];
-//   exerciseNames.forEach(name => {
-//     const raw = exerciseDataMap[name] || [];
-//     const proc = raw.map(w => {
-//       const ws = w.sets.map(s => s.weight);
-//       const max = Math.max(...ws), min = Math.min(...ws);
-//       const totalW = w.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
-//       const totalR = w.sets.reduce((sum, s) => sum + s.reps, 0);
-//       return {
-//         date: w.date,
-//         sets: w.sets,
-//         maxWeight: max,
-//         minWeight: min,
-//         weightedAvg: totalW / totalR
-//       };
-//     });
-//     processedByName[name] = proc;
-//     proc.forEach(d => {
-//       allDates.push(d.date);
-//       allWeights.push(d.maxWeight, d.minWeight);
-//     });
-//   });
-
-//   /********************** 4. SCALES ********************************/
-//   const minW = d3.min(allWeights);
-//   const maxW = d3.max(allWeights);
-//   const pad  = (maxW - minW) * 0.1 || 5;
-//   let curDomain = [Math.max(0, minW - pad), maxW + pad];
-
-//   const x = d3.scaleTime()
-//     .domain(d3.extent(allDates))
-//     .range([0, innerW])
-//     .nice();
-
-//   const y = d3.scaleLinear()
-//     .domain(curDomain)
-//     .range([innerH, 0]);
-
-//   /********************** 5. GRID ***********************************/
-//   g.append('g')  // X grid
-//     .attr('class', 'grid-lines-x')
-//     .attr('transform', `translate(0,${innerH})`)
-//     .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
-//     .call(g => g.select('.domain').remove());
-
-//   const gridYg = g.append('g').attr('class', 'grid-lines-y');
-//   function drawGridY() {
-//     const ticks = d3.ticks(curDomain[0], curDomain[1], GRID_TICKS);
-//     gridYg.call(
-//       d3.axisLeft(y).tickValues(ticks).tickSize(-innerW).tickFormat('')
-//     ).call(g => g.select('.domain').remove());
-//   }
-//   drawGridY();
-
-//   /********************** 6. AXES ***********************************/
-//   const xAxisG = g.append('g')
-//     .attr('class', 'x-axis')
-//     .attr('transform', `translate(0,${innerH})`);
-//   const yAxisG = g.append('g').attr('class', 'y-axis');
-
-//   function styleAxes() {
-//     xAxisG.select('.domain').attr('stroke', '#ccc');
-//     xAxisG.selectAll('text')
-//       .attr('transform','rotate(-40)')
-//       .attr('text-anchor','end')
-//       .attr('dx','-0.5em').attr('dy','0.15em')
-//       .style('font-size', isMobile?'10px':'12px');
-
-//     yAxisG.select('.domain').attr('stroke', '#ccc');
-//     yAxisG.selectAll('text')
-//       .style('font-size', isMobile?'10px':'12px');
-//   }
-
-//   function drawYAxis() {
-//     const ticks = d3.ticks(curDomain[0], curDomain[1], GRID_TICKS);
-//     yAxisG.call(
-//       d3.axisLeft(y)
-//         .tickValues(ticks)
-//         .tickSizeOuter(0)
-//         .tickFormat(d => `${d}kg`)
-//     );
-//     styleAxes();
-//   }
-
-//   xAxisG.call(
-//     d3.axisBottom(x)
-//       .ticks(6)
-//       .tickFormat(d => `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getDate()}`)
-//   );
-//   styleAxes();
-//   drawYAxis();
-
-//   /********************** 7. PATH GENERATORS ************************/
-//   const area = d3.area()
-//     .x(d => x(d.date))
-//     .y0(d => y(d.minWeight))
-//     .y1(d => y(d.maxWeight))
-//     .curve(d3.curveMonotoneX);
-
-//   const line = d3.line()
-//     .x(d => x(d.date))
-//     .y(d => y(d.weightedAvg))
-//     .curve(d3.curveMonotoneX);
-
-//   /********************** 8. TOOLTIP INFRA (ORIGINAL!) ***************/
-//   let tooltip = d3.select('body').select('.exercise-tooltip');
-//   if (tooltip.empty()) {
-//     tooltip = d3.select('body')
-//       .append('div')
-//       .attr('class','exercise-tooltip')
-//       .style('opacity',0)
-//       .style('visibility','hidden');
-//   }
-
-//   let overlay = d3.select('body').select('#exercise-tooltip-overlay');
-//   if (overlay.empty()) {
-//     overlay = d3.select('body')
-//       .append('div')
-//       .attr('id','exercise-tooltip-overlay')
-//       .style('display','none')
-//       .style('position','fixed')
-//       .style('top',0).style('left',0).style('right',0).style('bottom',0)
-//       .style('background','rgba(0,0,0,0.5)')
-//       .style('z-index',9900)
-//       .style('touch-action','manipulation');
-
-//     overlay.append('div')
-//       .attr('class','tooltip-hint')
-//       .style('position','fixed')
-//       .style('bottom','20px')
-//       .style('left',0).style('right',0)
-//       .style('width','150px')
-//       .style('margin','0 auto')
-//       .style('text-align','center')
-//       .style('color','#fff')
-//       .style('background','rgba(0,0,0,0.5)')
-//       .style('border-radius','8px')
-//       .style('padding','8px')
-//       .style('font-size','14px')
-//       .style('opacity',0.8)
-//       .text('Tap outside to close');
-
-//     overlay.on('click', hideTooltip);
-//   }
-
-//   function darken(hex, f) {
-//     if (hex.startsWith('#')) {
-//       const r = parseInt(hex.slice(1,3),16),
-//             g = parseInt(hex.slice(3,5),16),
-//             b = parseInt(hex.slice(5,7),16);
-//       return `rgba(${Math.floor(r*(1-f))},${Math.floor(g*(1-f))},${Math.floor(b*(1-f))},0.95)`;
-//     }
-//     return hex;
-//   }
-
-//   function hideTooltip() {
-//     tooltip
-//       .style('opacity', 0)
-//       .style('visibility', 'hidden')
-//       .classed('mobile-tooltip', false);
-//     overlay.style('display','none');
-//   }
-//   window.hideExerciseTooltip = hideTooltip;
-
-//   const showMobileTooltip = (event, d, exName, mGroup) => {
-//     hideTooltip();
-//     tooltip.classed('mobile-tooltip', true);
-
-//     let bg = '#363636'; 
-//     if (mGroup && calendarMuscleColors[mGroup]) {
-//       bg = darken(calendarMuscleColors[mGroup], 0.2);
-//     }
-
-//     const dateStr = d.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-//     const vol     = d.sets.reduce((s,set)=>s+set.weight*set.reps,0);
-//     const {exercise} = parseExerciseAndLocation(exName);
-//     const location = d.sets[0]?.location||'Bodyweight';
-
-//     const html = `
-//       <div style="position:relative;">
-//         <div class="tooltip-close-btn">&times;</div>
-//         <div class="tooltip-header">
-//           <div class="tooltip-title">${exercise}</div>
-//           <div class="tooltip-date">${dateStr}</div>
-//         </div>
-//         <div class="tooltip-summary">
-//           <div class="tooltip-section-title">Summary</div>
-//           <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.weightedAvg.toFixed(1)}kg</span></div>
-//           <div class="tooltip-stat-line"><span>Volume:</span><span class="tooltip-stat-value">${vol.toLocaleString()}kg</span></div>
-//           <div class="tooltip-stat-line"><span>Range:</span><span>${d.minWeight}-${d.maxWeight}kg</span></div>
-//           <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
-//           <div class="tooltip-stat-line"><span>Location:</span><span>${location}</span></div>
-//           <div class="tooltip-stat-line"><span>Group:</span><span>${mGroup||'Unknown'}</span></div>
-//         </div>
-//         <div class="tooltip-divider"></div>
-//         <div class="tooltip-sets">
-//           <div class="tooltip-section-title">Set Details</div>
-//           <div class="tooltip-sets-grid">
-//             ${d.sets.map((set,i)=>`
-//               <div class="tooltip-set-item">
-//                 <span class="set-number">Set ${i+1}:</span>
-//                 <span class="set-weight">${set.weight}kg</span>
-//                 <span class="set-reps">× ${set.reps}</span>
-//                 ${set.effort!=='N/A'?`<span class="set-effort">(${set.effort})</span>`:``}
-//               </div>`).join('')}
-//           </div>
-//         </div>
-//       </div>
-//     `;
-
-//     tooltip.html(html)
-//       .style('position','fixed')
-//       .style('top','50%').style('left','50%')
-//       .style('transform','translate(-50%,-50%)')
-//       .style('max-width','90%')
-//       .style('background',bg)
-//       .style('color','#fff')
-//       .style('border-radius','12px')
-//       .style('padding','15px')
-//       .style('box-shadow','0 4px 20px rgba(0,0,0,0.4)')
-//       .style('z-index',9999)
-//       .style('visibility','visible')
-//       .style('opacity',1);
-
-//     overlay.style('display','block');
-//     setTimeout(() => {
-//       document.querySelector('.tooltip-close-btn')
-//         .addEventListener('click', hideTooltip);
-//     }, 10);
-//   };
-
-//   const isTablet = window.innerWidth >= 768;
-//   const isTouch  = window.matchMedia('(pointer: coarse)').matches && !isTablet;
-//   const rPoint   = isMobile ? 3 : 4;
-
-//   /********************** 9. DRAW SERIES ***************************/
-//   exerciseNames.forEach((name, idx) => {
-//     const data = processedByName[name];
-//     if (!data.length) return;
-//     const mGroup = getExerciseMuscleGroup(name);
-//     const color  = mGroup && muscleColors[mGroup]
-//                    ? muscleColors[mGroup]
-//                    : exerciseColors[idx % exerciseColors.length];
-
-//     // area
-//     g.append('path')
-//       .datum(data)
-//       .attr('class','exercise-area')
-//       .attr('clip-path','url(#chartClip)')
-//       .attr('fill', color).attr('fill-opacity', 0.1)
-//       .attr('d', area);
-
-//     // line
-//     g.append('path')
-//       .datum(data)
-//       .attr('class','exercise-line')
-//       .attr('clip-path','url(#chartClip)')
-//       .attr('fill','none')
-//       .attr('stroke', color)
-//       .attr('stroke-width', isMobile ? 2 : 2.5)
-//       .attr('d', line);
-
-//     // points & interactions
-//     data.forEach(d => {
-//       const point = g.append('circle')
-//         .datum(d)
-//         .attr('class','avg-point')
-//         .attr('clip-path','url(#chartClip)')
-//         .attr('cx', x(d.date))
-//         .attr('cy', y(d.weightedAvg))
-//         .attr('r', rPoint)
-//         .style('fill', color)
-//         .attr('stroke','#fff')
-//         .attr('stroke-width',1.5);
-
-//       if (isTouch) {
-//         // mobile taps
-//         g.append('circle')
-//           .datum(d)
-//           .attr('class','touch-target')
-//           .attr('clip-path','url(#chartClip)')
-//           .attr('cx', x(d.date))
-//           .attr('cy', y(d.weightedAvg))
-//           .attr('r', 16)
-//           .attr('fill','transparent')
-//           .attr('pointer-events','all')
-//           .on('click', e => {
-//             e.preventDefault(); e.stopPropagation();
-//             point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
-//             showMobileTooltip(e, d, name, mGroup);
-//             setTimeout(() => {
-//               point.attr('r', rPoint).attr('stroke-width',1.5);
-//             }, 300);
-//           });
-//         point.style('cursor','pointer')
-//           .on('click', e => {
-//             e.preventDefault(); e.stopPropagation();
-//             point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
-//             showMobileTooltip(e, d, name, mGroup);
-//             setTimeout(() => {
-//               point.attr('r', rPoint).attr('stroke-width',1.5);
-//             }, 300);
-//           });
-//       } else {
-//         // desktop hover
-//         point.on('mouseover', function(ev) {
-//           d3.select(this).attr('r', rPoint+1.5).attr('stroke-width',1.8);
-//           const dateStr = d.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-//           const vol     = d.sets.reduce((s,set)=>s+set.weight*set.reps,0);
-//           let bg = '#363636';
-//           if (mGroup && calendarMuscleColors[mGroup]) bg = darken(calendarMuscleColors[mGroup],0.2);
-//           const {exercise} = parseExerciseAndLocation(name);
-//           const location = d.sets[0]?.location||'Bodyweight';
-//           const html = `
-//             <div class="tooltip-header">
-//               <div class="tooltip-title">${exercise}</div>
-//               <div class="tooltip-date">${dateStr}</div>
-//             </div>
-//             <div class="tooltip-summary">
-//               <div class="tooltip-section-title">Summary</div>
-//               <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.weightedAvg.toFixed(1)}kg</span></div>
-//               <div class="tooltip-stat-line"><span>Volume:</span><span class="tooltip-stat-value">${vol.toLocaleString()}kg</span></div>
-//               <div class="tooltip-stat-line"><span>Range:</span><span>${d.minWeight}-${d.maxWeight}kg</span></div>
-//               <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
-//               <div class="tooltip-stat-line"><span>Location:</span><span>${location}</span></div>
-//             </div>
-//             <div class="tooltip-divider"></div>
-//             <div class="tooltip-sets">
-//               <div class="tooltip-section-title">Set Details</div>
-//               <div class="tooltip-sets-grid">
-//                 ${d.sets.map((set,i)=>`
-//                   <div class="tooltip-set-item">
-//                     <span class="set-number">Set ${i+1}:</span>
-//                     <span class="set-weight">${set.weight}kg</span>
-//                     <span class="set-reps">× ${set.reps}</span>
-//                     ${set.effort!=='N/A'?`<span class="set-effort">(${set.effort})</span>`:``}
-//                   </div>`).join('')}
-//               </div>
-//             </div>`;
-//           tooltip.html(html)
-//             .style('visibility','visible')
-//             .style('opacity',1)
-//             .style('pointer-events','none')
-//             .style('background', bg);
-//         })
-//         .on('mousemove', ev => {
-//           const tw = 220;
-//           let xPos = ev.pageX + 10;
-//           if (xPos + tw > window.innerWidth) xPos = ev.pageX - tw - 10;
-//           tooltip.style('top', `${ev.pageY - 10}px`).style('left', `${xPos}px`);
-//         })
-//         .on('mouseout', function() {
-//           d3.select(this).attr('r', rPoint).attr('stroke-width',1.5);
-//           hideTooltip();
-//         });
-//       }
-//     });
-//   });
-
-//   /********************** 10. Y‑AXIS SWIPE‑TO‑ZOOM **********************/
-//   svg.style('touch-action','none');  // disable native scroll/zoom
-
-//   let startX, startY;
-//   const drag = d3.drag()
-//     .on('start', ev => {
-//       ev.sourceEvent.preventDefault();
-//       startX = ev.x; startY = ev.y;
-//     })
-//     .on('drag', ev => {
-//       ev.sourceEvent.preventDefault();
-//       const dx = ev.x - startX, dy = ev.y - startY;
-//       startX = ev.x; startY = ev.y;
-//       const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
-
-//       const span   = curDomain[1] - curDomain[0];
-//       const factor = 1 + Math.sign(delta)*Math.abs(delta)*ZOOM_SENSITIVITY;
-//       let newSpan  = span*factor;
-//       newSpan = Math.max(MIN_DOMAIN_SPAN, Math.min(MAX_DOMAIN_SPAN, newSpan));
-//       const mid    = (curDomain[0] + curDomain[1]) / 2;
-//       curDomain    = [mid - newSpan/2, mid + newSpan/2];
-
-//       y.domain(curDomain);
-//       drawYAxis();
-//       drawGridY();
-//       svg.selectAll('.exercise-area').attr('d', area);
-//       svg.selectAll('.exercise-line').attr('d', line);
-//       svg.selectAll('.avg-point').attr('cy', d => y(d.weightedAvg));
-//       svg.selectAll('.touch-target').attr('cy', d => y(d.weightedAvg));
-//     });
-
-//   yAxisG
-//     .on('pointerdown', function(event) {
-//       if (event.pointerType==='touch') {
-//         event.preventDefault();
-//         this.setPointerCapture(event.pointerId);
-//       }
-//     })
-//     .on('pointerup', function(event) {
-//       if (event.pointerType==='touch') {
-//         this.releasePointerCapture(event.pointerId);
-//       }
-//     })
-//     .call(drag)
-//     .style('cursor','ns-resize')
-//     .style('touch-action','none');
-
-//   g.insert('rect', '.y-axis')
-//     .attr('class','y-axis-drag-region')
-//     .attr('x', -margin.left)
-//     .attr('y', 0)
-//     .attr('width', margin.left)
-//     .attr('height', innerH)
-//     .style('fill','transparent')
-//     .style('pointer-events','all')
-//     .style('touch-action','none')
-//     .style('cursor','ns-resize')
-//     .call(drag);
-
-//   /********************** 11. LEGEND ********************************/
-//   if (exerciseNames.length > 1) {
-//     const leg = svg.append('g')
-//       .attr('class','chart-legend')
-//       .attr('transform', `translate(${width - margin.right + 10},${margin.top})`);
-//     exerciseNames.forEach((n,i) => {
-//       if (!processedByName[n]?.length) return;
-//       const m = getExerciseMuscleGroup(n);
-//       const c = m && muscleColors[m] ? muscleColors[m] : exerciseColors[i % exerciseColors.length];
-//       const {exercise} = parseExerciseAndLocation(n);
-//       const label = n.length > 15 ? exercise : n;
-//       const item = leg.append('g')
-//         .attr('transform',`translate(0,${i*20})`);
-//       item.append('line')
-//         .attr('x1',0).attr('y1',9).attr('x2',15).attr('y2',9)
-//         .attr('stroke',c).attr('stroke-width',2);
-//       item.append('text')
-//         .attr('x',20).attr('y',12)
-//         .attr('font-size','10px')
-//         .attr('fill','#666')
-//         .text(label);
-//     });
-//   }
-
-//   chartContainer.appendChild(svg.node());
-// }
-
-/**
- * MODIFIED VERSION: This code adds support for showing reps on y-axis for bodyweight exercises
- */
-
-/**
- * This function detects if an exercise is a bodyweight exercise based on location
- * Must be defined before renderMultiExerciseChart is called
- */
-function isBodyweightExercise(exerciseName, exerciseData) {
-  // If no data, return false
-  if (!exerciseData || !exerciseData.length || !exerciseData[0].sets || !exerciseData[0].sets.length) {
-    return false;
-  }
-  
-  // Extract location from first workout's first set
-  // Null, 'N/A', or 'Bodyweight' location indicates bodyweight exercise
-  const location = exerciseData[0].sets[0].location;
-  return !location || location === 'N/A' || location === 'null' || location === 'Bodyweight';
-}
-
-/**
- * Main chart rendering function - modified to handle bodyweight exercises correctly
- */
-function renderMultiExerciseChart(exerciseDataMap) {
-  /********************** 0. CONFIG & HELPERS *************************/
-  const calendarMuscleColors = {
-    Chest: "#c8ceee", Triceps: "#f9c5c7", Legs: "#f7e5b7",
-    Shoulders: "#ffc697", Back: "#cbd3ad", Biceps: "#c6e2e7",
-  };
-  const ZOOM_SENSITIVITY = 0.006;
-  const MIN_DOMAIN_SPAN  = 1;    // kg or reps
-  const MAX_DOMAIN_SPAN  = 300;  // kg or reps
-  const GRID_TICKS       = 5;
-
-  let chartContainer = document.querySelector('.exercise-chart-container');
-  if (!chartContainer) {
-    chartContainer = document.createElement('div');
-    chartContainer.className = 'exercise-chart-container';
-    secondChartArea.appendChild(chartContainer);
-  }
-  chartContainer.innerHTML = '';
-  if (!Object.keys(exerciseDataMap).length) {
-    showNoDataMessage('No exercise data available');
-    return;
-  }
-  const exerciseNames = Object.keys(exerciseDataMap);
-  if (!exerciseNames.some(n => exerciseDataMap[n]?.length)) {
-    showNoDataMessage('No data found for selected exercises');
-    return;
-  }
-
-  /********************** 1. SIZING - MODIFIED FOR BODYWEIGHT *********/
-  // Track if each exercise is bodyweight or not
-  const isBodyweight = {};
-  
-  // First, determine which exercises are bodyweight
-  exerciseNames.forEach(name => {
-    isBodyweight[name] = isBodyweightExercise(name, exerciseDataMap[name]);
-  });
-  
-  // Check if we're showing any bodyweight exercises
-  const showingAnyBodyweight = exerciseNames.some(name => isBodyweight[name]);
-  
-  const cw = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
-  const isMobile = window.innerWidth < 500;
-  const isStacked = window.innerWidth < 992;
-  const ar = isStacked
-    ? (cw < 400 ? 1.2 : 1.5)
-    : (cw < 400 ? 1.8 : 2.0);
-  const width = cw;
-  const baseH = width / ar;
-  const height = Math.max(
-    isStacked ? 220 : 170,
-    Math.min(isStacked ? 4000 : 300, baseH)
-  );
-  chartContainer.style.height = `${height + 5}px`;
-  
-  // Increase the left margin when showing bodyweight exercises with "reps" labels
-  const margin = { 
-    top: 5, 
-    right: isMobile ? 10 : 15, 
-    bottom: 35, 
-    // Use wider margin for bodyweight exercises to accommodate "reps" labels
-    left: showingAnyBodyweight ? 60 : 45
-  };
-  const innerW = width - margin.left - margin.right;
-  const innerH = height - margin.top - margin.bottom;
-
-  /********************** 2. SVG / CLIP *****************************/
-  const svg = d3.create('svg')
-    .attr('width', '100%')
-    .attr('height', '100%')
-    .attr('viewBox', [0, 0, width, height])
-    .attr('preserveAspectRatio', 'xMidYMid meet')
-    .attr('class', 'exercise-chart');
-
-  const g = svg.append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
-
-  g.append('defs').append('clipPath').attr('id', 'chartClip')
-    .append('rect')
-      .attr('width', innerW)
-      .attr('height', innerH);
-
-  g.append('rect')  // outer border
-    .attr('x', 0).attr('y', 0)
-    .attr('width', innerW).attr('height', innerH)
-    .attr('fill', 'none')
-    .attr('stroke', '#ccc');
-
-  /********************** 3. DATA PREP - MODIFIED FOR BODYWEIGHT ******/
-  const processedByName = {};
-  let allDates = [], allValues = [];  // Changed from allWeights to allValues to be generic
-  
-  // Now process data differently based on bodyweight status
-  exerciseNames.forEach(name => {
-    const raw = exerciseDataMap[name] || [];
-    const useReps = isBodyweight[name];
+  /**
+   * This function detects if an exercise is a bodyweight exercise based on location
+   * Must be defined before renderMultiExerciseChart is called
+   */
+  function isBodyweightExercise(exerciseName, exerciseData) {
+    // If no data, return false
+    if (!exerciseData || !exerciseData.length || !exerciseData[0].sets || !exerciseData[0].sets.length) {
+      return false;
+    }
     
-    const proc = raw.map(w => {
-      if (useReps) {
-        // For bodyweight exercises, use reps for Y-axis values
-        const rs = w.sets.map(s => s.reps);
-        const maxReps = Math.max(...rs);
-        const minReps = Math.min(...rs);
-        const avgReps = rs.reduce((sum, r) => sum + r, 0) / rs.length;
-        
-        return {
-          date: w.date,
-          sets: w.sets,
-          maxValue: maxReps,      // Maximum reps
-          minValue: minReps,      // Minimum reps 
-          avgValue: avgReps,      // Average reps
-          isBodyweight: true      // Flag to indicate this is reps data
-        };
-      } else {
-        // For weighted exercises, use weights as before
-        const ws = w.sets.map(s => s.weight);
-        const max = Math.max(...ws), min = Math.min(...ws);
-        const totalW = w.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
-        const totalR = w.sets.reduce((sum, s) => sum + s.reps, 0);
-        
-        return {
-          date: w.date,
-          sets: w.sets,
-          maxValue: max,          // Maximum weight
-          minValue: min,          // Minimum weight
-          avgValue: totalW / totalR, // Weighted average
-          isBodyweight: false     // Flag to indicate this is weight data
-        };
+    // Extract location from first workout's first set
+    // Null, 'N/A', or 'Bodyweight' location indicates bodyweight exercise
+    const location = exerciseData[0].sets[0].location;
+    return !location || location === 'N/A' || location === 'null' || location === 'Bodyweight';
+  }
+
+  /**
+   * Main chart rendering function - modified to handle bodyweight exercises correctly
+   * and implement x-axis sliding functionality
+   */
+  function renderMultiExerciseChart(exerciseDataMap) {
+    /********************** 0. CONFIG & HELPERS *************************/
+    const calendarMuscleColors = {
+      Chest: "#c8ceee", Triceps: "#f9c5c7", Legs: "#f7e5b7",
+      Shoulders: "#ffc697", Back: "#cbd3ad", Biceps: "#c6e2e7",
+    };
+    const ZOOM_SENSITIVITY = 0.006;
+    const MIN_DOMAIN_SPAN  = 1;    // kg or reps
+    const MAX_DOMAIN_SPAN  = 300;  // kg or reps
+    const GRID_TICKS       = 5;
+    const SLIDE_SENSITIVITY = 0.01; // Sensitivity for x-axis sliding
+
+    let chartContainer = document.querySelector('.exercise-chart-container');
+    if (!chartContainer) {
+      chartContainer = document.createElement('div');
+      chartContainer.className = 'exercise-chart-container';
+      secondChartArea.appendChild(chartContainer);
+    }
+    chartContainer.innerHTML = '';
+    if (!Object.keys(exerciseDataMap).length) {
+      showNoDataMessage('No exercise data available');
+      return;
+    }
+    const exerciseNames = Object.keys(exerciseDataMap);
+    if (!exerciseNames.some(n => exerciseDataMap[n]?.length)) {
+      showNoDataMessage('No data found for selected exercises');
+      return;
+    }
+
+    /********************** 1. SIZING - MODIFIED FOR BODYWEIGHT *********/
+    // Track if each exercise is bodyweight or not
+    const isBodyweight = {};
+    
+    // First, determine which exercises are bodyweight
+    exerciseNames.forEach(name => {
+      isBodyweight[name] = isBodyweightExercise(name, exerciseDataMap[name]);
+    });
+    
+    // Check if we're showing any bodyweight exercises
+    const showingAnyBodyweight = exerciseNames.some(name => isBodyweight[name]);
+    
+    const cw = chartContainer.clientWidth || secondChartArea.clientWidth || 300;
+    const isMobile = window.innerWidth < 500;
+    const isStacked = window.innerWidth < 992;
+    const ar = isStacked
+      ? (cw < 400 ? 1.2 : 1.5)
+      : (cw < 400 ? 1.8 : 2.0);
+    const width = cw;
+    const baseH = width / ar;
+    const height = Math.max(
+      isStacked ? 220 : 170,
+      Math.min(isStacked ? 4000 : 300, baseH)
+    );
+    chartContainer.style.height = `${height + 5}px`;
+    
+    // Increase the left margin when showing bodyweight exercises with "reps" labels
+    const margin = { 
+      top: 5, 
+      right: isMobile ? 10 : 15, 
+      bottom: 35, 
+      // Use wider margin for bodyweight exercises to accommodate "reps" labels
+      left: showingAnyBodyweight ? 60 : 45
+    };
+    const innerW = width - margin.left - margin.right;
+    const innerH = height - margin.top - margin.bottom;
+
+    /********************** 2. SVG / CLIP *****************************/
+    const svg = d3.create('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('viewBox', [0, 0, width, height])
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .attr('class', 'exercise-chart');
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    g.append('defs').append('clipPath').attr('id', 'chartClip')
+      .append('rect')
+        .attr('width', innerW)
+        .attr('height', innerH);
+
+    g.append('rect')  // outer border
+      .attr('x', 0).attr('y', 0)
+      .attr('width', innerW).attr('height', innerH)
+      .attr('fill', 'none')
+      .attr('stroke', '#ccc');
+
+    /********************** 3. DATA PREP - MODIFIED FOR BODYWEIGHT ******/
+    const processedByName = {};
+    let allDates = [], allValues = [];  // Changed from allWeights to allValues to be generic
+    
+    // Get the total number of workouts available for sliding calculations
+    let maxWorkouts = 0;
+    exerciseNames.forEach(name => {
+      const fullData = allExerciseData[name] || [];
+      if (fullData.length > maxWorkouts) {
+        maxWorkouts = fullData.length;
       }
     });
     
-    processedByName[name] = proc;
-    proc.forEach(d => {
-      allDates.push(d.date);
-      allValues.push(d.maxValue, d.minValue);
+    // Now process data differently based on bodyweight status
+    exerciseNames.forEach(name => {
+      const raw = exerciseDataMap[name] || [];
+      const useReps = isBodyweight[name];
+      
+      const proc = raw.map(w => {
+        if (useReps) {
+          // For bodyweight exercises, use reps for Y-axis values
+          const rs = w.sets.map(s => s.reps);
+          const maxReps = Math.max(...rs);
+          const minReps = Math.min(...rs);
+          const avgReps = rs.reduce((sum, r) => sum + r, 0) / rs.length;
+          
+          return {
+            date: w.date,
+            sets: w.sets,
+            maxValue: maxReps,      // Maximum reps
+            minValue: minReps,      // Minimum reps 
+            avgValue: avgReps,      // Average reps
+            isBodyweight: true      // Flag to indicate this is reps data
+          };
+        } else {
+          // For weighted exercises, use weights as before
+          const ws = w.sets.map(s => s.weight);
+          const max = Math.max(...ws), min = Math.min(...ws);
+          const totalW = w.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+          const totalR = w.sets.reduce((sum, s) => sum + s.reps, 0);
+          
+          return {
+            date: w.date,
+            sets: w.sets,
+            maxValue: max,          // Maximum weight
+            minValue: min,          // Minimum weight
+            avgValue: totalW / totalR, // Weighted average
+            isBodyweight: false     // Flag to indicate this is weight data
+          };
+        }
+      });
+      
+      processedByName[name] = proc;
+      proc.forEach(d => {
+        allDates.push(d.date);
+        allValues.push(d.maxValue, d.minValue);
+      });
     });
-  });
 
-  /********************** 4. SCALES ********************************/
-  const minValue = d3.min(allValues);
-  const maxValue = d3.max(allValues);
-  const pad = (maxValue - minValue) * 0.1 || 5;
-  let curDomain = [Math.max(0, minValue - pad), maxValue + pad];
+    /********************** 4. SCALES ********************************/
+    const minValue = d3.min(allValues);
+    const maxValue = d3.max(allValues);
+    const pad = (maxValue - minValue) * 0.1 || 5;
+    let curDomain = [Math.max(0, minValue - pad), maxValue + pad];
 
-  const x = d3.scaleTime()
-    .domain(d3.extent(allDates))
-    .range([0, innerW])
-    .nice();
+    const x = d3.scaleTime()
+      .domain(d3.extent(allDates))
+      .range([0, innerW])
+      .nice();
 
-  const y = d3.scaleLinear()
-    .domain(curDomain)
-    .range([innerH, 0]);
+    const y = d3.scaleLinear()
+      .domain(curDomain)
+      .range([innerH, 0]);
 
-  /********************** 5. GRID ***********************************/
-  g.append('g')  // X grid
-    .attr('class', 'grid-lines-x')
-    .attr('transform', `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
-    .call(g => g.select('.domain').remove());
+    /********************** 5. GRID ***********************************/
+    g.append('g')  // X grid
+      .attr('class', 'grid-lines-x')
+      .attr('transform', `translate(0,${innerH})`)
+      .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
+      .call(g => g.select('.domain').remove());
 
-  const gridYg = g.append('g').attr('class', 'grid-lines-y');
-  function drawGridY() {
-    const ticks = d3.ticks(curDomain[0], curDomain[1], GRID_TICKS);
-    gridYg.call(
-      d3.axisLeft(y).tickValues(ticks).tickSize(-innerW).tickFormat('')
-    ).call(g => g.select('.domain').remove());
-  }
-  drawGridY();
-
-  /********************** 6. AXES - MODIFIED FOR BODYWEIGHT ***********/
-  const xAxisG = g.append('g')
-    .attr('class', 'x-axis')
-    .attr('transform', `translate(0,${innerH})`);
-  const yAxisG = g.append('g').attr('class', 'y-axis');
-
-  function styleAxes() {
-    xAxisG.select('.domain').attr('stroke', '#ccc');
-    xAxisG.selectAll('text')
-      .attr('transform','rotate(-40)')
-      .attr('text-anchor','end')
-      .attr('dx','-0.5em').attr('dy','0.15em')
-      .style('font-size', isMobile?'10px':'12px');
-
-    yAxisG.select('.domain').attr('stroke', '#ccc');
-    yAxisG.selectAll('text')
-      .style('font-size', isMobile?'10px':'12px'); // Slightly smaller font for y-axis labels
-  }
-  
-  function drawYAxis() {
-    const ticks = d3.ticks(curDomain[0], curDomain[1], GRID_TICKS);
-    
-    // If we have mixed exercise types (bodyweight and weighted),
-    // use a more generic label format
-    if (exerciseNames.length > 1 && showingAnyBodyweight && !exerciseNames.every(name => isBodyweight[name])) {
-      yAxisG.call(
-        d3.axisLeft(y)
-          .tickValues(ticks)
-          .tickSizeOuter(0)
-          .tickFormat(d => `${d}`)  // Just show the number without units
-      );
-    } 
-    // If all exercises are bodyweight or single bodyweight is selected
-    else if (exerciseNames.every(name => isBodyweight[name])) {
-      yAxisG.call(
-        d3.axisLeft(y)
-          .tickValues(ticks)
-          .tickSizeOuter(0)
-          .tickFormat(d => `${Math.round(d)} reps`)  // Show reps (rounded to whole numbers)
-      );
-    } 
-    // Default case - all weighted exercises
-    else {
-      yAxisG.call(
-        d3.axisLeft(y)
-          .tickValues(ticks)
-          .tickSizeOuter(0)
-          .tickFormat(d => `${d}kg`)  // Show kg
-      );
+    const gridYg = g.append('g').attr('class', 'grid-lines-y');
+    function drawGridY() {
+      const ticks = d3.ticks(curDomain[0], curDomain[1], GRID_TICKS);
+      gridYg.call(
+        d3.axisLeft(y).tickValues(ticks).tickSize(-innerW).tickFormat('')
+      ).call(g => g.select('.domain').remove());
     }
-    styleAxes();
-  }
+    drawGridY();
 
-  xAxisG.call(
-    d3.axisBottom(x)
-      .ticks(6)
-      .tickFormat(d => `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getDate()}`)
-  );
-  styleAxes();
-  drawYAxis();
+    /********************** 6. AXES - MODIFIED FOR BODYWEIGHT ***********/
+    const xAxisG = g.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', `translate(0,${innerH})`);
+    const yAxisG = g.append('g').attr('class', 'y-axis');
 
-  /********************** 7. PATH GENERATORS - MODIFIED FOR BODYWEIGHT ******/
-  const area = d3.area()
-    .x(d => x(d.date))
-    .y0(d => y(d.minValue))  // Changed from minWeight to minValue
-    .y1(d => y(d.maxValue))  // Changed from maxWeight to maxValue
-    .curve(d3.curveMonotoneX);
+    function styleAxes() {
+      xAxisG.select('.domain').attr('stroke', '#ccc');
+      xAxisG.selectAll('text')
+        .attr('transform','rotate(-40)')
+        .attr('text-anchor','end')
+        .attr('dx','-0.5em').attr('dy','0.15em')
+        .style('font-size', isMobile?'10px':'12px');
 
-  const line = d3.line()
-    .x(d => x(d.date))
-    .y(d => y(d.avgValue))  // Changed from weightedAvg to avgValue
-    .curve(d3.curveMonotoneX);
-
-  /********************** 8. TOOLTIP INFRA (MODIFIED!) ***************/
-  let tooltip = d3.select('body').select('.exercise-tooltip');
-  if (tooltip.empty()) {
-    tooltip = d3.select('body')
-      .append('div')
-      .attr('class','exercise-tooltip')
-      .style('opacity',0)
-      .style('visibility','hidden');
-  }
-
-  let overlay = d3.select('body').select('#exercise-tooltip-overlay');
-  if (overlay.empty()) {
-    overlay = d3.select('body')
-      .append('div')
-      .attr('id','exercise-tooltip-overlay')
-      .style('display','none')
-      .style('position','fixed')
-      .style('top',0).style('left',0).style('right',0).style('bottom',0)
-      .style('background','rgba(0,0,0,0.5)')
-      .style('z-index',9900)
-      .style('touch-action','manipulation');
-
-    overlay.append('div')
-      .attr('class','tooltip-hint')
-      .style('position','fixed')
-      .style('bottom','20px')
-      .style('left',0).style('right',0)
-      .style('width','150px')
-      .style('margin','0 auto')
-      .style('text-align','center')
-      .style('color','#fff')
-      .style('background','rgba(0,0,0,0.5)')
-      .style('border-radius','8px')
-      .style('padding','8px')
-      .style('font-size','14px')
-      .style('opacity',0.8)
-      .text('Tap outside to close');
-
-    overlay.on('click', hideTooltip);
-  }
-
-  function darken(hex, f) {
-    if (hex.startsWith('#')) {
-      const r = parseInt(hex.slice(1,3),16),
-            g = parseInt(hex.slice(3,5),16),
-            b = parseInt(hex.slice(5,7),16);
-      return `rgba(${Math.floor(r*(1-f))},${Math.floor(g*(1-f))},${Math.floor(b*(1-f))},0.95)`;
+      yAxisG.select('.domain').attr('stroke', '#ccc');
+      yAxisG.selectAll('text')
+        .style('font-size', isMobile?'10px':'12px');
     }
-    return hex;
-  }
-
-  function hideTooltip() {
-    tooltip
-      .style('opacity', 0)
-      .style('visibility', 'hidden')
-      .classed('mobile-tooltip', false);
-    overlay.style('display','none');
-  }
-  window.hideExerciseTooltip = hideTooltip;
-
-  // Modified tooltip to handle bodyweight exercises
-  const showMobileTooltip = (event, d, exName, mGroup) => {
-    hideTooltip();
-    tooltip.classed('mobile-tooltip', true);
-
-    let bg = '#363636'; 
-    if (mGroup && calendarMuscleColors[mGroup]) {
-      bg = darken(calendarMuscleColors[mGroup], 0.2);
-    }
-
-    const dateStr = d.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const {exercise} = parseExerciseAndLocation(exName);
-    const location = d.sets[0]?.location || 'Bodyweight';
     
-    // Check if this is a bodyweight exercise
-    const isBodyweightEx = d.isBodyweight;
-    
-    // Calculate different metrics depending on exercise type
-    let summaryHtml;
-    if (isBodyweightEx) {
-      // For bodyweight exercises, show reps info
-      const totalReps = d.sets.reduce((s, set) => s + set.reps, 0);
+    function drawYAxis() {
+      const ticks = d3.ticks(curDomain[0], curDomain[1], GRID_TICKS);
       
-      summaryHtml = `
-        <div class="tooltip-section-title">Summary</div>
-        <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)} reps</span></div>
-        <div class="tooltip-stat-line"><span>Total:</span><span class="tooltip-stat-value">${totalReps} reps</span></div>
-        <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue} reps</span></div>
-        <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
-        <div class="tooltip-stat-line"><span>Type:</span><span>Bodyweight</span></div>
-        <div class="tooltip-stat-line"><span>Group:</span><span>${mGroup||'Unknown'}</span></div>
-      `;
-    } else {
-      // For weighted exercises, show weight info as before
-      const vol = d.sets.reduce((s, set) => s + set.weight * set.reps, 0);
-      
-      summaryHtml = `
-        <div class="tooltip-section-title">Summary</div>
-        <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)}kg</span></div>
-        <div class="tooltip-stat-line"><span>Volume:</span><span class="tooltip-stat-value">${vol.toLocaleString()}kg</span></div>
-        <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue}kg</span></div>
-        <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
-        <div class="tooltip-stat-line"><span>Location:</span><span>${location}</span></div>
-        <div class="tooltip-stat-line"><span>Group:</span><span>${mGroup||'Unknown'}</span></div>
-      `;
+      // If we have mixed exercise types (bodyweight and weighted),
+      // use a more generic label format
+      if (exerciseNames.length > 1 && showingAnyBodyweight && !exerciseNames.every(name => isBodyweight[name])) {
+        yAxisG.call(
+          d3.axisLeft(y)
+            .tickValues(ticks)
+            .tickSizeOuter(0)
+            .tickFormat(d => `${d}`)  // Just show the number without units
+        );
+      } 
+      // If all exercises are bodyweight or single bodyweight is selected
+      else if (exerciseNames.every(name => isBodyweight[name])) {
+        yAxisG.call(
+          d3.axisLeft(y)
+            .tickValues(ticks)
+            .tickSizeOuter(0)
+            .tickFormat(d => `${Math.round(d)} reps`)  // Show reps (rounded to whole numbers)
+        );
+      } 
+      // Default case - all weighted exercises
+      else {
+        yAxisG.call(
+          d3.axisLeft(y)
+            .tickValues(ticks)
+            .tickSizeOuter(0)
+            .tickFormat(d => `${d}kg`)  // Show kg
+        );
+      }
+      styleAxes();
     }
 
-    // Modify set details for bodyweight exercises
-    const setDetailsHtml = `
-      <div class="tooltip-section-title">Set Details</div>
-      <div class="tooltip-sets-grid">
-        ${d.sets.map((set, i) => {
-          if (isBodyweightEx) {
-            return `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${i+1}:</span>
-                <span class="set-reps">${set.reps} reps</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
-              </div>`;
-          } else {
-            return `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${i+1}:</span>
-                <span class="set-weight">${set.weight}kg</span>
-                <span class="set-reps">× ${set.reps}</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
-              </div>`;
-          }
-        }).join('')}
-      </div>
-    `;
+    function drawXAxis() {
+      xAxisG.call(
+        d3.axisBottom(x)
+          .ticks(6)
+          .tickFormat(d => `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getDate()}`)
+      );
+      styleAxes();
+    }
 
-    const html = `
-      <div style="position:relative;">
-        <div class="tooltip-close-btn">&times;</div>
+    drawXAxis();
+    drawYAxis();
+
+    /********************** 7. PATH GENERATORS - MODIFIED FOR BODYWEIGHT ******/
+    const area = d3.area()
+      .x(d => x(d.date))
+      .y0(d => y(d.minValue))  // Changed from minWeight to minValue
+      .y1(d => y(d.maxValue))  // Changed from maxWeight to maxValue
+      .curve(d3.curveMonotoneX);
+
+    const line = d3.line()
+      .x(d => x(d.date))
+      .y(d => y(d.avgValue))  // Changed from weightedAvg to avgValue
+      .curve(d3.curveMonotoneX);
+
+    /********************** 8. TOOLTIP INFRA (MODIFIED!) ***************/
+    let tooltip = d3.select('body').select('.exercise-tooltip');
+    if (tooltip.empty()) {
+      tooltip = d3.select('body')
+        .append('div')
+        .attr('class','exercise-tooltip')
+        .style('opacity',0)
+        .style('visibility','hidden');
+    }
+
+    let overlay = d3.select('body').select('#exercise-tooltip-overlay');
+    if (overlay.empty()) {
+      overlay = d3.select('body')
+        .append('div')
+        .attr('id','exercise-tooltip-overlay')
+        .style('display','none')
+        .style('position','fixed')
+        .style('top',0).style('left',0).style('right',0).style('bottom',0)
+        .style('background','rgba(0,0,0,0.5)')
+        .style('z-index',9900)
+        .style('touch-action','manipulation');
+
+      overlay.append('div')
+        .attr('class','tooltip-hint')
+        .style('position','fixed')
+        .style('bottom','20px')
+        .style('left',0).style('right',0)
+        .style('width','150px')
+        .style('margin','0 auto')
+        .style('text-align','center')
+        .style('color','#fff')
+        .style('background','rgba(0,0,0,0.5)')
+        .style('border-radius','8px')
+        .style('padding','8px')
+        .style('font-size','14px')
+        .style('opacity',0.8)
+        .text('Tap outside to close');
+
+      overlay.on('click', hideTooltip);
+    }
+
+    function darken(hex, f) {
+      if (hex.startsWith('#')) {
+        const r = parseInt(hex.slice(1,3),16),
+              g = parseInt(hex.slice(3,5),16),
+              b = parseInt(hex.slice(5,7),16);
+        return `rgba(${Math.floor(r*(1-f))},${Math.floor(g*(1-f))},${Math.floor(b*(1-f))},0.95)`;
+      }
+      return hex;
+    }
+
+    function hideTooltip() {
+      tooltip
+        .style('opacity', 0)
+        .style('visibility', 'hidden')
+        .classed('mobile-tooltip', false);
+      overlay.style('display','none');
+    }
+    window.hideExerciseTooltip = hideTooltip;
+
+    // Modified tooltip to handle bodyweight exercises
+    const showMobileTooltip = (event, d, exName, mGroup) => {
+      hideTooltip();
+      tooltip.classed('mobile-tooltip', true);
+
+      let bg = '#363636'; 
+      if (mGroup && calendarMuscleColors[mGroup]) {
+        bg = darken(calendarMuscleColors[mGroup], 0.2);
+      }
+
+      const dateStr = d.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const {exercise} = parseExerciseAndLocation(exName);
+      const location = d.sets[0]?.location || 'Bodyweight';
+      
+      // Check if this is a bodyweight exercise
+      const isBodyweightEx = d.isBodyweight;
+      
+      // Calculate different metrics depending on exercise type
+      let summaryHtml;
+      if (isBodyweightEx) {
+        // For bodyweight exercises, show reps info
+        const totalReps = d.sets.reduce((s, set) => s + set.reps, 0);
+        
+        summaryHtml = `
+          <div class="tooltip-section-title">Summary</div>
+          <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)} reps</span></div>
+          <div class="tooltip-stat-line"><span>Total:</span><span class="tooltip-stat-value">${totalReps} reps</span></div>
+          <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue} reps</span></div>
+          <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
+          <div class="tooltip-stat-line"><span>Type:</span><span>Bodyweight</span></div>
+          <div class="tooltip-stat-line"><span>Group:</span><span>${mGroup||'Unknown'}</span></div>
+        `;
+      } else {
+        // For weighted exercises, show weight info as before
+        const vol = d.sets.reduce((s, set) => s + set.weight * set.reps, 0);
+        
+        summaryHtml = `
+          <div class="tooltip-section-title">Summary</div>
+          <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)}kg</span></div>
+          <div class="tooltip-stat-line"><span>Volume:</span><span class="tooltip-stat-value">${vol.toLocaleString()}kg</span></div>
+          <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue}kg</span></div>
+          <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
+          <div class="tooltip-stat-line"><span>Location:</span><span>${location}</span></div>
+          <div class="tooltip-stat-line"><span>Group:</span><span>${mGroup||'Unknown'}</span></div>
+        `;
+      }
+
+      // Modify set details for bodyweight exercises
+      const setDetailsHtml = `
+        <div class="tooltip-section-title">Set Details</div>
+        <div class="tooltip-sets-grid">
+          ${d.sets.map((set, i) => {
+            if (isBodyweightEx) {
+              return `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${i+1}:</span>
+                  <span class="set-reps">${set.reps} reps</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
+                </div>`;
+            } else {
+              return `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${i+1}:</span>
+                  <span class="set-weight">${set.weight}kg</span>
+                  <span class="set-reps">× ${set.reps}</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
+                </div>`;
+            }
+          }).join('')}
+        </div>
+      `;
+
+      const html = `
+        <div style="position:relative;">
+          <div class="tooltip-close-btn">&times;</div>
+          <div class="tooltip-header">
+            <div class="tooltip-title">${exercise}</div>
+            <div class="tooltip-date">${dateStr}</div>
+          </div>
+          <div class="tooltip-summary">
+            ${summaryHtml}
+          </div>
+          <div class="tooltip-divider"></div>
+          <div class="tooltip-sets">
+            ${setDetailsHtml}
+          </div>
+        </div>
+      `;
+
+      tooltip.html(html)
+        .style('position','fixed')
+        .style('top','50%').style('left','50%')
+        .style('transform','translate(-50%,-50%)')
+        .style('max-width','90%')
+        .style('background',bg)
+        .style('color','#fff')
+        .style('border-radius','12px')
+        .style('padding','15px')
+        .style('box-shadow','0 4px 20px rgba(0,0,0,0.4)')
+        .style('z-index',9999)
+        .style('visibility','visible')
+        .style('opacity',1);
+
+      overlay.style('display','block');
+      setTimeout(() => {
+        document.querySelector('.tooltip-close-btn')
+          .addEventListener('click', hideTooltip);
+      }, 10);
+    };
+
+    // Modified desktop tooltip to handle bodyweight exercises
+    const showDesktopTooltip = (event, d, exName, mGroup) => {
+      const dateStr = d.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      let bg = '#363636'; 
+      if (mGroup && calendarMuscleColors[mGroup]) {
+        bg = darken(calendarMuscleColors[mGroup], 0.2);
+      }
+      
+      const {exercise} = parseExerciseAndLocation(exName);
+      const location = d.sets[0]?.location || 'Bodyweight';
+      
+      // Check if this is a bodyweight exercise
+      const isBodyweightEx = d.isBodyweight;
+      
+      // Calculate different metrics depending on exercise type
+      let summaryHtml;
+      if (isBodyweightEx) {
+        // For bodyweight exercises, show reps info
+        const totalReps = d.sets.reduce((s, set) => s + set.reps, 0);
+        
+        summaryHtml = `
+          <div class="tooltip-section-title">Summary</div>
+          <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)} reps</span></div>
+          <div class="tooltip-stat-line"><span>Total:</span><span class="tooltip-stat-value">${totalReps} reps</span></div>
+          <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue} reps</span></div>
+          <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
+          <div class="tooltip-stat-line"><span>Type:</span><span>Bodyweight</span></div>
+        `;
+      } else {
+        // For weighted exercises, show weight info as before
+        const vol = d.sets.reduce((s, set) => s + set.weight * set.reps, 0);
+        
+        summaryHtml = `
+          <div class="tooltip-section-title">Summary</div>
+          <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)}kg</span></div>
+          <div class="tooltip-stat-line"><span>Volume:</span><span class="tooltip-stat-value">${vol.toLocaleString()}kg</span></div>
+          <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue}kg</span></div>
+          <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
+          <div class="tooltip-stat-line"><span>Location:</span><span>${location}</span></div>
+        `;
+      }
+
+      // Modify set details for bodyweight exercises
+      const setDetailsHtml = `
+        <div class="tooltip-section-title">Set Details</div>
+        <div class="tooltip-sets-grid">
+          ${d.sets.map((set, i) => {
+            if (isBodyweightEx) {
+              return `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${i+1}:</span>
+                  <span class="set-reps">${set.reps} reps</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
+                </div>`;
+            } else {
+              return `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${i+1}:</span>
+                  <span class="set-weight">${set.weight}kg</span>
+                  <span class="set-reps">× ${set.reps}</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
+                </div>`;
+            }
+          }).join('')}
+        </div>
+      `;
+
+      const html = `
         <div class="tooltip-header">
           <div class="tooltip-title">${exercise}</div>
           <div class="tooltip-date">${dateStr}</div>
@@ -1727,673 +1218,627 @@ function renderMultiExerciseChart(exerciseDataMap) {
         <div class="tooltip-divider"></div>
         <div class="tooltip-sets">
           ${setDetailsHtml}
-        </div>
-      </div>
-    `;
-
-    tooltip.html(html)
-      .style('position','fixed')
-      .style('top','50%').style('left','50%')
-      .style('transform','translate(-50%,-50%)')
-      .style('max-width','90%')
-      .style('background',bg)
-      .style('color','#fff')
-      .style('border-radius','12px')
-      .style('padding','15px')
-      .style('box-shadow','0 4px 20px rgba(0,0,0,0.4)')
-      .style('z-index',9999)
-      .style('visibility','visible')
-      .style('opacity',1);
-
-    overlay.style('display','block');
-    setTimeout(() => {
-      document.querySelector('.tooltip-close-btn')
-        .addEventListener('click', hideTooltip);
-    }, 10);
-  };
-
-  // Modified desktop tooltip to handle bodyweight exercises
-  const showDesktopTooltip = (event, d, exName, mGroup) => {
-    const dateStr = d.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    let bg = '#363636'; 
-    if (mGroup && calendarMuscleColors[mGroup]) {
-      bg = darken(calendarMuscleColors[mGroup], 0.2);
-    }
-    
-    const {exercise} = parseExerciseAndLocation(exName);
-    const location = d.sets[0]?.location || 'Bodyweight';
-    
-    // Check if this is a bodyweight exercise
-    const isBodyweightEx = d.isBodyweight;
-    
-    // Calculate different metrics depending on exercise type
-    let summaryHtml;
-    if (isBodyweightEx) {
-      // For bodyweight exercises, show reps info
-      const totalReps = d.sets.reduce((s, set) => s + set.reps, 0);
+        </div>`;
       
-      summaryHtml = `
-        <div class="tooltip-section-title">Summary</div>
-        <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)} reps</span></div>
-        <div class="tooltip-stat-line"><span>Total:</span><span class="tooltip-stat-value">${totalReps} reps</span></div>
-        <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue} reps</span></div>
-        <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
-        <div class="tooltip-stat-line"><span>Type:</span><span>Bodyweight</span></div>
-      `;
-    } else {
-      // For weighted exercises, show weight info as before
-      const vol = d.sets.reduce((s, set) => s + set.weight * set.reps, 0);
+      tooltip.html(html)
+        .style('visibility','visible')
+        .style('opacity',1)
+        .style('pointer-events','none')
+        .style('background', bg);
       
-      summaryHtml = `
-        <div class="tooltip-section-title">Summary</div>
-        <div class="tooltip-stat-line"><span>Average:</span><span class="tooltip-stat-value">${d.avgValue.toFixed(1)}kg</span></div>
-        <div class="tooltip-stat-line"><span>Volume:</span><span class="tooltip-stat-value">${vol.toLocaleString()}kg</span></div>
-        <div class="tooltip-stat-line"><span>Range:</span><span>${d.minValue}-${d.maxValue}kg</span></div>
-        <div class="tooltip-stat-line"><span>Sets:</span><span>${d.sets.length}</span></div>
-        <div class="tooltip-stat-line"><span>Location:</span><span>${location}</span></div>
-      `;
-    }
+      const tw = 220;
+      let xPos = event.pageX + 10;
+      if (xPos + tw > window.innerWidth) xPos = event.pageX - tw - 10;
+      tooltip.style('top', `${event.pageY - 10}px`).style('left', `${xPos}px`);
+    };
 
-    // Modify set details for bodyweight exercises
-    const setDetailsHtml = `
-      <div class="tooltip-section-title">Set Details</div>
-      <div class="tooltip-sets-grid">
-        ${d.sets.map((set, i) => {
-          if (isBodyweightEx) {
-            return `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${i+1}:</span>
-                <span class="set-reps">${set.reps} reps</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
-              </div>`;
-          } else {
-            return `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${i+1}:</span>
-                <span class="set-weight">${set.weight}kg</span>
-                <span class="set-reps">× ${set.reps}</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ``}
-              </div>`;
-          }
-        }).join('')}
-      </div>
-    `;
+    const isTablet = window.innerWidth >= 768;
+    const isTouch  = window.matchMedia('(pointer: coarse)').matches && !isTablet;
+    const rPoint   = isMobile ? 3 : 4;
 
-    const html = `
-      <div class="tooltip-header">
-        <div class="tooltip-title">${exercise}</div>
-        <div class="tooltip-date">${dateStr}</div>
-      </div>
-      <div class="tooltip-summary">
-        ${summaryHtml}
-      </div>
-      <div class="tooltip-divider"></div>
-      <div class="tooltip-sets">
-        ${setDetailsHtml}
-      </div>`;
-    
-    tooltip.html(html)
-      .style('visibility','visible')
-      .style('opacity',1)
-      .style('pointer-events','none')
-      .style('background', bg);
-    
-    const tw = 220;
-    let xPos = event.pageX + 10;
-    if (xPos + tw > window.innerWidth) xPos = event.pageX - tw - 10;
-    tooltip.style('top', `${event.pageY - 10}px`).style('left', `${xPos}px`);
-  };
+    /********************** 9. DRAW SERIES - MODIFIED FOR BODYWEIGHT ******/
+    exerciseNames.forEach((name, idx) => {
+      const data = processedByName[name];
+      if (!data.length) return;
+      const mGroup = getExerciseMuscleGroup(name);
+      const color  = mGroup && muscleColors[mGroup]
+                     ? muscleColors[mGroup]
+                     : exerciseColors[idx % exerciseColors.length];
 
-  const isTablet = window.innerWidth >= 768;
-  const isTouch  = window.matchMedia('(pointer: coarse)').matches && !isTablet;
-  const rPoint   = isMobile ? 3 : 4;
-
-  /********************** 9. DRAW SERIES - MODIFIED FOR BODYWEIGHT ******/
-  exerciseNames.forEach((name, idx) => {
-    const data = processedByName[name];
-    if (!data.length) return;
-    const mGroup = getExerciseMuscleGroup(name);
-    const color  = mGroup && muscleColors[mGroup]
-                   ? muscleColors[mGroup]
-                   : exerciseColors[idx % exerciseColors.length];
-
-    // area
-    g.append('path')
-      .datum(data)
-      .attr('class','exercise-area')
-      .attr('clip-path','url(#chartClip)')
-      .attr('fill', color).attr('fill-opacity', 0.1)
-      .attr('d', area);
-
-    // line
-    g.append('path')
-      .datum(data)
-      .attr('class','exercise-line')
-      .attr('clip-path','url(#chartClip)')
-      .attr('fill','none')
-      .attr('stroke', color)
-      .attr('stroke-width', isMobile ? 2 : 2.5)
-      .attr('d', line);
-
-    // points & interactions
-    data.forEach(d => {
-      const point = g.append('circle')
-        .datum(d)
-        .attr('class','avg-point')
+      // area
+      g.append('path')
+        .datum(data)
+        .attr('class','exercise-area')
         .attr('clip-path','url(#chartClip)')
-        .attr('cx', x(d.date))
-        .attr('cy', y(d.avgValue))  // Using avgValue instead of weightedAvg
-        .attr('r', rPoint)
-        .style('fill', color)
-        .attr('stroke','#fff')
-        .attr('stroke-width',1.5);
+        .attr('fill', color).attr('fill-opacity', 0.1)
+        .attr('d', area);
 
-      if (isTouch) {
-        // mobile taps
-        g.append('circle')
+      // line
+      g.append('path')
+        .datum(data)
+        .attr('class','exercise-line')
+        .attr('clip-path','url(#chartClip)')
+        .attr('fill','none')
+        .attr('stroke', color)
+        .attr('stroke-width', isMobile ? 2 : 2.5)
+        .attr('d', line);
+
+      // points & interactions
+      data.forEach(d => {
+        const point = g.append('circle')
           .datum(d)
-          .attr('class','touch-target')
+          .attr('class','avg-point')
           .attr('clip-path','url(#chartClip)')
           .attr('cx', x(d.date))
           .attr('cy', y(d.avgValue))  // Using avgValue instead of weightedAvg
-          .attr('r', 16)
-          .attr('fill','transparent')
-          .attr('pointer-events','all')
-          .on('click', e => {
-            e.preventDefault(); e.stopPropagation();
-            point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
-            showMobileTooltip(e, d, name, mGroup);
-            setTimeout(() => {
-              point.attr('r', rPoint).attr('stroke-width',1.5);
-            }, 300);
+          .attr('r', rPoint)
+          .style('fill', color)
+          .attr('stroke','#fff')
+          .attr('stroke-width',1.5);
+
+        if (isTouch) {
+          // mobile taps
+          g.append('circle')
+            .datum(d)
+            .attr('class','touch-target')
+            .attr('clip-path','url(#chartClip)')
+            .attr('cx', x(d.date))
+            .attr('cy', y(d.avgValue))  // Using avgValue instead of weightedAvg
+            .attr('r', 16)
+            .attr('fill','transparent')
+            .attr('pointer-events','all')
+            .on('click', e => {
+              e.preventDefault(); e.stopPropagation();
+              point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
+              showMobileTooltip(e, d, name, mGroup);
+              setTimeout(() => {
+                point.attr('r', rPoint).attr('stroke-width',1.5);
+              }, 300);
+            });
+          point.style('cursor','pointer')
+            .on('click', e => {
+              e.preventDefault(); e.stopPropagation();
+              point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
+              showMobileTooltip(e, d, name, mGroup);
+              setTimeout(() => {
+                point.attr('r', rPoint).attr('stroke-width',1.5);
+              }, 300);
+            });
+        } else {
+          // desktop hover
+          point.on('mouseover', function(ev) {
+            d3.select(this).attr('r', rPoint+1.5).attr('stroke-width',1.8);
+            showDesktopTooltip(ev, d, name, mGroup);
+          })
+          .on('mousemove', ev => {
+            const tw = 220;
+            let xPos = ev.pageX + 10;
+            if (xPos + tw > window.innerWidth) xPos = ev.pageX - tw - 10;
+            tooltip.style('top', `${ev.pageY - 10}px`).style('left', `${xPos}px`);
+          })
+          .on('mouseout', function() {
+            d3.select(this).attr('r', rPoint).attr('stroke-width',1.5);
+            hideTooltip();
           });
-        point.style('cursor','pointer')
-          .on('click', e => {
-            e.preventDefault(); e.stopPropagation();
-            point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
-            showMobileTooltip(e, d, name, mGroup);
-            setTimeout(() => {
-              point.attr('r', rPoint).attr('stroke-width',1.5);
-            }, 300);
-          });
-      } else {
-        // desktop hover
-        point.on('mouseover', function(ev) {
-          d3.select(this).attr('r', rPoint+1.5).attr('stroke-width',1.8);
-          showDesktopTooltip(ev, d, name, mGroup);
-        })
-        .on('mousemove', ev => {
-          const tw = 220;
-          let xPos = ev.pageX + 10;
-          if (xPos + tw > window.innerWidth) xPos = ev.pageX - tw - 10;
-          tooltip.style('top', `${ev.pageY - 10}px`).style('left', `${xPos}px`);
-        })
-        .on('mouseout', function() {
-          d3.select(this).attr('r', rPoint).attr('stroke-width',1.5);
-          hideTooltip();
+        }
+      });
+    });
+
+    /********************** 10. Y‑AXIS SWIPE‑TO‑ZOOM **********************/
+    svg.style('touch-action','none');  // disable native scroll/zoom
+
+    let startX, startY;
+    const yAxisDrag = d3.drag()
+      .on('start', ev => {
+        ev.sourceEvent.preventDefault();
+        startX = ev.x; startY = ev.y;
+      })
+      .on('drag', ev => {
+        ev.sourceEvent.preventDefault();
+        const dx = ev.x - startX, dy = ev.y - startY;
+        startX = ev.x; startY = ev.y;
+        const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+
+        const span   = curDomain[1] - curDomain[0];
+        const factor = 1 + Math.sign(delta)*Math.abs(delta)*ZOOM_SENSITIVITY;
+        let newSpan  = span*factor;
+        newSpan = Math.max(MIN_DOMAIN_SPAN, Math.min(MAX_DOMAIN_SPAN, newSpan));
+        const mid    = (curDomain[0] + curDomain[1]) / 2;
+        curDomain    = [mid - newSpan/2, mid + newSpan/2];
+
+        y.domain(curDomain);
+        drawYAxis();
+        drawGridY();
+        svg.selectAll('.exercise-area').attr('d', area);
+        svg.selectAll('.exercise-line').attr('d', line);
+        svg.selectAll('.avg-point').attr('cy', d => y(d.avgValue));  // Using avgValue
+        svg.selectAll('.touch-target').attr('cy', d => y(d.avgValue));  // Using avgValue
+      });
+
+    /********************** 11. X‑AXIS SLIDING FUNCTIONALITY *************/
+    const xAxisDrag = d3.drag()
+      .on('start', ev => {
+        ev.sourceEvent.preventDefault();
+        startX = ev.x; startY = ev.y;
+      })
+      .on('drag', ev => {
+        ev.sourceEvent.preventDefault();
+        const dx = ev.x - startX;
+        startX = ev.x;
+        
+        // Calculate slide direction and amount
+        const slideAmount = Math.round(dx * SLIDE_SENSITIVITY * maxWorkouts);
+        
+        if (slideAmount !== 0) {
+          const newOffset = Math.max(0, Math.min(maxWorkouts - xAxisWindow, xAxisOffset - slideAmount));
+          
+          if (newOffset !== xAxisOffset) {
+            xAxisOffset = newOffset;
+            
+            // Update the chart with new data window
+            const newData = getFilteredExerciseData();
+            
+            // Update scales
+            const newAllDates = [];
+            Object.values(newData).forEach(exerciseData => {
+              exerciseData.forEach(d => newAllDates.push(d.date));
+            });
+            
+            if (newAllDates.length > 0) {
+              x.domain(d3.extent(newAllDates)).nice();
+              
+              // Redraw x-axis and grid
+              drawXAxis();
+              svg.selectAll('.grid-lines-x')
+                .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
+                .call(g => g.select('.domain').remove());
+              
+              // Update paths and points
+              svg.selectAll('.exercise-area').remove();
+              svg.selectAll('.exercise-line').remove();
+              svg.selectAll('.avg-point').remove();
+              svg.selectAll('.touch-target').remove();
+              
+              // Redraw with new data
+              Object.keys(newData).forEach((name, idx) => {
+                const data = newData[name];
+                if (!data.length) return;
+                
+                const mGroup = getExerciseMuscleGroup(name);
+                const color = mGroup && muscleColors[mGroup]
+                             ? muscleColors[mGroup]
+                             : exerciseColors[idx % exerciseColors.length];
+                
+                // Process data for new scales
+                const processedData = data.map(w => {
+                  const useReps = isBodyweight[name];
+                  if (useReps) {
+                    const rs = w.sets.map(s => s.reps);
+                    const maxReps = Math.max(...rs);
+                    const minReps = Math.min(...rs);
+                    const avgReps = rs.reduce((sum, r) => sum + r, 0) / rs.length;
+                    return {
+                      date: w.date,
+                      sets: w.sets,
+                      maxValue: maxReps,
+                      minValue: minReps,
+                      avgValue: avgReps,
+                      isBodyweight: true
+                    };
+                  } else {
+                    const ws = w.sets.map(s => s.weight);
+                    const max = Math.max(...ws), min = Math.min(...ws);
+                    const totalW = w.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+                    const totalR = w.sets.reduce((sum, s) => sum + s.reps, 0);
+                    return {
+                      date: w.date,
+                      sets: w.sets,
+                      maxValue: max,
+                      minValue: min,
+                      avgValue: totalW / totalR,
+                      isBodyweight: false
+                    };
+                  }
+                });
+                
+                // Update path generators with new scale
+                const newArea = d3.area()
+                  .x(d => x(d.date))
+                  .y0(d => y(d.minValue))
+                  .y1(d => y(d.maxValue))
+                  .curve(d3.curveMonotoneX);
+
+                const newLine = d3.line()
+                  .x(d => x(d.date))
+                  .y(d => y(d.avgValue))
+                  .curve(d3.curveMonotoneX);
+                
+                // Draw area
+                g.append('path')
+                  .datum(processedData)
+                  .attr('class','exercise-area')
+                  .attr('clip-path','url(#chartClip)')
+                  .attr('fill', color).attr('fill-opacity', 0.1)
+                  .attr('d', newArea);
+
+                // Draw line
+                g.append('path')
+                  .datum(processedData)
+                  .attr('class','exercise-line')
+                  .attr('clip-path','url(#chartClip)')
+                  .attr('fill','none')
+                  .attr('stroke', color)
+                  .attr('stroke-width', isMobile ? 2 : 2.5)
+                  .attr('d', newLine);
+
+                // Draw points with interactions
+                processedData.forEach(d => {
+                  const point = g.append('circle')
+                    .datum(d)
+                    .attr('class','avg-point')
+                    .attr('clip-path','url(#chartClip)')
+                    .attr('cx', x(d.date))
+                    .attr('cy', y(d.avgValue))
+                    .attr('r', rPoint)
+                    .style('fill', color)
+                    .attr('stroke','#fff')
+                    .attr('stroke-width',1.5);
+
+                  if (isTouch) {
+                    g.append('circle')
+                      .datum(d)
+                      .attr('class','touch-target')
+                      .attr('clip-path','url(#chartClip)')
+                      .attr('cx', x(d.date))
+                      .attr('cy', y(d.avgValue))
+                      .attr('r', 16)
+                      .attr('fill','transparent')
+                      .attr('pointer-events','all')
+                      .on('click', e => {
+                        e.preventDefault(); e.stopPropagation();
+                        point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
+                        showMobileTooltip(e, d, name, mGroup);
+                        setTimeout(() => {
+                          point.attr('r', rPoint).attr('stroke-width',1.5);
+                        }, 300);
+                      });
+                    point.style('cursor','pointer')
+                      .on('click', e => {
+                        e.preventDefault(); e.stopPropagation();
+                        point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
+                        showMobileTooltip(e, d, name, mGroup);
+                        setTimeout(() => {
+                          point.attr('r', rPoint).attr('stroke-width',1.5);
+                        }, 300);
+                      });
+                  } else {
+                    point.on('mouseover', function(ev) {
+                      d3.select(this).attr('r', rPoint+1.5).attr('stroke-width',1.8);
+                      showDesktopTooltip(ev, d, name, mGroup);
+                    })
+                    .on('mousemove', ev => {
+                      const tw = 220;
+                      let xPos = ev.pageX + 10;
+                      if (xPos + tw > window.innerWidth) xPos = ev.pageX - tw - 10;
+                      tooltip.style('top', `${ev.pageY - 10}px`).style('left', `${xPos}px`);
+                    })
+                    .on('mouseout', function() {
+                      d3.select(this).attr('r', rPoint).attr('stroke-width',1.5);
+                      hideTooltip();
+                    });
+                  }
+                });
+              });
+            }
+          }
+        }
+      });
+
+    // Apply drag behaviors
+    yAxisG
+      .on('pointerdown', function(event) {
+        if (event.pointerType==='touch') {
+          event.preventDefault();
+          this.setPointerCapture(event.pointerId);
+        }
+      })
+      .on('pointerup', function(event) {
+        if (event.pointerType==='touch') {
+          this.releasePointerCapture(event.pointerId);
+        }
+      })
+      .call(yAxisDrag)
+      .style('cursor','ns-resize')
+      .style('touch-action','none');
+
+    // Apply x-axis drag to x-axis area
+    xAxisG
+      .on('pointerdown', function(event) {
+        if (event.pointerType==='touch') {
+          event.preventDefault();
+          this.setPointerCapture(event.pointerId);
+        }
+      })
+      .on('pointerup', function(event) {
+        if (event.pointerType==='touch') {
+          this.releasePointerCapture(event.pointerId);
+        }
+      })
+      .call(xAxisDrag)
+      .style('cursor','ew-resize')
+      .style('touch-action','none');
+
+    // Create drag regions for better touch targets
+    g.insert('rect', '.y-axis')
+      .attr('class','y-axis-drag-region')
+      .attr('x', -margin.left)
+      .attr('y', 0)
+      .attr('width', margin.left)
+      .attr('height', innerH)
+      .style('fill','transparent')
+      .style('pointer-events','all')
+      .style('touch-action','none')
+      .style('cursor','ns-resize')
+      .call(yAxisDrag);
+
+    g.insert('rect', '.x-axis')
+      .attr('class','x-axis-drag-region')
+      .attr('x', 0)
+      .attr('y', innerH)
+      .attr('width', innerW)
+      .attr('height', margin.bottom)
+      .style('fill','transparent')
+      .style('pointer-events','all')
+      .style('touch-action','none')
+      .style('cursor','ew-resize')
+      .call(xAxisDrag);
+
+    /********************** 12. LEGEND - MODIFIED FOR BODYWEIGHT *********/
+    if (exerciseNames.length > 1) {
+      const leg = svg.append('g')
+        .attr('class','chart-legend')
+        .attr('transform', `translate(${width - margin.right + 10},${margin.top})`);
+      
+      // Add a legend for exercise types if we have mixed types
+      if (showingAnyBodyweight && !exerciseNames.every(name => isBodyweight[name])) {
+        // Position the type legend appropriately with the wider margin
+        const typeLeg = svg.append('g')
+          .attr('class','type-legend')
+          .attr('transform', `translate(${width - margin.right - 85},${margin.top})`);
+          
+        // Header for units
+        typeLeg.append('text')
+          .attr('x', 0)
+          .attr('y', 10)
+          .attr('font-size', '10px')
+          .attr('fill', '#666')
+          .attr('font-weight', 'bold')
+          .text('Units:');
+          
+        // Weighted legend entry  
+        typeLeg.append('text')
+          .attr('x', 0)
+          .attr('y', 30)
+          .attr('font-size', '10px')
+          .attr('fill', '#666')
+          .text('Regular: kg');
+          
+        // Bodyweight legend entry
+        typeLeg.append('text')
+          .attr('x', 0)
+          .attr('y', 50)
+          .attr('font-size', '10px')
+          .attr('fill', '#666')
+          .text('Bodyweight: reps');
+      }
+      
+      // Normal exercise legend (with subtle indicators for exercise type)
+      exerciseNames.forEach((n, i) => {
+        if (!processedByName[n]?.length) return;
+        const m = getExerciseMuscleGroup(n);
+        const c = m && muscleColors[m] ? muscleColors[m] : exerciseColors[i % exerciseColors.length];
+        const {exercise} = parseExerciseAndLocation(n);
+        const label = n.length > 15 ? exercise : n;
+        const item = leg.append('g')
+          .attr('transform',`translate(0,${i*20})`);
+        
+        // Line for the exercise
+        item.append('line')
+          .attr('x1', 0).attr('y1', 9).attr('x2', 15).attr('y2', 9)
+          .attr('stroke', c).attr('stroke-width', 2);
+        
+        // Label with bodyweight indicator if needed
+        item.append('text')
+          .attr('x', 20).attr('y', 12)
+          .attr('font-size', '10px')
+          .attr('fill', '#666')
+          .text(`${label}${isBodyweight[n] ? ' (BW)' : ''}`);
+      });
+    }
+
+    chartContainer.appendChild(svg.node());
+  }
+
+  // Function to show exercise tooltip for mobile devices - updated for bodyweight
+  function showExerciseTooltipMobile(event, dayData) {
+    // Hide any existing tooltips
+    hideExerciseTooltip();
+    
+    const tooltipDiv = d3.select(".exercise-tooltip");
+    
+    // Add CSS classes for mobile tooltip
+    tooltipDiv.classed("mobile-tooltip", true);
+    
+    // Get the muscle group color for background
+    let bgColor = "#546bce"; // Default color
+    
+    // Format date for display
+    const dateStr = dayData.date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+    
+    // Check if this is a bodyweight exercise
+    const isBodyweightEx = dayData.isBodyweight;
+    
+    // Build tooltip content based on exercise type
+    let tooltipContent;
+    
+    if (isBodyweightEx) {
+      // For bodyweight exercises, show reps-focused summary
+      const totalReps = dayData.sets.reduce((sum, set) => sum + set.reps, 0);
+      
+      tooltipContent = `
+        <div style="position:relative;">
+          <div class="tooltip-close-btn">&times;</div>
+          <div class="tooltip-header">
+            <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
+            <div class="tooltip-date">${dateStr}</div>
+          </div>
+          <div class="tooltip-summary">
+            <div class="tooltip-section-title">Summary</div>
+            <div class="tooltip-stat-line">
+              <span>Average:</span>
+              <span class="tooltip-stat-value">${dayData.avgValue.toFixed(1)} reps</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Total:</span>
+              <span class="tooltip-stat-value">${totalReps} reps</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Range:</span>
+              <span>${dayData.minValue}-${dayData.maxValue} reps</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Sets:</span>
+              <span>${dayData.sets.length}</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Type:</span>
+              <span>Bodyweight</span>
+            </div>
+          </div>
+          <div class="tooltip-divider"></div>
+          <div class="tooltip-sets">
+            <div class="tooltip-section-title">Set Details</div>
+            <div class="tooltip-sets-grid">
+              ${dayData.sets.map((set, idx) => `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${idx + 1}:</span>
+                  <span class="set-reps">${set.reps} reps</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      // For weighted exercises, show weight-focused summary
+      const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+      const location = dayData.sets[0]?.location || 'Bodyweight';
+      
+      tooltipContent = `
+        <div style="position:relative;">
+          <div class="tooltip-close-btn">&times;</div>
+          <div class="tooltip-header">
+            <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
+            <div class="tooltip-date">${dateStr}</div>
+          </div>
+          <div class="tooltip-summary">
+            <div class="tooltip-section-title">Summary</div>
+            <div class="tooltip-stat-line">
+              <span>Average:</span>
+              <span class="tooltip-stat-value">${dayData.avgValue.toFixed(1)}kg</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Volume:</span>
+              <span class="tooltip-stat-value">${totalVolume.toLocaleString()}kg</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Range:</span>
+              <span>${dayData.minValue}-${dayData.maxValue}kg</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Sets:</span>
+              <span>${dayData.sets.length}</span>
+            </div>
+            <div class="tooltip-stat-line">
+              <span>Location:</span>
+              <span>${location}</span>
+            </div>
+          </div>
+          <div class="tooltip-divider"></div>
+          <div class="tooltip-sets">
+            <div class="tooltip-section-title">Set Details</div>
+            <div class="tooltip-sets-grid">
+              ${dayData.sets.map((set, idx) => `
+                <div class="tooltip-set-item">
+                  <span class="set-number">Set ${idx + 1}:</span>
+                  <span class="set-weight">${set.weight}kg</span>
+                  <span class="set-reps">× ${set.reps}</span>
+                  ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    tooltipDiv.html(tooltipContent);
+    
+    // Apply styles for mobile
+    tooltipDiv
+      .style("position", "fixed")
+      .style("top", "50%")
+      .style("left", "50%")
+      .style("transform", "translate(-50%, -50%)")
+      .style("width", "auto")
+      .style("max-width", "90%")
+      .style("background-color", bgColor)
+      .style("color", "#ffffff")
+      .style("border-radius", "12px")
+      .style("padding", "15px")
+      .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.4)")
+      .style("z-index", "9999")
+      .style("opacity", 1)
+      .style("visibility", "visible")
+      .style("pointer-events", "auto");
+    
+    // Show the overlay
+    d3.select("#exercise-tooltip-overlay")
+      .style("display", "block")
+      .style("opacity", 1)
+      .style("pointer-events", "auto");
+    
+    // Add click handler for close button
+    setTimeout(() => {
+      const closeBtn = document.querySelector('.exercise-tooltip .tooltip-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          hideExerciseTooltip();
         });
       }
-    });
-  });
-
-  /********************** 10. Y‑AXIS SWIPE‑TO‑ZOOM **********************/
-  svg.style('touch-action','none');  // disable native scroll/zoom
-
-  let startX, startY;
-  const drag = d3.drag()
-    .on('start', ev => {
-      ev.sourceEvent.preventDefault();
-      startX = ev.x; startY = ev.y;
-    })
-    .on('drag', ev => {
-      ev.sourceEvent.preventDefault();
-      const dx = ev.x - startX, dy = ev.y - startY;
-      startX = ev.x; startY = ev.y;
-      const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
-
-      const span   = curDomain[1] - curDomain[0];
-      const factor = 1 + Math.sign(delta)*Math.abs(delta)*ZOOM_SENSITIVITY;
-      let newSpan  = span*factor;
-      newSpan = Math.max(MIN_DOMAIN_SPAN, Math.min(MAX_DOMAIN_SPAN, newSpan));
-      const mid    = (curDomain[0] + curDomain[1]) / 2;
-      curDomain    = [mid - newSpan/2, mid + newSpan/2];
-
-      y.domain(curDomain);
-      drawYAxis();
-      drawGridY();
-      svg.selectAll('.exercise-area').attr('d', area);
-      svg.selectAll('.exercise-line').attr('d', line);
-      svg.selectAll('.avg-point').attr('cy', d => y(d.avgValue));  // Using avgValue
-      svg.selectAll('.touch-target').attr('cy', d => y(d.avgValue));  // Using avgValue
-    });
-
-  yAxisG
-    .on('pointerdown', function(event) {
-      if (event.pointerType==='touch') {
-        event.preventDefault();
-        this.setPointerCapture(event.pointerId);
-      }
-    })
-    .on('pointerup', function(event) {
-      if (event.pointerType==='touch') {
-        this.releasePointerCapture(event.pointerId);
-      }
-    })
-    .call(drag)
-    .style('cursor','ns-resize')
-    .style('touch-action','none');
-
-  g.insert('rect', '.y-axis')
-    .attr('class','y-axis-drag-region')
-    .attr('x', -margin.left)
-    .attr('y', 0)
-    .attr('width', margin.left)
-    .attr('height', innerH)
-    .style('fill','transparent')
-    .style('pointer-events','all')
-    .style('touch-action','none')
-    .style('cursor','ns-resize')
-    .call(drag);
-
-  /********************** 11. LEGEND - MODIFIED FOR BODYWEIGHT *********/
-  if (exerciseNames.length > 1) {
-    const leg = svg.append('g')
-      .attr('class','chart-legend')
-      .attr('transform', `translate(${width - margin.right + 10},${margin.top})`);
-    
-    // Add a legend for exercise types if we have mixed types
-    if (showingAnyBodyweight && !exerciseNames.every(name => isBodyweight[name])) {
-      // Position the type legend appropriately with the wider margin
-      const typeLeg = svg.append('g')
-        .attr('class','type-legend')
-        .attr('transform', `translate(${width - margin.right - 85},${margin.top})`);
-        
-      // Header for units
-      typeLeg.append('text')
-        .attr('x', 0)
-        .attr('y', 10)
-        .attr('font-size', '10px')
-        .attr('fill', '#666')
-        .attr('font-weight', 'bold')
-        .text('Units:');
-        
-      // Weighted legend entry  
-      typeLeg.append('text')
-        .attr('x', 0)
-        .attr('y', 30)
-        .attr('font-size', '10px')
-        .attr('fill', '#666')
-        .text('Regular: kg');
-        
-      // Bodyweight legend entry
-      typeLeg.append('text')
-        .attr('x', 0)
-        .attr('y', 50)
-        .attr('font-size', '10px')
-        .attr('fill', '#666')
-        .text('Bodyweight: reps');
-    }
-    
-    // Normal exercise legend (with subtle indicators for exercise type)
-    exerciseNames.forEach((n, i) => {
-      if (!processedByName[n]?.length) return;
-      const m = getExerciseMuscleGroup(n);
-      const c = m && muscleColors[m] ? muscleColors[m] : exerciseColors[i % exerciseColors.length];
-      const {exercise} = parseExerciseAndLocation(n);
-      const label = n.length > 15 ? exercise : n;
-      const item = leg.append('g')
-        .attr('transform',`translate(0,${i*20})`);
-      
-      // Line for the exercise
-      item.append('line')
-        .attr('x1', 0).attr('y1', 9).attr('x2', 15).attr('y2', 9)
-        .attr('stroke', c).attr('stroke-width', 2);
-      
-      // Label with bodyweight indicator if needed
-      item.append('text')
-        .attr('x', 20).attr('y', 12)
-        .attr('font-size', '10px')
-        .attr('fill', '#666')
-        .text(`${label}${isBodyweight[n] ? ' (BW)' : ''}`);
-    });
+    }, 10);
   }
 
-  chartContainer.appendChild(svg.node());
-}
-
-// Function to show exercise tooltip for mobile devices - updated for bodyweight
-function showExerciseTooltipMobile(event, dayData) {
-  // Hide any existing tooltips
-  hideExerciseTooltip();
-  
-  const tooltipDiv = d3.select(".exercise-tooltip");
-  
-  // Add CSS classes for mobile tooltip
-  tooltipDiv.classed("mobile-tooltip", true);
-  
-  // Get the muscle group color for background
-  let bgColor = "#546bce"; // Default color
-  
-  // Format date for display
-  const dateStr = dayData.date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  });
-  
-  // Check if this is a bodyweight exercise
-  const isBodyweightEx = dayData.isBodyweight;
-  
-  // Build tooltip content based on exercise type
-  let tooltipContent;
-  
-  if (isBodyweightEx) {
-    // For bodyweight exercises, show reps-focused summary
-    const totalReps = dayData.sets.reduce((sum, set) => sum + set.reps, 0);
+  // Function to hide exercise tooltip
+  function hideExerciseTooltip() {
+    const tooltip = d3.select(".exercise-tooltip");
+    tooltip
+      .style("opacity", 0)
+      .style("visibility", "hidden")
+      .style("pointer-events", "none")
+      .classed("mobile-tooltip", false);
     
-    tooltipContent = `
-      <div style="position:relative;">
-        <div class="tooltip-close-btn">&times;</div>
-        <div class="tooltip-header">
-          <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
-          <div class="tooltip-date">${dateStr}</div>
-        </div>
-        <div class="tooltip-summary">
-          <div class="tooltip-section-title">Summary</div>
-          <div class="tooltip-stat-line">
-            <span>Average:</span>
-            <span class="tooltip-stat-value">${dayData.avgValue.toFixed(1)} reps</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Total:</span>
-            <span class="tooltip-stat-value">${totalReps} reps</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Range:</span>
-            <span>${dayData.minValue}-${dayData.maxValue} reps</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Sets:</span>
-            <span>${dayData.sets.length}</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Type:</span>
-            <span>Bodyweight</span>
-          </div>
-        </div>
-        <div class="tooltip-divider"></div>
-        <div class="tooltip-sets">
-          <div class="tooltip-section-title">Set Details</div>
-          <div class="tooltip-sets-grid">
-            ${dayData.sets.map((set, idx) => `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${idx + 1}:</span>
-                <span class="set-reps">${set.reps} reps</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-  } else {
-    // For weighted exercises, show weight-focused summary
-    const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
-    const location = dayData.sets[0]?.location || 'Bodyweight';
-    
-    tooltipContent = `
-      <div style="position:relative;">
-        <div class="tooltip-close-btn">&times;</div>
-        <div class="tooltip-header">
-          <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
-          <div class="tooltip-date">${dateStr}</div>
-        </div>
-        <div class="tooltip-summary">
-          <div class="tooltip-section-title">Summary</div>
-          <div class="tooltip-stat-line">
-            <span>Average:</span>
-            <span class="tooltip-stat-value">${dayData.avgValue.toFixed(1)}kg</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Volume:</span>
-            <span class="tooltip-stat-value">${totalVolume.toLocaleString()}kg</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Range:</span>
-            <span>${dayData.minValue}-${dayData.maxValue}kg</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Sets:</span>
-            <span>${dayData.sets.length}</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Location:</span>
-            <span>${location}</span>
-          </div>
-        </div>
-        <div class="tooltip-divider"></div>
-        <div class="tooltip-sets">
-          <div class="tooltip-section-title">Set Details</div>
-          <div class="tooltip-sets-grid">
-            ${dayData.sets.map((set, idx) => `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${idx + 1}:</span>
-                <span class="set-weight">${set.weight}kg</span>
-                <span class="set-reps">× ${set.reps}</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
+    // Hide the overlay
+    d3.select("#exercise-tooltip-overlay")
+      .style("display", "none")
+      .style("pointer-events", "none");
   }
-  
-  tooltipDiv.html(tooltipContent);
-  
-  // Apply styles for mobile
-  tooltipDiv
-    .style("position", "fixed")
-    .style("top", "50%")
-    .style("left", "50%")
-    .style("transform", "translate(-50%, -50%)")
-    .style("width", "auto")
-    .style("max-width", "90%")
-    .style("background-color", bgColor)
-    .style("color", "#ffffff")
-    .style("border-radius", "12px")
-    .style("padding", "15px")
-    .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.4)")
-    .style("z-index", "9999")
-    .style("opacity", 1)
-    .style("visibility", "visible")
-    .style("pointer-events", "auto");
-  
-  // Show the overlay
-  d3.select("#exercise-tooltip-overlay")
-    .style("display", "block")
-    .style("opacity", 1)
-    .style("pointer-events", "auto");
-  
-  // Add click handler for close button
-  setTimeout(() => {
-    const closeBtn = document.querySelector('.exercise-tooltip .tooltip-close-btn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        hideExerciseTooltip();
-      });
-    }
-  }, 10);
-}
-
-// Function to show exercise tooltip for mobile devices - updated for bodyweight
-function showExerciseTooltipMobile(event, dayData) {
-  // Hide any existing tooltips
-  hideExerciseTooltip();
-  
-  const tooltipDiv = d3.select(".exercise-tooltip");
-  
-  // Add CSS classes for mobile tooltip
-  tooltipDiv.classed("mobile-tooltip", true);
-  
-  // Get the muscle group color for background
-  let bgColor = "#546bce"; // Default color
-  
-  // Format date for display
-  const dateStr = dayData.date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  });
-  
-  // Check if this is a bodyweight exercise
-  const isBodyweightEx = dayData.isBodyweight;
-  
-  // Build tooltip content based on exercise type
-  let tooltipContent;
-  
-  if (isBodyweightEx) {
-    // For bodyweight exercises, show reps-focused summary
-    const totalReps = dayData.sets.reduce((sum, set) => sum + set.reps, 0);
-    
-    tooltipContent = `
-      <div style="position:relative;">
-        <div class="tooltip-close-btn">&times;</div>
-        <div class="tooltip-header">
-          <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
-          <div class="tooltip-date">${dateStr}</div>
-        </div>
-        <div class="tooltip-summary">
-          <div class="tooltip-section-title">Summary</div>
-          <div class="tooltip-stat-line">
-            <span>Average:</span>
-            <span class="tooltip-stat-value">${dayData.avgValue.toFixed(1)} reps</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Total:</span>
-            <span class="tooltip-stat-value">${totalReps} reps</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Range:</span>
-            <span>${dayData.minValue}-${dayData.maxValue} reps</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Sets:</span>
-            <span>${dayData.sets.length}</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Type:</span>
-            <span>Bodyweight</span>
-          </div>
-        </div>
-        <div class="tooltip-divider"></div>
-        <div class="tooltip-sets">
-          <div class="tooltip-section-title">Set Details</div>
-          <div class="tooltip-sets-grid">
-            ${dayData.sets.map((set, idx) => `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${idx + 1}:</span>
-                <span class="set-reps">${set.reps} reps</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-  } else {
-    // For weighted exercises, show weight-focused summary
-    const totalVolume = dayData.sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
-    const location = dayData.sets[0]?.location || 'Bodyweight';
-    
-    tooltipContent = `
-      <div style="position:relative;">
-        <div class="tooltip-close-btn">&times;</div>
-        <div class="tooltip-header">
-          <div class="tooltip-title">${dayData.exerciseName || 'Workout'}</div>
-          <div class="tooltip-date">${dateStr}</div>
-        </div>
-        <div class="tooltip-summary">
-          <div class="tooltip-section-title">Summary</div>
-          <div class="tooltip-stat-line">
-            <span>Average:</span>
-            <span class="tooltip-stat-value">${dayData.avgValue.toFixed(1)}kg</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Volume:</span>
-            <span class="tooltip-stat-value">${totalVolume.toLocaleString()}kg</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Range:</span>
-            <span>${dayData.minValue}-${dayData.maxValue}kg</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Sets:</span>
-            <span>${dayData.sets.length}</span>
-          </div>
-          <div class="tooltip-stat-line">
-            <span>Location:</span>
-            <span>${location}</span>
-          </div>
-        </div>
-        <div class="tooltip-divider"></div>
-        <div class="tooltip-sets">
-          <div class="tooltip-section-title">Set Details</div>
-          <div class="tooltip-sets-grid">
-            ${dayData.sets.map((set, idx) => `
-              <div class="tooltip-set-item">
-                <span class="set-number">Set ${idx + 1}:</span>
-                <span class="set-weight">${set.weight}kg</span>
-                <span class="set-reps">× ${set.reps}</span>
-                ${set.effort !== 'N/A' ? `<span class="set-effort">(${set.effort})</span>` : ''}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
-  tooltipDiv.html(tooltipContent);
-  
-  // Apply styles for mobile
-  tooltipDiv
-    .style("position", "fixed")
-    .style("top", "50%")
-    .style("left", "50%")
-    .style("transform", "translate(-50%, -50%)")
-    .style("width", "auto")
-    .style("max-width", "90%")
-    .style("background-color", bgColor)
-    .style("color", "#ffffff")
-    .style("border-radius", "12px")
-    .style("padding", "15px")
-    .style("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.4)")
-    .style("z-index", "9999")
-    .style("opacity", 1)
-    .style("visibility", "visible")
-    .style("pointer-events", "auto");
-  
-  // Show the overlay
-  d3.select("#exercise-tooltip-overlay")
-    .style("display", "block")
-    .style("opacity", 1)
-    .style("pointer-events", "auto");
-  
-  // Add click handler for close button
-  setTimeout(() => {
-    const closeBtn = document.querySelector('.exercise-tooltip .tooltip-close-btn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        hideExerciseTooltip();
-      });
-    }
-  }, 10);
-}
-
-
 
   /**
    * Display message when no exercise data is available
@@ -2497,7 +1942,6 @@ function showExerciseTooltipMobile(event, dayData) {
     }
   });
 
-
   function checkAndInitialize() {
     console.log('checkAndInitialize called');
     document.addEventListener("DOMContentLoaded", () => {
@@ -2525,7 +1969,6 @@ function showExerciseTooltipMobile(event, dayData) {
   // Start initialization
   checkAndInitialize();
 
-  // Note: Do not call initializeTitleWithDropdown() again here to avoid duplicate initialization.
 })();
 
 // Function to show exercise tooltip for mobile devices
