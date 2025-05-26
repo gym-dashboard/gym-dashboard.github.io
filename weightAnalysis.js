@@ -53,8 +53,6 @@
   let selectedExercises = [];  
   let dropdownCreated = false;   // Track if dropdown was created
   let allExerciseData = {};      // Store all loaded exercise data keyed by exercise name
-  let xAxisWindow = 5;           // Number of workouts to display (default 5)
-  let xAxisOffset = 0;           // Offset from the end (0 = show last 5, 1 = show 5 before last, etc.)
   let titleElements = null;      // Reference to title dropdown elements
 
   // Exercise colors for multi-select
@@ -285,8 +283,6 @@
           allExerciseData[exercise] = datasets[index];
         });
 
-        // Reset x-axis window to show last 5 entries
-        xAxisOffset = 0;
         renderMultiExerciseChart(getFilteredExerciseData());
       });
 
@@ -349,8 +345,6 @@
         allExerciseData[exercise] = datasets[index];
       });
       
-      // Reset x-axis window to show last 5 entries
-      xAxisOffset = 0;
       updateTitleText();
       renderMultiExerciseChart(getFilteredExerciseData());
       
@@ -406,8 +400,6 @@
         const data = await loadExerciseData(selectedValue, currentYear);
         allExerciseData[selectedValue] = data;
         
-        // Reset x-axis window to show last 5 entries
-        xAxisOffset = 0;
         updateTitleText();
         renderMultiExerciseChart(getFilteredExerciseData());
       } catch (error) {
@@ -457,7 +449,7 @@
   }
 
   /**
-   * Return filtered exercise data based on xAxisWindow and xAxisOffset
+   * Return all exercise data (smooth sliding controls visibility via x-axis domain)
    */
   function getFilteredExerciseData() {
     const filteredData = {};
@@ -468,16 +460,8 @@
           filteredData[exerciseName] = [];
           return;
         }
-
-        // Sort data by date
-        const sortedData = [...exerciseData].sort((a, b) => a.date - b.date);
-        
-        // Calculate the slice based on window and offset
-        const totalWorkouts = sortedData.length;
-        const endIndex = totalWorkouts - xAxisOffset;
-        const startIndex = Math.max(0, endIndex - xAxisWindow);
-        
-        filteredData[exerciseName] = sortedData.slice(startIndex, endIndex);
+        // Return all data - x-axis domain controls what's visible
+        filteredData[exerciseName] = [...exerciseData].sort((a, b) => a.date - b.date);
       }
     });
     return filteredData;
@@ -725,7 +709,6 @@
     const MIN_DOMAIN_SPAN  = 1;    // kg or reps
     const MAX_DOMAIN_SPAN  = 300;  // kg or reps
     const GRID_TICKS       = 5;
-    const SLIDE_SENSITIVITY = 0.01; // Sensitivity for x-axis sliding
 
     let chartContainer = document.querySelector('.exercise-chart-container');
     if (!chartContainer) {
@@ -807,15 +790,6 @@
     const processedByName = {};
     let allDates = [], allValues = [];  // Changed from allWeights to allValues to be generic
     
-    // Get the total number of workouts available for sliding calculations
-    let maxWorkouts = 0;
-    exerciseNames.forEach(name => {
-      const fullData = allExerciseData[name] || [];
-      if (fullData.length > maxWorkouts) {
-        maxWorkouts = fullData.length;
-      }
-    });
-    
     // Now process data differently based on bodyweight status
     exerciseNames.forEach(name => {
       const raw = exerciseDataMap[name] || [];
@@ -868,8 +842,22 @@
     const pad = (maxValue - minValue) * 0.1 || 5;
     let curDomain = [Math.max(0, minValue - pad), maxValue + pad];
 
+    // Initialize x-axis to show last 5 workouts by default
+    let xDomain;
+    if (allDates.length > 5) {
+      // Sort dates and take the last 5
+      const sortedDates = [...allDates].sort((a, b) => a - b);
+      const lastFiveDates = sortedDates.slice(-5);
+      xDomain = d3.extent(lastFiveDates);
+      // Add small padding to the domain
+      const timePadding = (xDomain[1] - xDomain[0]) * 0.1;
+      xDomain = [new Date(xDomain[0].getTime() - timePadding), new Date(xDomain[1].getTime() + timePadding)];
+    } else {
+      xDomain = d3.extent(allDates);
+    }
+
     const x = d3.scaleTime()
-      .domain(d3.extent(allDates))
+      .domain(xDomain)
       .range([0, innerW])
       .nice();
 
@@ -1355,183 +1343,191 @@
         svg.selectAll('.touch-target').attr('cy', d => y(d.avgValue));  // Using avgValue
       });
 
-    /********************** 11. X‑AXIS SLIDING FUNCTIONALITY *************/
+    /********************** 11. X‑AXIS SMOOTH SLIDING FUNCTIONALITY ******/
+    // Get all available dates for smooth sliding calculation
+    let allAvailableDates = [];
+    exerciseNames.forEach(name => {
+      const fullData = allExerciseData[name] || [];
+      fullData.forEach(d => allAvailableDates.push(d.date));
+    });
+    allAvailableDates = [...new Set(allAvailableDates)].sort((a, b) => a - b);
+    
+    // Current domain for smooth sliding
+    let currentXDomain = x.domain();
+    
+    // Helper function to animate domain back to valid bounds
+    function springBackToValidDomain() {
+      if (allAvailableDates.length === 0) return;
+      
+      const yearStart = new Date(currentYear, 0, 1);
+      const firstDate = allAvailableDates[0];
+      const lastDate = allAvailableDates[allAvailableDates.length - 1];
+      const currentSpan = currentXDomain[1] - currentXDomain[0];
+      
+      // 1-day margin for comfortable viewing
+      const marginMs = 1 * 24 * 60 * 60 * 1000; // 1 day in milliseconds
+      
+      let targetStart = currentXDomain[0];
+      let targetEnd = currentXDomain[1];
+      let needsAnimation = false;
+      
+      // Check if we're beyond January 1st (hard boundary)
+      if (currentXDomain[0] < yearStart) {
+        const adjustment = yearStart.getTime() - currentXDomain[0].getTime();
+        targetStart = new Date(yearStart.getTime());
+        targetEnd = new Date(currentXDomain[1].getTime() + adjustment);
+        needsAnimation = true;
+      }
+      // Check if we're beyond first data point (with 1-day margin)
+      else if (currentXDomain[0] < new Date(firstDate.getTime() - marginMs)) {
+        targetStart = new Date(firstDate.getTime() - marginMs);
+        targetEnd = new Date(targetStart.getTime() + currentSpan);
+        needsAnimation = true;
+      }
+      
+      // Check if we're beyond last data point (with 1-day margin)
+      if (currentXDomain[1] > new Date(lastDate.getTime() + marginMs)) {
+        targetEnd = new Date(lastDate.getTime() + marginMs);
+        targetStart = new Date(targetEnd.getTime() - currentSpan);
+        needsAnimation = true;
+        
+        // Ensure we don't violate the January 1st limit when adjusting
+        if (targetStart < yearStart) {
+          targetStart = new Date(yearStart.getTime());
+          targetEnd = new Date(targetStart.getTime() + currentSpan);
+        }
+      }
+      
+      if (needsAnimation) {
+        // Create smooth spring-back animation
+        const interpolateStart = d3.interpolate(currentXDomain[0], targetStart);
+        const interpolateEnd = d3.interpolate(currentXDomain[1], targetEnd);
+        
+        const transition = d3.transition()
+          .duration(400)
+          .ease(d3.easeBackOut.overshoot(0.3));
+        
+        transition.tween("springback", function() {
+          return function(t) {
+            currentXDomain = [interpolateStart(t), interpolateEnd(t)];
+            x.domain(currentXDomain);
+            
+            // Update all visual elements
+            drawXAxis();
+            svg.selectAll('.grid-lines-x')
+              .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
+              .call(g => g.select('.domain').remove());
+            
+            svg.selectAll('.exercise-area').attr('d', area);
+            svg.selectAll('.exercise-line').attr('d', line);
+            svg.selectAll('.avg-point').attr('cx', d => x(d.date));
+            svg.selectAll('.touch-target').attr('cx', d => x(d.date));
+          };
+        });
+      }
+    }
+    
     const xAxisDrag = d3.drag()
       .on('start', ev => {
         ev.sourceEvent.preventDefault();
         startX = ev.x; startY = ev.y;
+        
+        // Stop any ongoing spring-back animation
+        svg.selectAll("*").interrupt();
       })
       .on('drag', ev => {
         ev.sourceEvent.preventDefault();
         const dx = ev.x - startX;
         startX = ev.x;
         
-        // Calculate slide direction and amount
-        const slideAmount = Math.round(dx * SLIDE_SENSITIVITY * maxWorkouts);
+        if (allAvailableDates.length === 0) return;
         
-        if (slideAmount !== 0) {
-          const newOffset = Math.max(0, Math.min(maxWorkouts - xAxisWindow, xAxisOffset - slideAmount));
+        // Calculate smooth sliding based on pixel movement
+        const currentSpan = currentXDomain[1] - currentXDomain[0];
+        const pixelToTimeRatio = currentSpan / innerW;
+        const timeShift = dx * pixelToTimeRatio;
+        
+        // Calculate new domain
+        let newStart = new Date(currentXDomain[0].getTime() - timeShift);
+        let newEnd = new Date(currentXDomain[1].getTime() - timeShift);
+        
+        // Define boundaries
+        const yearStart = new Date(currentYear, 0, 1);
+        const firstDate = allAvailableDates[0];
+        const lastDate = allAvailableDates[allAvailableDates.length - 1];
+        
+        // Allow small overscroll: 3 days max from actual data boundaries
+        const overscrollDays = 3;
+        const overscrollMs = overscrollDays * 24 * 60 * 60 * 1000;
+        
+        // Overscroll limits from data points (not January 1st)
+        const softLeftLimit = new Date(firstDate.getTime() - overscrollMs);
+        const softRightLimit = new Date(lastDate.getTime() + overscrollMs);
+        
+        // But hard boundary is still January 1st
+        const absoluteLeftLimit = new Date(Math.max(yearStart.getTime(), softLeftLimit.getTime()));
+        
+        // Apply resistance when in overscroll territory
+        let resistanceFactor = 1;
+        
+        // Left overscroll resistance (going before first data point)
+        if (newStart < firstDate) {
+          const overscrollAmount = firstDate.getTime() - newStart.getTime();
+          const maxOverscroll = overscrollMs;
+          const overscrollRatio = Math.min(overscrollAmount / maxOverscroll, 1);
+          resistanceFactor = 1 - (overscrollRatio * 0.8); // Up to 80% resistance
           
-          if (newOffset !== xAxisOffset) {
-            xAxisOffset = newOffset;
-            
-            // Update the chart with new data window
-            const newData = getFilteredExerciseData();
-            
-            // Update scales
-            const newAllDates = [];
-            Object.values(newData).forEach(exerciseData => {
-              exerciseData.forEach(d => newAllDates.push(d.date));
-            });
-            
-            if (newAllDates.length > 0) {
-              x.domain(d3.extent(newAllDates)).nice();
-              
-              // Redraw x-axis and grid
-              drawXAxis();
-              svg.selectAll('.grid-lines-x')
-                .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
-                .call(g => g.select('.domain').remove());
-              
-              // Update paths and points
-              svg.selectAll('.exercise-area').remove();
-              svg.selectAll('.exercise-line').remove();
-              svg.selectAll('.avg-point').remove();
-              svg.selectAll('.touch-target').remove();
-              
-              // Redraw with new data
-              Object.keys(newData).forEach((name, idx) => {
-                const data = newData[name];
-                if (!data.length) return;
-                
-                const mGroup = getExerciseMuscleGroup(name);
-                const color = mGroup && muscleColors[mGroup]
-                             ? muscleColors[mGroup]
-                             : exerciseColors[idx % exerciseColors.length];
-                
-                // Process data for new scales
-                const processedData = data.map(w => {
-                  const useReps = isBodyweight[name];
-                  if (useReps) {
-                    const rs = w.sets.map(s => s.reps);
-                    const maxReps = Math.max(...rs);
-                    const minReps = Math.min(...rs);
-                    const avgReps = rs.reduce((sum, r) => sum + r, 0) / rs.length;
-                    return {
-                      date: w.date,
-                      sets: w.sets,
-                      maxValue: maxReps,
-                      minValue: minReps,
-                      avgValue: avgReps,
-                      isBodyweight: true
-                    };
-                  } else {
-                    const ws = w.sets.map(s => s.weight);
-                    const max = Math.max(...ws), min = Math.min(...ws);
-                    const totalW = w.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
-                    const totalR = w.sets.reduce((sum, s) => sum + s.reps, 0);
-                    return {
-                      date: w.date,
-                      sets: w.sets,
-                      maxValue: max,
-                      minValue: min,
-                      avgValue: totalW / totalR,
-                      isBodyweight: false
-                    };
-                  }
-                });
-                
-                // Update path generators with new scale
-                const newArea = d3.area()
-                  .x(d => x(d.date))
-                  .y0(d => y(d.minValue))
-                  .y1(d => y(d.maxValue))
-                  .curve(d3.curveMonotoneX);
-
-                const newLine = d3.line()
-                  .x(d => x(d.date))
-                  .y(d => y(d.avgValue))
-                  .curve(d3.curveMonotoneX);
-                
-                // Draw area
-                g.append('path')
-                  .datum(processedData)
-                  .attr('class','exercise-area')
-                  .attr('clip-path','url(#chartClip)')
-                  .attr('fill', color).attr('fill-opacity', 0.1)
-                  .attr('d', newArea);
-
-                // Draw line
-                g.append('path')
-                  .datum(processedData)
-                  .attr('class','exercise-line')
-                  .attr('clip-path','url(#chartClip)')
-                  .attr('fill','none')
-                  .attr('stroke', color)
-                  .attr('stroke-width', isMobile ? 2 : 2.5)
-                  .attr('d', newLine);
-
-                // Draw points with interactions
-                processedData.forEach(d => {
-                  const point = g.append('circle')
-                    .datum(d)
-                    .attr('class','avg-point')
-                    .attr('clip-path','url(#chartClip)')
-                    .attr('cx', x(d.date))
-                    .attr('cy', y(d.avgValue))
-                    .attr('r', rPoint)
-                    .style('fill', color)
-                    .attr('stroke','#fff')
-                    .attr('stroke-width',1.5);
-
-                  if (isTouch) {
-                    g.append('circle')
-                      .datum(d)
-                      .attr('class','touch-target')
-                      .attr('clip-path','url(#chartClip)')
-                      .attr('cx', x(d.date))
-                      .attr('cy', y(d.avgValue))
-                      .attr('r', 16)
-                      .attr('fill','transparent')
-                      .attr('pointer-events','all')
-                      .on('click', e => {
-                        e.preventDefault(); e.stopPropagation();
-                        point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
-                        showMobileTooltip(e, d, name, mGroup);
-                        setTimeout(() => {
-                          point.attr('r', rPoint).attr('stroke-width',1.5);
-                        }, 300);
-                      });
-                    point.style('cursor','pointer')
-                      .on('click', e => {
-                        e.preventDefault(); e.stopPropagation();
-                        point.attr('r', rPoint+1.5).attr('stroke-width',1.8);
-                        showMobileTooltip(e, d, name, mGroup);
-                        setTimeout(() => {
-                          point.attr('r', rPoint).attr('stroke-width',1.5);
-                        }, 300);
-                      });
-                  } else {
-                    point.on('mouseover', function(ev) {
-                      d3.select(this).attr('r', rPoint+1.5).attr('stroke-width',1.8);
-                      showDesktopTooltip(ev, d, name, mGroup);
-                    })
-                    .on('mousemove', ev => {
-                      const tw = 220;
-                      let xPos = ev.pageX + 10;
-                      if (xPos + tw > window.innerWidth) xPos = ev.pageX - tw - 10;
-                      tooltip.style('top', `${ev.pageY - 10}px`).style('left', `${xPos}px`);
-                    })
-                    .on('mouseout', function() {
-                      d3.select(this).attr('r', rPoint).attr('stroke-width',1.5);
-                      hideTooltip();
-                    });
-                  }
-                });
-              });
-            }
+          // Hard limit at absolute left boundary (January 1st or 3 days before first data)
+          if (newStart < absoluteLeftLimit) {
+            const adjustment = absoluteLeftLimit.getTime() - newStart.getTime();
+            newStart = new Date(absoluteLeftLimit.getTime());
+            newEnd = new Date(newEnd.getTime() + adjustment);
           }
         }
+        
+        // Right overscroll resistance (going after last data point)
+        if (newEnd > lastDate) {
+          const overscrollAmount = newEnd.getTime() - lastDate.getTime();
+          const maxOverscroll = overscrollMs;
+          const overscrollRatio = Math.min(overscrollAmount / maxOverscroll, 1);
+          resistanceFactor = Math.min(resistanceFactor, 1 - (overscrollRatio * 0.8));
+          
+          // Hard limit at soft right boundary
+          if (newEnd > softRightLimit) {
+            const adjustment = newEnd.getTime() - softRightLimit.getTime();
+            newEnd = new Date(softRightLimit.getTime());
+            newStart = new Date(newStart.getTime() - adjustment);
+          }
+        }
+        
+        // Apply resistance by reducing the movement
+        if (resistanceFactor < 1) {
+          const resistedTimeShift = timeShift * resistanceFactor;
+          newStart = new Date(currentXDomain[0].getTime() - resistedTimeShift);
+          newEnd = new Date(currentXDomain[1].getTime() - resistedTimeShift);
+        }
+        
+        // Update domain and redraw smoothly
+        currentXDomain = [newStart, newEnd];
+        x.domain(currentXDomain);
+        
+        // Redraw x-axis and grid smoothly
+        drawXAxis();
+        svg.selectAll('.grid-lines-x')
+          .call(d3.axisBottom(x).ticks(6).tickSize(-innerH).tickFormat(''))
+          .call(g => g.select('.domain').remove());
+        
+        // Update all visual elements smoothly
+        svg.selectAll('.exercise-area').attr('d', area);
+        svg.selectAll('.exercise-line').attr('d', line);
+        svg.selectAll('.avg-point').attr('cx', d => x(d.date));
+        svg.selectAll('.touch-target').attr('cx', d => x(d.date));
+      })
+      .on('end', ev => {
+        ev.sourceEvent.preventDefault();
+        
+        // Spring back to valid bounds when drag ends
+        springBackToValidDomain();
       });
 
     // Apply drag behaviors
