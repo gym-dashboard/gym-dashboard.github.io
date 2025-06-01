@@ -74,7 +74,7 @@
       "Weight": "0 kg",
       "Effort": "95%",
       "Muscle-Group": "Legs",
-      "Location": "Machine"
+      "Location": null
     },
     {
       "Exercise": "Twins",
@@ -82,7 +82,7 @@
       "Weight": "0 kg",
       "Effort": "90%",
       "Muscle-Group": "Legs",
-      "Location": "Machine"
+      "Location": null
     },
     {
       "Exercise": "Crunch",

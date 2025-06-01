@@ -1,0 +1,114 @@
+{
+  "date": "26-05-2025",
+  "participants": [
+    "André D.",
+    "Tomás T."
+  ],
+  "start_time": "19:42",
+  "end_time": "20:20",
+  "total_time": "0 hours 38 minutes",
+  "overall_muscle_group": [
+    "Abs",
+    "Back",
+    "Chest",
+    "Shoulders"
+  ],
+  "workout": [
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 9,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 9,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 9,
+      "Weight": "60 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 9,
+      "Weight": "27.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 6,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    }
+  ]
+}

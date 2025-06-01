@@ -1,0 +1,136 @@
+{
+  "date": "30-05-2025",
+  "participants": [
+    "André D."
+  ],
+  "start_time": "18:50",
+  "end_time": "19:40",
+  "total_time": "0 hours 50 minutes",
+  "overall_muscle_group": [
+    "Biceps",
+    "Triceps",
+    "Abs"
+  ],
+  "workout": [
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 30,
+      "Weight": "13 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 18,
+      "Weight": "18 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Preacher Curls",
+      "Reps": 12,
+      "Weight": "22.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Biceps",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Tricep Pushdown",
+      "Reps": 12,
+      "Weight": "17.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Tricep Pushdown",
+      "Reps": 12,
+      "Weight": "17.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Tricep Pushdown",
+      "Reps": 10,
+      "Weight": "17.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Overhead Extension",
+      "Reps": 15,
+      "Weight": "15 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Overhead Extension",
+      "Reps": 10,
+      "Weight": "17.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Overhead Extension",
+      "Reps": 10,
+      "Weight": "17.5 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Triceps",
+      "Location": "Cables"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 10,
+      "Weight": "12.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 10,
+      "Weight": "12.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 10,
+      "Weight": "12.5 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "70%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "80%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    }
+  ]
+}
