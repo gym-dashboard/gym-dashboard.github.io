@@ -1,0 +1,106 @@
+{
+  "date": "05-06-2025",
+  "participants": ["André D."],
+  "start_time": "19:02",
+  "end_time": "20:02",
+  "total_time": "1 hour 0 minutes",
+  "overall_muscle_group": ["Chest", "Back", "Biceps", "Shoulders"],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 6,
+      "Weight": "30 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 8,
+      "Weight": "60 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rows",
+      "Reps": 7,
+      "Weight": "65 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 12,
+      "Weight": "10 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Hammer Curls",
+      "Reps": 10,
+      "Weight": "10 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Biceps",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 7,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "25 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Shoulder Press",
+      "Reps": 8,
+      "Weight": "25 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 15,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Rear Delt Rows",
+      "Reps": 8,
+      "Weight": "70 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Machine"
+    }
+  ]
+}

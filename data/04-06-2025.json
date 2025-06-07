@@ -1,0 +1,98 @@
+{
+  "date": "04-06-2025",
+  "participants": ["André D.", "Mariana D."],
+  "start_time": "18:23",
+  "end_time": "19:12",
+  "total_time": "0 hours 49 minutes",
+  "overall_muscle_group": ["Legs", "Abs"],
+  "workout": [
+    {
+      "Exercise": "Leg Press",
+      "Reps": 10,
+      "Weight": "120 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 9,
+      "Weight": "125 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Press",
+      "Reps": 8,
+      "Weight": "125 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 14,
+      "Weight": "50 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Extension",
+      "Reps": 10,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "75%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Crunch",
+      "Reps": 25,
+      "Weight": "0 kg",
+      "Effort": "85%",
+      "Muscle-Group": "Abs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 9,
+      "Weight": "25 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Leg Curl",
+      "Reps": 10,
+      "Weight": "25 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Legs",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 44,
+      "Weight": "0 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Legs",
+      "Location": null
+    },
+    {
+      "Exercise": "Twins",
+      "Reps": 35,
+      "Weight": "0 kg",
+      "Effort": null,
+      "Muscle-Group": "Legs",
+      "Location": null
+    }
+  ]
+}

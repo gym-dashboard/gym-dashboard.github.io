@@ -1,0 +1,98 @@
+{
+  "date": "02-06-2025",
+  "participants": ["André P.", "Tomás T."],
+  "start_time": "18:36",
+  "end_time": "19:37",
+  "total_time": "1 hour 1 minute",
+  "overall_muscle_group": ["Chest", "Back", "Shoulders"],
+  "workout": [
+    {
+      "Exercise": "Bench Press",
+      "Reps": 7,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Bench Press",
+      "Reps": 8,
+      "Weight": "40 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 9,
+      "Weight": "55 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lat Pull-Down",
+      "Reps": 7,
+      "Weight": "60 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Incline Bench Press",
+      "Reps": 8,
+      "Weight": "20 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Chest",
+      "Location": "Bar"
+    },
+    {
+      "Exercise": "Low Rows",
+      "Reps": 10,
+      "Weight": "100 kg",
+      "Effort": "95%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Low Rows",
+      "Reps": 10,
+      "Weight": "100 kg",
+      "Effort": "100%",
+      "Muscle-Group": "Back",
+      "Location": "Machine"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    },
+    {
+      "Exercise": "Lateral Raises",
+      "Reps": 15,
+      "Weight": "10 kg",
+      "Effort": "90%",
+      "Muscle-Group": "Shoulders",
+      "Location": "Dumbbells"
+    }
+  ]
+}
